@@ -39,7 +39,7 @@ type ChromeApi = {
 
 declare const chrome: ChromeApi;
 
-const CROP_COMMAND = "_execute_action";
+const CROP_COMMAND = "open-crop";
 const CONTENT_SCRIPT_FILE = "content/inject.js";
 const RESTRICTED_URL_PREFIXES = [
   "about:",

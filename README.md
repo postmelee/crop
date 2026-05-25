@@ -40,7 +40,7 @@ Phase 1 기준으로 Chrome MV3 shell이 준비됐다.
 
 - `manifest.json` source manifest
 - Vite 기반 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 산출
-- background service worker의 action icon/`_execute_action` 주입 흐름
+- background service worker의 action icon/`open-crop` command 주입 흐름
 - content script의 `__crop_root__` Shadow DOM overlay stub
 - 중복 실행 방지와 Escape/close 제거 동작
 

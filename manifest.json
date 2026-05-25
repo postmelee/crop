@@ -12,11 +12,12 @@
     "default_title": "crop"
   },
   "commands": {
-    "_execute_action": {
+    "open-crop": {
       "suggested_key": {
         "default": "Ctrl+Shift+S",
         "mac": "Command+Shift+S"
-      }
+      },
+      "description": "Open crop overlay"
     }
   }
 }
