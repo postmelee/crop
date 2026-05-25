@@ -69,6 +69,18 @@ npm run typecheck
 
 The Phase 0 Vite configuration uses a virtual no-op entry so the build pipeline can be validated before real MV3 runtime entrypoints exist. Later tasks will replace that probe with actual extension entrypoints such as the background service worker and content scripts.
 
+## Source Layout
+
+Initial source boundaries:
+
+- `src/background/`: Chrome extension service worker code
+- `src/content/`: injected content script code
+- `src/content/overlay/`: Shadow DOM overlay UI code
+- `src/firefox-derived/`: files adapted from Mozilla Firefox Screenshots under MPL-2.0
+- `src/shared/`: shared message, rectangle, filename, crop, and clipboard helpers
+
+Phase 0 creates these boundaries without adding runtime implementation. Firefox-derived source should not be mixed into Chrome-specific directories.
+
 ## Branding
 
 The product name is `crop`.
