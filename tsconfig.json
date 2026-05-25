@@ -12,6 +12,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
