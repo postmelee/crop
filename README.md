@@ -47,6 +47,28 @@ Phase 0 prepares the repository:
 
 Runtime files such as `manifest.json`, background service worker, content script injection, overlay UI, and capture/crop behavior are intentionally deferred to later tasks.
 
+## Local Development
+
+Prerequisites:
+
+- Node.js 20 or newer
+- npm
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the Phase 0 build checks:
+
+```bash
+npm run build
+npm run typecheck
+```
+
+The Phase 0 Vite configuration uses a virtual no-op entry so the build pipeline can be validated before real MV3 runtime entrypoints exist. Later tasks will replace that probe with actual extension entrypoints such as the background service worker and content scripts.
+
 ## Branding
 
 The product name is `crop`.

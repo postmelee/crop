@@ -9,7 +9,7 @@ GitHub Issue: [#1](https://github.com/postmelee/crop/issues/1)
 | Stage | 제목 | 주요 산출 | 검증 |
 |---|---|---|---|
 | 1 | 라이선스와 고지 파일 | `README.md`, `LICENSE`, `LICENSE-MPL-2.0`, `NOTICE`, `THIRD_PARTY.md` | 파일 존재, 라이선스/상표 문구 grep, `git diff --check` |
-| 2 | TypeScript/Vite 빌드 기반 | `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts` | `npm install`, `npm run build`, `npm run typecheck`, `git diff --check` |
+| 2 | TypeScript/Vite 빌드 기반 | `.gitignore`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts` | `npm install`, `npm run build`, `npm run typecheck`, `git diff --check` |
 | 3 | 소스 구조와 Firefox-derived 정책 | `src/**`, `src/firefox-derived/README.md` | source tree 확인, MPL/출처 문구 grep, `git diff --check` |
 | 4 | 최종 검증과 보고 | `mydocs/report/task_m010_1_report.md`, `mydocs/orders/20260525.md` | 전체 검증 재실행, `git status --short`, `git diff --check` |
 
@@ -80,6 +80,7 @@ Task #1 Stage 1: 라이선스와 고지 파일 추가
 - `package-lock.json`
 - `tsconfig.json`
 - `vite.config.ts`
+- `.gitignore`
 - `mydocs/working/task_m010_1_stage2.md`
 
 수정:
