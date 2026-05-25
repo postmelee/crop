@@ -1,32 +1,33 @@
-const ROOT_ID = "__crop_root__";
-const ROOT_ATTRIBUTE = "data-crop-root";
-const PANEL_ATTRIBUTE = "data-crop-panel";
-const FLASH_CLASS = "crop-panel--flash";
+(() => {
+  const ROOT_ID = "__crop_root__";
+  const ROOT_ATTRIBUTE = "data-crop-root";
+  const PANEL_ATTRIBUTE = "data-crop-panel";
+  const FLASH_CLASS = "crop-panel--flash";
 
-function flashExistingOverlay(existingRoot: HTMLElement): boolean {
-  if (existingRoot.getAttribute(ROOT_ATTRIBUTE) !== "true") {
-    console.warn(`[crop] Cannot mount overlay: #${ROOT_ID} already exists.`);
+  function flashExistingOverlay(existingRoot: HTMLElement): boolean {
+    if (existingRoot.getAttribute(ROOT_ATTRIBUTE) !== "true") {
+      console.warn(`[crop] Cannot mount overlay: #${ROOT_ID} already exists.`);
+      return true;
+    }
+
+    const panel = existingRoot.shadowRoot?.querySelector<HTMLElement>(`[${PANEL_ATTRIBUTE}]`);
+
+    if (!panel) {
+      existingRoot.remove();
+      return false;
+    }
+
+    panel.classList.remove(FLASH_CLASS);
+    void panel.offsetWidth;
+    panel.classList.add(FLASH_CLASS);
+
     return true;
   }
 
-  const panel = existingRoot.shadowRoot?.querySelector<HTMLElement>(`[${PANEL_ATTRIBUTE}]`);
+  function createStyle(): HTMLStyleElement {
+    const style = document.createElement("style");
 
-  if (!panel) {
-    existingRoot.remove();
-    return false;
-  }
-
-  panel.classList.remove(FLASH_CLASS);
-  void panel.offsetWidth;
-  panel.classList.add(FLASH_CLASS);
-
-  return true;
-}
-
-function createStyle(): HTMLStyleElement {
-  const style = document.createElement("style");
-
-  style.textContent = `
+    style.textContent = `
     :host {
       all: initial;
       position: fixed;
@@ -131,75 +132,76 @@ function createStyle(): HTMLStyleElement {
         box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
       }
     }
-  `;
+    `;
 
-  return style;
-}
-
-function createOverlay(shadowRoot: ShadowRoot, removeOverlay: () => void): void {
-  const frame = document.createElement("div");
-  frame.className = "crop-frame";
-
-  const panel = document.createElement("div");
-  panel.className = "crop-panel";
-  panel.setAttribute(PANEL_ATTRIBUTE, "true");
-  panel.setAttribute("role", "dialog");
-  panel.setAttribute("aria-label", "crop");
-
-  const brand = document.createElement("div");
-  brand.className = "crop-brand";
-
-  const mark = document.createElement("span");
-  mark.className = "crop-mark";
-  mark.setAttribute("aria-hidden", "true");
-
-  const label = document.createElement("span");
-  label.textContent = "crop";
-
-  const closeButton = document.createElement("button");
-  closeButton.className = "crop-close";
-  closeButton.type = "button";
-  closeButton.textContent = "x";
-  closeButton.setAttribute("aria-label", "Close crop overlay");
-  closeButton.addEventListener("click", removeOverlay);
-
-  brand.append(mark, label);
-  panel.append(brand, closeButton);
-  shadowRoot.append(createStyle(), frame, panel);
-  panel.classList.add(FLASH_CLASS);
-}
-
-function mountOverlay(): void {
-  const existingRoot = document.getElementById(ROOT_ID);
-
-  if (existingRoot instanceof HTMLElement && flashExistingOverlay(existingRoot)) {
-    return;
+    return style;
   }
 
-  const host = document.createElement("div");
-  host.id = ROOT_ID;
-  host.setAttribute(ROOT_ATTRIBUTE, "true");
+  function createOverlay(shadowRoot: ShadowRoot, removeOverlay: () => void): void {
+    const frame = document.createElement("div");
+    frame.className = "crop-frame";
 
-  const shadowRoot = host.attachShadow({ mode: "open" });
+    const panel = document.createElement("div");
+    panel.className = "crop-panel";
+    panel.setAttribute(PANEL_ATTRIBUTE, "true");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "crop");
 
-  const removeOverlay = (): void => {
-    window.removeEventListener("keydown", handleKeyDown, true);
-    host.remove();
-  };
+    const brand = document.createElement("div");
+    brand.className = "crop-brand";
 
-  const handleKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== "Escape") {
+    const mark = document.createElement("span");
+    mark.className = "crop-mark";
+    mark.setAttribute("aria-hidden", "true");
+
+    const label = document.createElement("span");
+    label.textContent = "crop";
+
+    const closeButton = document.createElement("button");
+    closeButton.className = "crop-close";
+    closeButton.type = "button";
+    closeButton.textContent = "x";
+    closeButton.setAttribute("aria-label", "Close crop overlay");
+    closeButton.addEventListener("click", removeOverlay);
+
+    brand.append(mark, label);
+    panel.append(brand, closeButton);
+    shadowRoot.append(createStyle(), frame, panel);
+    panel.classList.add(FLASH_CLASS);
+  }
+
+  function mountOverlay(): void {
+    const existingRoot = document.getElementById(ROOT_ID);
+
+    if (existingRoot instanceof HTMLElement && flashExistingOverlay(existingRoot)) {
       return;
     }
 
-    event.preventDefault();
-    event.stopPropagation();
-    removeOverlay();
-  };
+    const host = document.createElement("div");
+    host.id = ROOT_ID;
+    host.setAttribute(ROOT_ATTRIBUTE, "true");
 
-  createOverlay(shadowRoot, removeOverlay);
-  document.documentElement.append(host);
-  window.addEventListener("keydown", handleKeyDown, true);
-}
+    const shadowRoot = host.attachShadow({ mode: "open" });
 
-mountOverlay();
+    const removeOverlay = (): void => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+      host.remove();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      removeOverlay();
+    };
+
+    createOverlay(shadowRoot, removeOverlay);
+    document.documentElement.append(host);
+    window.addEventListener("keydown", handleKeyDown, true);
+  }
+
+  mountOverlay();
+})();
