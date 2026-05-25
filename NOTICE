@@ -1,0 +1,18 @@
+crop Notices
+============
+
+crop is not affiliated with, endorsed by, or sponsored by Mozilla or Firefox.
+
+This project intends to adapt selected implementation ideas and source code
+from Mozilla Firefox Screenshots for element selection and overlay behavior.
+Any file adapted from Mozilla Firefox Screenshots source code must retain a
+Mozilla Public License 2.0 notice and be placed under `src/firefox-derived/`.
+
+As of Phase 0, no Mozilla Firefox source file has been copied into this
+repository. When Firefox-derived source is added, this notice and
+`THIRD_PARTY.md` must be updated with the exact upstream file paths, upstream
+revision, and modification summary.
+
+The Mozilla Public License 2.0 text is available in `LICENSE-MPL-2.0` and at:
+
+https://mozilla.org/MPL/2.0/
