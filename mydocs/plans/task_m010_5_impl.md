@@ -13,6 +13,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | 3 | selection 상태와 action buttons 배치 | `src/content/overlay/state-machine.ts`, `src/content/overlay/crop-template.ts` | `npm run test`, selection/buttons grep |
 | 4 | README smoke 절차와 통합 검증 | `README.md`, `mydocs/report/task_m010_5_report.md` | `npm run build`, `npm run typecheck`, `npm run test`, Chrome smoke |
 | 5 | Firefox식 시각 정렬과 눈동자 포인터 추적 | `src/content/overlay/crop-template.ts`, `src/content/overlay/crop-overlay.css`, `src/content/overlay/positioning.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
+| 6 | Firefox 원본 UI 자산과 drag selection 포팅 | `src/firefox-derived/screenshots-ui-assets.ts`, `src/content/overlay/state-machine.ts`, `src/content/overlay/crop-overlay.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP drag smoke |
 
 ## 문서 위치 확인
 
@@ -261,6 +262,75 @@ git diff --check
 Task #5 Stage 5: Firefox식 overlay 시각 정렬
 ```
 
+## Stage 6 — Firefox 원본 UI 자산과 drag selection 포팅
+
+### 산출물
+
+신규:
+
+- `src/firefox-derived/screenshots-ui-assets.ts`
+- `mydocs/working/task_m010_5_stage6.md`
+
+수정:
+
+- `src/content/overlay/crop-template.ts`
+- `src/content/overlay/crop-overlay.ts`
+- `src/content/overlay/crop-overlay.css`
+- `src/content/overlay/positioning.ts`
+- `src/content/overlay/state-machine.ts`
+- `tests/content/overlay/positioning.test.ts`
+- `tests/content/overlay/state-machine.test.ts`
+- `NOTICE`
+- `THIRD_PARTY.md`
+- `README.md`
+- `mydocs/report/task_m010_5_report.md`
+- `mydocs/orders/20260527.md`
+
+### Firefox 원본 분석 기준
+
+아래 Mozilla Firefox 원본 구현은 MPL 2.0 출처를 유지해 필요한 UI 자산과 상태 전환을 포팅한다. Chrome에서 직접 실행할 수 없는 Firefox privileged API는 포팅하지 않는다.
+
+- `browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs`: preview face SVG, `crosshairs -> draggingReady -> dragging -> selected` drag selection 흐름, selection container 구조
+- `browser/components/screenshots/overlay/overlay.css`: `preview-container`, `hover-highlight`, `selection-container`, selection background, instruction typography
+- `browser/components/screenshots/screenshots-buttons.css`: top-right visible/full page button 크기와 icon-above-label 구조
+- `browser/components/screenshots/content/menu-visible.svg`
+- `browser/components/screenshots/content/menu-fullpage.svg`
+
+### 변경 내용
+
+- 원본 preview face SVG path와 visible/full page menu SVG를 `src/firefox-derived/screenshots-ui-assets.ts`로 분리하고 MPL 2.0 헤더를 유지한다.
+- `crop-template.ts`는 Firefox-derived asset factory를 통해 face와 mode icon SVG를 생성한다.
+- CSS는 원본 `overlay.css`의 주요 수치에 맞춰 prompt font `24px`, line-height `32px`, instruction width `400px`, face `64px`, button min-width `90px`, icon `46px` 기준으로 조정한다.
+- Firefox 원본처럼 pointerdown에서 `draggingReady`, 40px 이상 이동 시 `dragging`, pointerup에서 `selected`로 전환하는 drag selection을 구현한다.
+- drag/selected 상태에서는 preview prompt와 top-right mode toolbar를 숨기고, selection background와 selected highlight를 표시한다.
+- click만 하는 경우에는 기존 hover element selection을 유지한다.
+- full page capture 동작, Firefox resize mover 전체, privileged iframe traversal, telemetry, localization id는 이번 Stage에서 제외한다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm run test
+rg "draggingReady|dragging|screenshots-ui-assets|menu-visible|menu-fullpage|leftPupil|rightPupil" src tests NOTICE THIRD_PARTY.md README.md
+git diff --check
+```
+
+자동 smoke:
+
+- `dist/content/inject.js`를 CDP로 직접 주입한다.
+- 원본 face SVG와 mode icon SVG가 Shadow DOM에 생성되는지 확인한다.
+- pointermove 후 SVG pupil transform이 갱신되는지 확인한다.
+- hover 상태에서 click하면 기존 element selection이 유지되는지 확인한다.
+- pointerdown/move/up drag로 임의 region이 selected 상태가 되는지 확인한다.
+- selected 상태에서 action buttons와 Cancel/Escape teardown이 유지되는지 확인한다.
+
+### 커밋
+
+```text
+Task #5 Stage 6: Firefox 원본 UI와 drag selection 포팅
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -281,6 +351,7 @@ Task #5 Stage 5: Firefox식 overlay 시각 정렬
 - Stage 3은 Stage 2에서 hover rect 표시와 helper 연결이 검증된 후 진행한다.
 - Stage 4는 Stage 1~3 검증과 단계 보고서 승인이 끝난 후 진행한다.
 - Stage 5는 작업지시자의 추가 UI parity 요청 승인 이후 진행한다.
+- Stage 6은 작업지시자의 원본에 최대한 가까운 포팅 요청 승인 이후 진행한다.
 - capture/crop backend는 Task #5 final report와 PR merge 이후 #6에서 진행한다.
 
 ## 위험과 대응
@@ -292,6 +363,8 @@ Task #5 Stage 5: Firefox식 overlay 시각 정렬
 - **CSS raw import type 문제**: `?raw` declaration을 추가하거나 동등한 inline CSS 방식을 Stage 1에서 검증한다.
 - **수동 smoke 제약**: 로컬 Chrome 검증이 제한되면 자동 검증 결과와 함께 검증 한계를 보고서에 남기고 작업지시자 확인을 요청한다.
 - **Firefox 동일성 한계**: Firefox 제품명, 원본 아이콘/SVG, full page capture 동작은 이번 task에서 복제하지 않고 `crop` 브랜딩과 MVP visible viewport 범위를 유지한다.
+- **MPL 자산 혼입 위험**: Firefox 원본 SVG path와 menu icon은 `src/firefox-derived/`로 분리하고 `NOTICE`, `THIRD_PARTY.md`에 출처를 기록한다.
+- **drag와 click 이벤트 충돌**: pointerdown/up drag 흐름과 click selection 흐름이 중복 실행되지 않도록 selected 상태에서는 click 후속 처리를 no-op으로 둔다.
 
 ## 승인 요청 사항
 

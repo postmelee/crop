@@ -1,4 +1,9 @@
 import overlayStyles from "./crop-overlay.css?raw";
+import {
+  createScreenshotsFullPageIconSvg,
+  createScreenshotsPreviewFaceSvg,
+  createScreenshotsVisibleIconSvg
+} from "../../firefox-derived/screenshots-ui-assets";
 
 export const ROOT_ID = "__crop_root__";
 export const ROOT_ATTRIBUTE = "data-crop-root";
@@ -10,6 +15,7 @@ export interface CropOverlayTemplate {
   readonly highlight: HTMLElement;
   readonly actions: HTMLElement;
   readonly prompt: HTMLElement;
+  readonly selectionMask: CropSelectionMaskTemplate;
 }
 
 export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTemplate {
@@ -24,6 +30,8 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
 
   const frame = document.createElement("div");
   frame.className = "crop-frame";
+
+  const selectionMask = createSelectionMaskTemplate();
 
   const highlight = document.createElement("div");
   highlight.className = "crop-highlight";
@@ -83,11 +91,19 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   prompt.append(face, instructions, promptCancelButton);
   panel.append(visibleModeButton, fullPageModeButton);
   actions.append(copyButton, saveButton, cancelButton);
-  shell.append(dim, frame, highlight, prompt, actions, panel);
+  shell.append(dim, frame, selectionMask.container, highlight, prompt, actions, panel);
   shadowRoot.append(style, shell);
   panel.classList.add(FLASH_CLASS);
 
-  return { panel, highlight, actions, prompt };
+  return { panel, highlight, actions, prompt, selectionMask };
+}
+
+export interface CropSelectionMaskTemplate {
+  readonly container: HTMLElement;
+  readonly top: HTMLElement;
+  readonly right: HTMLElement;
+  readonly bottom: HTMLElement;
+  readonly left: HTMLElement;
 }
 
 interface ModeButtonOptions {
@@ -106,13 +122,17 @@ function createModeButton(options: ModeButtonOptions): HTMLButtonElement {
   button.setAttribute("aria-pressed", options.active ? "true" : "false");
 
   if (options.disabled) {
-    button.disabled = true;
     button.setAttribute("aria-disabled", "true");
   }
 
   const icon = document.createElement("span");
   icon.className = "crop-mode-icon";
   icon.setAttribute("aria-hidden", "true");
+  icon.append(
+    options.mode === "visible"
+      ? createScreenshotsVisibleIconSvg(document)
+      : createScreenshotsFullPageIconSvg(document)
+  );
 
   const label = document.createElement("span");
   label.className = "crop-mode-label";
@@ -127,38 +147,9 @@ function createPromptFace(): HTMLElement {
   const face = document.createElement("div");
   face.className = "crop-face";
   face.setAttribute("aria-hidden", "true");
-
-  for (const corner of ["top-left", "top-right", "bottom-right", "bottom-left"] as const) {
-    const cornerElement = document.createElement("span");
-    cornerElement.className = `crop-face-corner crop-face-corner--${corner}`;
-    face.append(cornerElement);
-  }
-
-  const eyes = document.createElement("div");
-  eyes.className = "crop-face-eyes";
-
-  const leftEye = createEye("left");
-  const rightEye = createEye("right");
-
-  const smile = document.createElement("span");
-  smile.className = "crop-face-smile";
-
-  eyes.append(leftEye, rightEye);
-  face.append(eyes, smile);
+  face.append(createScreenshotsPreviewFaceSvg(document));
 
   return face;
-}
-
-function createEye(side: "left" | "right"): HTMLElement {
-  const eye = document.createElement("span");
-  eye.className = `crop-eye crop-eye--${side}`;
-
-  const pupil = document.createElement("span");
-  pupil.className = "crop-pupil";
-
-  eye.append(pupil);
-
-  return eye;
 }
 
 function createActionButton(action: string, label: string): HTMLButtonElement {
@@ -170,4 +161,33 @@ function createActionButton(action: string, label: string): HTMLButtonElement {
   button.setAttribute("data-crop-action", action);
 
   return button;
+}
+
+function createSelectionMaskTemplate(): CropSelectionMaskTemplate {
+  const container = document.createElement("div");
+  container.className = "crop-selection-mask";
+  container.hidden = true;
+  container.setAttribute("aria-hidden", "true");
+
+  const top = createSelectionMaskPart("top");
+  const right = createSelectionMaskPart("right");
+  const bottom = createSelectionMaskPart("bottom");
+  const left = createSelectionMaskPart("left");
+
+  container.append(top, right, bottom, left);
+
+  return {
+    container,
+    top,
+    right,
+    bottom,
+    left
+  };
+}
+
+function createSelectionMaskPart(position: string): HTMLElement {
+  const part = document.createElement("div");
+  part.className = `crop-selection-mask-part crop-selection-mask-part--${position}`;
+
+  return part;
 }

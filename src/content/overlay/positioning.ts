@@ -22,6 +22,14 @@ export interface ActionButtonsPresentation {
   readonly transform: string;
 }
 
+export interface SelectionMaskElements {
+  readonly container: HTMLElement;
+  readonly top: HTMLElement;
+  readonly right: HTMLElement;
+  readonly bottom: HTMLElement;
+  readonly left: HTMLElement;
+}
+
 export interface Point {
   readonly x: number;
   readonly y: number;
@@ -109,6 +117,40 @@ export function applyActionButtonsPresentation(
 
   element.hidden = presentation.hidden;
   element.style.transform = presentation.transform;
+}
+
+export function applySelectionMaskPresentation(
+  elements: SelectionMaskElements,
+  rect: ViewportRect | null
+): void {
+  elements.container.hidden = !rect;
+
+  if (!rect) {
+    for (const part of [elements.top, elements.right, elements.bottom, elements.left]) {
+      part.removeAttribute("style");
+    }
+    return;
+  }
+
+  elements.top.style.left = "0";
+  elements.top.style.top = "0";
+  elements.top.style.width = "100vw";
+  elements.top.style.height = toCssPixel(rect.top);
+
+  elements.right.style.left = toCssPixel(rect.right);
+  elements.right.style.top = toCssPixel(rect.top);
+  elements.right.style.width = `calc(100vw - ${toCssPixel(rect.right)})`;
+  elements.right.style.height = toCssPixel(rect.height);
+
+  elements.bottom.style.left = "0";
+  elements.bottom.style.top = toCssPixel(rect.bottom);
+  elements.bottom.style.width = "100vw";
+  elements.bottom.style.height = `calc(100vh - ${toCssPixel(rect.bottom)})`;
+
+  elements.left.style.left = "0";
+  elements.left.style.top = toCssPixel(rect.top);
+  elements.left.style.width = toCssPixel(rect.left);
+  elements.left.style.height = toCssPixel(rect.height);
 }
 
 export function getEyeOffsetPresentation(

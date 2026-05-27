@@ -17,11 +17,12 @@ the MPL-covered boundary stays visible to contributors and build tooling.
 
 ## Local Adaptation Targets
 
-| Local path | Upstream scope | Task #4 responsibility |
+| Local path | Upstream scope | Responsibility |
 |---|---|---|
 | `overlay-helpers.ts` | Element hit-test, `getBestRectForElement`, small/large element and heading/article heuristics | Chrome MV3-safe helper functions for Phase 3 overlay UI |
 | `region.ts` | `Region` geometry class | Visible viewport-only region math |
 | `window-dimensions.ts` | `WindowDimensions` class | Explicit viewport dimensions for Chrome content scripts |
+| `screenshots-ui-assets.ts` | Preview face SVG and visible/full page menu SVGs | Chrome Shadow DOM-safe factory helpers for Firefox Screenshots-derived UI assets |
 
 ## Excluded Upstream Sources
 

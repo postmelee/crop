@@ -31,12 +31,33 @@
   background: rgba(0, 0, 0, 0.58);
 }
 
+:host([data-crop-state="dragging"]) .crop-dim,
+:host([data-crop-state="selected"]) .crop-dim {
+  display: none;
+}
+
 .crop-frame {
   position: absolute;
   inset: 1px;
   box-sizing: border-box;
   border: 2px dashed rgba(255, 255, 255, 0.46);
   background: transparent;
+}
+
+.crop-selection-mask {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.crop-selection-mask[hidden] {
+  display: none;
+}
+
+.crop-selection-mask-part {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.58);
+  pointer-events: none;
 }
 
 .crop-highlight {
@@ -80,87 +101,37 @@
   display: none;
 }
 
+:host([data-crop-state="dragging"]) .crop-prompt {
+  display: none;
+}
+
+:host([data-crop-state="draggingReady"]) .crop-mode-toolbar,
+:host([data-crop-state="dragging"]) .crop-mode-toolbar,
+:host([data-crop-state="selected"]) .crop-mode-toolbar {
+  display: none;
+}
+
 .crop-face {
   position: relative;
   width: 64px;
   height: 64px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
-.crop-face-corner {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-color: #ffffff;
-  border-style: solid;
-  border-width: 0;
+.crop-screenshots-face-svg {
+  display: block;
+  width: 64px;
+  height: 64px;
 }
 
-.crop-face-corner--top-left {
-  left: 0;
-  top: 0;
-  border-left-width: 4px;
-  border-top-width: 4px;
+.face-line-color {
+  fill: #ffffff;
 }
 
-.crop-face-corner--top-right {
-  right: 0;
-  top: 0;
-  border-right-width: 4px;
-  border-top-width: 4px;
-}
-
-.crop-face-corner--bottom-right {
-  right: 0;
-  bottom: 0;
-  border-right-width: 4px;
-  border-bottom-width: 4px;
-}
-
-.crop-face-corner--bottom-left {
-  left: 0;
-  bottom: 0;
-  border-left-width: 4px;
-  border-bottom-width: 4px;
-}
-
-.crop-face-eyes {
-  position: absolute;
-  left: 15px;
-  right: 15px;
-  top: 26px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.crop-eye {
-  position: relative;
-  width: 12px;
-  height: 16px;
-  border-radius: 999px;
-  background: #ffffff;
-}
-
-.crop-pupil {
-  position: absolute;
-  left: 4px;
-  top: 6px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #111827;
+.face-pupil-color {
+  fill: #000000;
   transform: translate(var(--crop-eye-x), var(--crop-eye-y));
   transition: transform 60ms linear;
-}
-
-.crop-face-smile {
-  position: absolute;
-  left: 26px;
-  top: 42px;
-  width: 14px;
-  height: 8px;
-  border-bottom: 4px solid #ffffff;
-  border-radius: 0 0 999px 999px;
 }
 
 .crop-prompt-instructions {
@@ -168,18 +139,18 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: min(720px, calc(100vw - 48px));
+  width: min(400px, calc(100vw - 48px));
   color: #ffffff;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.34;
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 32px;
   letter-spacing: 0;
 }
 
 .crop-prompt-cancel {
   min-width: 60px;
   height: 42px;
-  margin-top: 26px;
+  margin-top: 20px;
   padding: 0 16px;
   border: 2px solid rgba(255, 255, 255, 0.88);
   border-radius: 8px;
@@ -264,13 +235,13 @@
 
 .crop-mode-toolbar {
   position: fixed;
-  top: 6px;
+  top: -8px;
   right: 10px;
   display: inline-flex;
   align-items: stretch;
   gap: 4px;
   max-width: calc(100vw - 20px);
-  padding: 6px;
+  padding: 12px;
   border-radius: 8px;
   background: rgba(38, 43, 51, 0.98);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
@@ -287,16 +258,16 @@
   display: grid;
   grid-template-rows: 46px auto;
   place-items: center;
-  width: 120px;
-  min-height: 94px;
-  padding: 8px 8px 10px;
+  min-width: 90px;
+  min-height: 86px;
+  padding: 6px 5px 5px;
   border: 2px solid transparent;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.18;
   letter-spacing: 0;
@@ -311,7 +282,7 @@
     0 0 0 1px rgba(125, 211, 252, 0.24);
 }
 
-.crop-mode-button:hover:not(:disabled) {
+.crop-mode-button:hover {
   background: rgba(255, 255, 255, 0.16);
 }
 
@@ -320,44 +291,27 @@
   outline-offset: 2px;
 }
 
-.crop-mode-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.72;
-}
-
-.crop-mode-button:disabled .crop-mode-label::after {
-  content: "";
+.crop-mode-button[aria-disabled="true"] {
+  cursor: default;
 }
 
 .crop-mode-button--full-page {
-  background: rgba(47, 125, 246, 0.72);
-  color: rgba(255, 255, 255, 0.88);
+  background: #2f7df6;
+  color: #ffffff;
 }
 
 .crop-mode-icon {
   position: relative;
   width: 46px;
-  height: 34px;
-  border: 3px solid rgba(255, 255, 255, 0.72);
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.36) 50%, transparent 0) 0 0 / 6px 3px,
-    linear-gradient(90deg, rgba(255, 255, 255, 0.36) 50%, transparent 0) 0 100% / 6px 3px,
-    linear-gradient(0deg, rgba(255, 255, 255, 0.36) 50%, transparent 0) 0 0 / 3px 6px,
-    linear-gradient(0deg, rgba(255, 255, 255, 0.36) 50%, transparent 0) 100% 0 / 3px 6px,
-    rgba(255, 255, 255, 0.22);
-  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y, no-repeat;
-  box-shadow: inset 0 0 0 2px rgba(17, 24, 39, 0.22);
+  height: 46px;
+  color: #f9fbff;
+  --crop-screenshots-icon-background-color: rgba(255, 255, 255, 0.42);
 }
 
-.crop-mode-button--full-page .crop-mode-icon::after {
-  content: "";
-  position: absolute;
-  right: -5px;
-  top: -5px;
+.crop-mode-icon svg {
+  display: block;
   width: 46px;
-  height: 34px;
-  border: 3px solid rgba(255, 255, 255, 0.52);
-  background: rgba(255, 255, 255, 0.12);
+  height: 46px;
 }
 
 .crop-mode-label {
@@ -388,7 +342,7 @@
   }
 
   .crop-mode-button {
-    width: 96px;
+    min-width: 86px;
     min-height: 82px;
     grid-template-rows: 36px auto;
     padding: 6px;
@@ -397,12 +351,12 @@
 
   .crop-mode-icon {
     width: 38px;
-    height: 28px;
+    height: 38px;
   }
 
-  .crop-mode-button--full-page .crop-mode-icon::after {
+  .crop-mode-icon svg {
     width: 38px;
-    height: 28px;
+    height: 38px;
   }
 
   .crop-prompt-instructions {
@@ -411,7 +365,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crop-pupil {
+  .face-pupil-color {
     transition: none;
   }
 }

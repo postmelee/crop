@@ -1,18 +1,31 @@
-import type { ViewportRect } from "../../firefox-derived/window-dimensions";
+import { rectFromEdges, type ViewportRect } from "../../firefox-derived/window-dimensions";
 
-export type CropOverlayStatus = "idle" | "hovering" | "selected" | "closing";
+export type CropOverlayStatus =
+  | "idle"
+  | "hovering"
+  | "draggingReady"
+  | "dragging"
+  | "selected"
+  | "closing";
+
+export interface CropOverlayPoint {
+  readonly x: number;
+  readonly y: number;
+}
 
 export interface CropOverlayState {
   readonly status: CropOverlayStatus;
   readonly hoverRect: ViewportRect | null;
   readonly selectedRect: ViewportRect | null;
+  readonly dragStart: CropOverlayPoint | null;
 }
 
 export function createInitialOverlayState(): CropOverlayState {
   return {
     status: "idle",
     hoverRect: null,
-    selectedRect: null
+    selectedRect: null,
+    dragStart: null
   };
 }
 
@@ -26,8 +39,21 @@ export type CropOverlayEvent =
       readonly rect?: ViewportRect | null;
     }
   | {
+      readonly type: "dragStart";
+      readonly point: CropOverlayPoint;
+    }
+  | {
+      readonly type: "dragMove";
+      readonly point: CropOverlayPoint;
+    }
+  | {
+      readonly type: "dragEnd";
+    }
+  | {
       readonly type: "cancel";
     };
+
+const DRAG_SELECTION_THRESHOLD = 40;
 
 export function transitionOverlayState(
   state: CropOverlayState,
@@ -39,7 +65,7 @@ export function transitionOverlayState(
 
   switch (event.type) {
     case "hover":
-      if (state.status === "selected") {
+      if (state.status !== "idle" && state.status !== "hovering") {
         return state;
       }
 
@@ -47,7 +73,8 @@ export function transitionOverlayState(
         ? {
             status: "hovering",
             hoverRect: event.rect,
-            selectedRect: null
+            selectedRect: null,
+            dragStart: null
           }
         : createInitialOverlayState();
 
@@ -58,16 +85,83 @@ export function transitionOverlayState(
         ? {
             status: "selected",
             hoverRect: null,
-            selectedRect
+            selectedRect,
+            dragStart: null
           }
         : state;
     }
+
+    case "dragStart":
+      return {
+        status: "draggingReady",
+        hoverRect: state.hoverRect,
+        selectedRect: null,
+        dragStart: event.point
+      };
+
+    case "dragMove": {
+      if (
+        (state.status !== "draggingReady" && state.status !== "dragging") ||
+        !state.dragStart
+      ) {
+        return state;
+      }
+
+      const selectedRect = rectFromEdges(
+        state.dragStart.x,
+        state.dragStart.y,
+        event.point.x,
+        event.point.y
+      );
+
+      if (
+        state.status === "draggingReady" &&
+        getRectDistance(selectedRect) <= DRAG_SELECTION_THRESHOLD
+      ) {
+        return state;
+      }
+
+      return {
+        status: "dragging",
+        hoverRect: null,
+        selectedRect,
+        dragStart: state.dragStart
+      };
+    }
+
+    case "dragEnd":
+      if (state.status === "dragging" && state.selectedRect) {
+        return {
+          status: "selected",
+          hoverRect: null,
+          selectedRect: state.selectedRect,
+          dragStart: null
+        };
+      }
+
+      if (state.status === "draggingReady") {
+        return state.hoverRect
+          ? {
+              status: "selected",
+              hoverRect: null,
+              selectedRect: state.hoverRect,
+              dragStart: null
+            }
+          : createInitialOverlayState();
+      }
+
+      return state;
 
     case "cancel":
       return {
         status: "closing",
         hoverRect: null,
-        selectedRect: null
+        selectedRect: null,
+        dragStart: null
       };
   }
+}
+
+function getRectDistance(rect: ViewportRect): number {
+  return Math.hypot(rect.width, rect.height);
 }

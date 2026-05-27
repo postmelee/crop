@@ -10,6 +10,7 @@ import {
   applyActionButtonsPresentation,
   applyEyeOffsetPresentation,
   applyHighlightPresentation,
+  applySelectionMaskPresentation,
   type ElementSize
 } from "./positioning";
 import {
@@ -74,7 +75,9 @@ export function mountCropOverlay(): void {
 
   const removeOverlay = (): void => {
     window.removeEventListener("keydown", handleKeyDown, true);
+    window.removeEventListener("pointerdown", handlePointerDown, true);
     window.removeEventListener("pointermove", handlePointerMove, true);
+    window.removeEventListener("pointerup", handlePointerUp, true);
     window.removeEventListener("click", handleClick, true);
     cancelPendingHoverUpdate();
     host.remove();
@@ -104,6 +107,17 @@ export function mountCropOverlay(): void {
 
     updatePromptEyes(pointer);
 
+    if (overlayState.status === "draggingReady" || overlayState.status === "dragging") {
+      event.preventDefault();
+      event.stopPropagation();
+      overlayState = transitionOverlayState(overlayState, {
+        type: "dragMove",
+        point: pointer
+      });
+      renderOverlayState();
+      return;
+    }
+
     if (overlayState.status === "selected") {
       return;
     }
@@ -114,6 +128,36 @@ export function mountCropOverlay(): void {
     }
 
     queueHoverUpdate(pointer);
+  };
+
+  const handlePointerDown = (event: PointerEvent): void => {
+    if (isCropOverlayEvent(event, host) || event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    cancelPendingHoverUpdate();
+    overlayState = transitionOverlayState(overlayState, {
+      type: "dragStart",
+      point: {
+        x: event.clientX,
+        y: event.clientY
+      }
+    });
+    renderOverlayState();
+  };
+
+  const handlePointerUp = (event: PointerEvent): void => {
+    if (overlayState.status !== "draggingReady" && overlayState.status !== "dragging") {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    overlayState = transitionOverlayState(overlayState, { type: "dragEnd" });
+    cancelPendingHoverUpdate();
+    renderOverlayState();
   };
 
   const queueHoverUpdate = (pointer: PointerPosition): void => {
@@ -193,12 +237,20 @@ export function mountCropOverlay(): void {
 
     if (template) {
       const activeRect = overlayState.selectedRect ?? overlayState.hoverRect;
+      const selectionRect =
+        overlayState.status === "selected" || overlayState.status === "dragging"
+          ? overlayState.selectedRect
+          : null;
       applyHighlightPresentation(template.highlight, activeRect);
+      applySelectionMaskPresentation(template.selectionMask, selectionRect);
       template.highlight.classList.toggle(
         "crop-highlight--selected",
-        overlayState.status === "selected"
+        overlayState.status === "selected" || overlayState.status === "dragging"
       );
-      updateActionButtons(template, overlayState.selectedRect);
+      updateActionButtons(
+        template,
+        overlayState.status === "selected" ? overlayState.selectedRect : null
+      );
     }
   };
 
@@ -229,7 +281,9 @@ export function mountCropOverlay(): void {
   document.documentElement.append(host);
   renderOverlayState();
   window.addEventListener("keydown", handleKeyDown, true);
+  window.addEventListener("pointerdown", handlePointerDown, true);
   window.addEventListener("pointermove", handlePointerMove, true);
+  window.addEventListener("pointerup", handlePointerUp, true);
   window.addEventListener("click", handleClick, true);
 }
 
