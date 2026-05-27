@@ -94,7 +94,7 @@
   pointer-events: none;
   text-align: center;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.34);
-  transform: translateY(18px);
+  transform: translateY(0);
 }
 
 :host([data-crop-state="selected"]) .crop-prompt {
@@ -142,7 +142,7 @@
   width: min(400px, calc(100vw - 48px));
   color: #ffffff;
   font-size: 24px;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 32px;
   letter-spacing: 0;
 }
@@ -158,8 +158,8 @@
   color: #ffffff;
   cursor: pointer;
   font: inherit;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: 0;
   pointer-events: auto;
 }
@@ -239,10 +239,10 @@
   right: 10px;
   display: inline-flex;
   align-items: stretch;
-  gap: 4px;
+  gap: 3px;
   max-width: calc(100vw - 20px);
-  padding: 12px;
-  border-radius: 8px;
+  padding: 9px;
+  border-radius: 7px;
   background: rgba(38, 43, 51, 0.98);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
   pointer-events: auto;
@@ -256,19 +256,19 @@
 .crop-mode-button {
   position: relative;
   display: grid;
-  grid-template-rows: 46px auto;
+  grid-template-rows: 44px auto;
   place-items: center;
-  min-width: 90px;
-  min-height: 86px;
-  padding: 6px 5px 5px;
+  min-width: 86px;
+  min-height: 80px;
+  padding: 5px 4px 4px;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1.18;
   letter-spacing: 0;
   text-align: center;
@@ -302,16 +302,16 @@
 
 .crop-mode-icon {
   position: relative;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   color: #f9fbff;
   --crop-screenshots-icon-background-color: rgba(255, 255, 255, 0.42);
 }
 
 .crop-mode-icon svg {
   display: block;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
 }
 
 .crop-mode-label {

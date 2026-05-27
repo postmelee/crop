@@ -45,6 +45,8 @@ function createIconSvgElement(markup: string, className: string, doc: Document):
       element.setAttribute("fill", "var(--crop-screenshots-icon-background-color)");
     } else if (fill.startsWith("context-fill")) {
       element.setAttribute("fill", "currentColor");
+      element.setAttribute("fill-rule", "evenodd");
+      element.setAttribute("clip-rule", "evenodd");
     }
   }
 

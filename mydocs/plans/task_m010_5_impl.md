@@ -14,6 +14,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | 4 | README smoke 절차와 통합 검증 | `README.md`, `mydocs/report/task_m010_5_report.md` | `npm run build`, `npm run typecheck`, `npm run test`, Chrome smoke |
 | 5 | Firefox식 시각 정렬과 눈동자 포인터 추적 | `src/content/overlay/crop-template.ts`, `src/content/overlay/crop-overlay.css`, `src/content/overlay/positioning.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
 | 6 | Firefox 원본 UI 자산과 drag selection 포팅 | `src/firefox-derived/screenshots-ui-assets.ts`, `src/content/overlay/state-machine.ts`, `src/content/overlay/crop-overlay.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP drag smoke |
+| 7 | Firefox UI parity 세부 보정 | `src/firefox-derived/screenshots-ui-assets.ts`, `src/content/overlay/crop-overlay.css` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
 
 ## 문서 위치 확인
 
@@ -331,6 +332,53 @@ git diff --check
 Task #5 Stage 6: Firefox 원본 UI와 drag selection 포팅
 ```
 
+## Stage 7 — Firefox UI parity 세부 보정
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m010_5_stage7.md`
+
+수정:
+
+- `src/firefox-derived/screenshots-ui-assets.ts`
+- `src/content/overlay/crop-overlay.css`
+- `README.md`
+- `mydocs/report/task_m010_5_report.md`
+- `mydocs/orders/20260527.md`
+
+### 변경 내용
+
+- `crop-frame` 상시 표시와 hover highlight 색/opacity는 작업지시자 요청에 따라 변경하지 않는다.
+- visible/full page SVG icon의 `context-fill/context-stroke` 변환을 보정해 visible icon이 흰 사각형처럼 채워지지 않도록 한다.
+- prompt가 viewport 중앙에 더 가깝게 배치되도록 수직 offset을 제거한다.
+- prompt instruction과 cancel button font weight를 낮춰 Firefox 원본 렌더링에 가깝게 보정한다.
+- top-right mode panel button 폭, 높이, font weight, radius를 줄여 Firefox panel에 더 가깝게 맞춘다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm run test
+rg "fill-rule|crop-mode-button|crop-prompt-instructions|font-weight: 600|translateY\\(0\\)" src/content src/firefox-derived
+git diff --check
+```
+
+자동 smoke:
+
+- `dist/content/inject.js`를 CDP로 직접 주입한다.
+- visible/full page icon SVG가 생성되고 frame path가 `fill-rule="evenodd"`를 갖는지 확인한다.
+- prompt CSS가 `translateY(0)`과 낮아진 font weight를 반영하는지 확인한다.
+- 기존 hover click selection, drag selection, Cancel/Escape teardown 회귀가 없는지 확인한다.
+
+### 커밋
+
+```text
+Task #5 Stage 7: Firefox UI parity 세부 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -352,6 +400,7 @@ Task #5 Stage 6: Firefox 원본 UI와 drag selection 포팅
 - Stage 4는 Stage 1~3 검증과 단계 보고서 승인이 끝난 후 진행한다.
 - Stage 5는 작업지시자의 추가 UI parity 요청 승인 이후 진행한다.
 - Stage 6은 작업지시자의 원본에 최대한 가까운 포팅 요청 승인 이후 진행한다.
+- Stage 7은 작업지시자의 frame/hover 제외 UI parity 보정 요청 승인 이후 진행한다.
 - capture/crop backend는 Task #5 final report와 PR merge 이후 #6에서 진행한다.
 
 ## 위험과 대응

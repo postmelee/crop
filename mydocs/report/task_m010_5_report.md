@@ -7,7 +7,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 
 - 대상 이슈: #5
 - 마일스톤: M010
-- 단계 수: 6
+- 단계 수: 7
 - 작업 목적: Chrome MV3 content script 안에 Firefox식 overlay UI 기반을 구현하고 hover/click/drag select/cancel 흐름을 연결한다.
 
 ## 변경 파일 목록과 영향 범위
@@ -15,10 +15,10 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | 경로 | 변경 요약 | 영향 범위 |
 |---|---|---|
 | `src/content/inject.ts` | content script entry를 `mountCropOverlay()` bootstrap으로 축소 | content script entrypoint |
-| `src/firefox-derived/screenshots-ui-assets.ts` | Firefox Screenshots preview face SVG와 visible/full page menu icon SVG를 Chrome-compatible factory로 분리 | MPL-derived UI asset boundary |
+| `src/firefox-derived/screenshots-ui-assets.ts` | Firefox Screenshots preview face SVG와 visible/full page menu icon SVG를 Chrome-compatible factory로 분리하고 icon fill rule 보정 | MPL-derived UI asset boundary |
 | `src/content/overlay/crop-overlay.ts` | overlay mount, 중복 실행 flash, hover helper 연결, 눈동자 pointer offset 갱신, click/drag selection, Cancel/Escape teardown 구현 | overlay runtime controller |
 | `src/content/overlay/crop-template.ts` | Shadow DOM template, Firefox-derived mode icon/face, selection mask, highlight, Copy/Save/Cancel buttons 생성 | overlay DOM 구조 |
-| `src/content/overlay/crop-overlay.css` | Firefox 원본 수치에 가까운 dark preview, prompt/face, toolbar, selection mask, hover/selected highlight 스타일 | overlay UI styling |
+| `src/content/overlay/crop-overlay.css` | Firefox 원본 수치에 가까운 dark preview, prompt/face, toolbar, selection mask, hover/selected highlight 스타일과 Stage 7 prompt/panel 세부 보정 | overlay UI styling |
 | `src/content/overlay/state-machine.ts` | `idle`, `hovering`, `draggingReady`, `dragging`, `selected`, `closing` 상태와 전이 구현 | overlay 상태 모델 |
 | `src/content/overlay/positioning.ts` | highlight placement, selection mask, action buttons clamp/flip placement, eye offset helper 구현 | overlay layout helper |
 | `src/vite-env.d.ts` | `*.css?raw` import declaration 추가 | TypeScript build support |
@@ -28,7 +28,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | `NOTICE` | Stage 6 Firefox-derived UI asset 출처 추가 | 라이선스 고지 |
 | `THIRD_PARTY.md` | Stage 6 local adaptation target과 upstream SVG 출처 추가 | third-party attribution |
 | `src/firefox-derived/README.md` | Firefox-derived UI asset boundary 설명 추가 | 기여자 안내 |
-| `README.md` | 개발 상태와 Chrome unpacked smoke 기대 결과를 Phase 3 기준으로 갱신 | 기여자 로컬 실행 문서 |
+| `README.md` | 개발 상태와 Chrome unpacked smoke 기대 결과를 Phase 3 Stage 7 기준으로 갱신 | 기여자 로컬 실행 문서 |
 | `mydocs/plans/task_m010_5.md` | 수행계획서 작성 | Hyper-Waterfall 작업 추적 |
 | `mydocs/plans/task_m010_5_impl.md` | 구현계획서 작성 | Hyper-Waterfall 작업 추적 |
 | `mydocs/working/task_m010_5_stage1.md` | Stage 1 완료 보고서 작성 | 단계 검증 기록 |
@@ -36,6 +36,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | `mydocs/working/task_m010_5_stage3.md` | Stage 3 완료 보고서 작성 | 단계 검증 기록 |
 | `mydocs/working/task_m010_5_stage5.md` | Stage 5 완료 보고서 작성 | 단계 검증 기록 |
 | `mydocs/working/task_m010_5_stage6.md` | Stage 6 완료 보고서 작성 | 단계 검증 기록 |
+| `mydocs/working/task_m010_5_stage7.md` | Stage 7 완료 보고서 작성 | 단계 검증 기록 |
 | `mydocs/orders/20260527.md` | #5 오늘할일 완료 처리 | 작업 상태 기록 |
 
 ## 문서 위치 검증
@@ -50,12 +51,12 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 
 | 지표 | 변경 전 | 변경 후 |
 |---|---|---|
-| content overlay entry | `src/content/inject.ts` inline stub 207줄 | `inject.ts` 3줄 bootstrap + overlay/controller/assets로 분리, `dist/content/inject.js` 26.37 kB |
+| content overlay entry | `src/content/inject.ts` inline stub 207줄 | `inject.ts` 3줄 bootstrap + overlay/controller/assets로 분리, `dist/content/inject.js` 26.44 kB |
 | overlay 상태 모델 | 없음 | `state-machine.ts`에 drag 상태 포함, 11개 상태 전이 테스트 |
 | overlay placement helper | 없음 | `positioning.ts`에 highlight/action/eye/mask helper, 10개 placement/eye offset 테스트 |
 | 전체 Vitest | 3개 test file, 25개 test | 5개 test file, 46개 test |
-| 단계 보고서 | 없음 | Stage 1~3, Stage 5~6 보고서 5개 |
-| README smoke 기대 결과 | overlay stub 기준 | 원본 face/icon, mode toolbar, 중앙 prompt, hover/click/drag selection, Copy/Save/Cancel buttons 기준 |
+| 단계 보고서 | 없음 | Stage 1~3, Stage 5~7 보고서 6개 |
+| README smoke 기대 결과 | overlay stub 기준 | 원본 face/icon, compact mode toolbar, 중앙 prompt, hover/click/drag selection, Copy/Save/Cancel buttons 기준 |
 
 ## 검증 결과
 
@@ -68,7 +69,9 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | content script 반복 주입 안전성 | OK — `content/inject` bundle IIFE wrapper와 두 번째 content script 주입 후 root count 1 확인 |
 | Firefox식 mode toolbar 표시 | OK — CDP content-script smoke에서 `보이는 영역 선택`, `전체 페이지 선택` 버튼과 full page disabled placeholder 확인 |
 | Firefox-derived face/icon 표시 | OK — CDP content-script smoke에서 원본 기반 face SVG, visible icon, full page icon DOM 확인 |
+| Firefox-derived icon fill 보정 | OK — CDP content-script smoke에서 visible/full page icon `fill-rule="evenodd"` 확인 |
 | 중앙 preview prompt와 face 표시 | OK — CDP content-script smoke에서 안내 문구, Cancel button, face DOM, pupil DOM 2개 확인 |
+| 중앙 preview prompt/panel 세부 보정 | OK — CDP content-script smoke에서 prompt transform `matrix(1, 0, 0, 1, 0, 0)`, prompt/cancel/mode button font weight `600`, mode button `91x80` 확인 |
 | 눈동자 pointer 추적 | OK — CDP content-script smoke에서 pointermove 후 `--crop-eye-x`, `--crop-eye-y`와 SVG pupil transform 갱신 확인 |
 | Task #4 helper hover 연결 | OK — `getElementFromPoint`, `getBestRectForElement`, `readWindowDimensions`, `pointermove` 연결 확인 |
 | hover highlight 표시 | OK — CDP content-script smoke에서 hover 상태 `hidden: false`, transform/width/height style 적용 확인 |
@@ -89,6 +92,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 - Stage 4: 통합 검증 — `npm run build`, `npm run typecheck`, `npm run test`, README/source grep, `git diff --check`, CDP content-script smoke 통과
 - Stage 5: [`task_m010_5_stage5.md`](../working/task_m010_5_stage5.md) — Firefox식 mode toolbar, 중앙 prompt/face, 눈동자 pointer 추적 구현, build/typecheck/test/grep/diff/CDP smoke 통과
 - Stage 6: [`task_m010_5_stage6.md`](../working/task_m010_5_stage6.md) — Firefox 원본 face/icon asset 분리, Firefox식 prompt 수치 보정, drag selection 구현, build/typecheck/test/grep/diff/CDP drag smoke 통과
+- Stage 7: [`task_m010_5_stage7.md`](../working/task_m010_5_stage7.md) — icon fill rule, prompt 중앙 배치, prompt/panel typography와 compact toolbar 보정, build/typecheck/test/grep/diff/CDP smoke 통과
 
 ## 잔여 위험과 후속 작업
 
