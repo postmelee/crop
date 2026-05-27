@@ -8,6 +8,7 @@ export const FLASH_CLASS = "crop-panel--flash";
 
 export interface CropOverlayTemplate {
   readonly panel: HTMLElement;
+  readonly highlight: HTMLElement;
 }
 
 export function createCropOverlayTemplate(
@@ -29,6 +30,11 @@ export function createCropOverlayTemplate(
 
   const frame = document.createElement("div");
   frame.className = "crop-frame";
+
+  const highlight = document.createElement("div");
+  highlight.className = "crop-highlight";
+  highlight.hidden = true;
+  highlight.setAttribute("aria-hidden", "true");
 
   const panel = document.createElement("div");
   panel.className = "crop-panel";
@@ -55,9 +61,9 @@ export function createCropOverlayTemplate(
 
   brand.append(mark, label);
   panel.append(brand, closeButton);
-  shell.append(dim, frame, panel);
+  shell.append(dim, frame, highlight, panel);
   shadowRoot.append(style, shell);
   panel.classList.add(FLASH_CLASS);
 
-  return { panel };
+  return { panel, highlight };
 }
