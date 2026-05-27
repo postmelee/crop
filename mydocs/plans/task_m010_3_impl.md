@@ -39,7 +39,7 @@ GitHub Issue: [#3](https://github.com/postmelee/crop/issues/3)
 ### 변경 내용
 
 - 루트 `manifest.json`을 source manifest로 추가한다.
-- manifest는 MV3, 제품명 `crop`, version `0.1.0`, `activeTab`, `scripting`, `clipboardWrite`, background service worker, action, `_execute_action` command를 정의한다.
+- manifest는 MV3, 제품명 `crop`, version `0.1.0`, `activeTab`, `scripting`, `clipboardWrite`, background service worker, action, `open-crop` command를 정의한다.
 - `debugger`와 `<all_urls>` 권한은 추가하지 않는다.
 - Vite 설정을 Phase 0 virtual no-op entry에서 실제 extension entrypoint output 구조로 변경한다.
 - build 시 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js`가 생성되도록 output 경로를 맞춘다.
@@ -72,7 +72,7 @@ Task #3 Stage 1: MV3 manifest와 Vite output 연결
 ### 변경 내용
 
 - action icon click handler를 추가한다.
-- `_execute_action` command handler를 추가한다.
+- `open-crop` command handler를 추가한다.
 - 두 entrypoint가 동일한 `injectCrop(tab)` 흐름을 사용하도록 구성한다.
 - `chrome.scripting.executeScript()`로 `content/inject.js`를 주입한다.
 - 제한 페이지, tab id 부재, script injection 실패를 console warning으로 남긴다.
@@ -162,7 +162,7 @@ git status --short
 
 - Chrome에서 `dist/` unpacked extension 로드
 - action icon click smoke test
-- `_execute_action` shortcut smoke test
+- `open-crop` shortcut smoke test
 - 중복 실행 smoke test
 - 제한 페이지 주입 실패 warning 확인
 
