@@ -1,0 +1,371 @@
+:host {
+  all: initial;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  color-scheme: light;
+  font-family:
+    Inter,
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.crop-shell {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  --crop-eye-x: 0px;
+  --crop-eye-y: 0px;
+}
+
+.crop-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.58);
+}
+
+:host([data-crop-state="dragging"]) .crop-dim,
+:host([data-crop-state="selected"]) .crop-dim {
+  display: none;
+}
+
+.crop-frame {
+  position: absolute;
+  inset: 1px;
+  box-sizing: border-box;
+  border: 2px dashed rgba(255, 255, 255, 0.46);
+  background: transparent;
+}
+
+.crop-selection-mask {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.crop-selection-mask[hidden] {
+  display: none;
+}
+
+.crop-selection-mask-part {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.58);
+  pointer-events: none;
+}
+
+.crop-highlight {
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  border: 2px dashed rgba(255, 255, 255, 0.82);
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.48);
+  pointer-events: none;
+  will-change: transform, width, height;
+}
+
+.crop-highlight[hidden] {
+  display: none;
+}
+
+.crop-highlight--selected {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.72);
+}
+
+.crop-prompt {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  pointer-events: none;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.34);
+  transform: translateY(0);
+}
+
+:host([data-crop-state="selected"]) .crop-prompt {
+  display: none;
+}
+
+:host([data-crop-state="dragging"]) .crop-prompt {
+  display: none;
+}
+
+:host([data-crop-state="draggingReady"]) .crop-mode-toolbar,
+:host([data-crop-state="dragging"]) .crop-mode-toolbar,
+:host([data-crop-state="selected"]) .crop-mode-toolbar {
+  display: none;
+}
+
+.crop-face {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 20px;
+}
+
+.crop-screenshots-face-svg {
+  display: block;
+  width: 64px;
+  height: 64px;
+}
+
+.face-line-color {
+  fill: #ffffff;
+}
+
+.face-pupil-color {
+  fill: #000000;
+  transform: translate(var(--crop-eye-x), var(--crop-eye-y));
+  transition: transform 60ms linear;
+}
+
+.crop-prompt-instructions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: min(400px, calc(100vw - 48px));
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: 0;
+}
+
+.crop-prompt-cancel {
+  min-width: 60px;
+  height: 42px;
+  margin-top: 20px;
+  padding: 0 16px;
+  border: 2px solid rgba(255, 255, 255, 0.88);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  pointer-events: auto;
+}
+
+.crop-prompt-cancel:hover {
+  background: #ffffff;
+  color: #111827;
+}
+
+.crop-prompt-cancel:focus-visible {
+  outline: 3px solid #7dd3fc;
+  outline-offset: 3px;
+}
+
+.crop-actions {
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 16px);
+  min-height: 40px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(37, 42, 50, 0.98);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.crop-actions[hidden] {
+  display: none;
+}
+
+.crop-action {
+  min-width: 68px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 0;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.crop-action:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.crop-action:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
+.crop-action--copy,
+.crop-action--save {
+  background: #2f7df6;
+  color: #ffffff;
+}
+
+.crop-action--copy:hover,
+.crop-action--save:hover {
+  background: #246ee0;
+}
+
+.crop-mode-toolbar {
+  position: fixed;
+  top: -8px;
+  right: 10px;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 3px;
+  max-width: calc(100vw - 20px);
+  padding: 9px;
+  border-radius: 7px;
+  background: rgba(38, 43, 51, 0.98);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
+  pointer-events: auto;
+  transform-origin: top right;
+}
+
+.crop-panel--flash {
+  animation: crop-panel-flash 180ms ease-out;
+}
+
+.crop-mode-button {
+  position: relative;
+  display: grid;
+  grid-template-rows: 44px auto;
+  place-items: center;
+  min-width: 86px;
+  min-height: 80px;
+  padding: 5px 4px 4px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.crop-mode-button[aria-pressed="true"] {
+  border-color: #7dd3fc;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 211, 252, 0.56),
+    0 0 0 1px rgba(125, 211, 252, 0.24);
+}
+
+.crop-mode-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.crop-mode-button:focus-visible {
+  outline: 3px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
+.crop-mode-button[aria-disabled="true"] {
+  cursor: default;
+}
+
+.crop-mode-button--full-page {
+  background: #2f7df6;
+  color: #ffffff;
+}
+
+.crop-mode-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  color: #f9fbff;
+  --crop-screenshots-icon-background-color: rgba(255, 255, 255, 0.42);
+}
+
+.crop-mode-icon svg {
+  display: block;
+  width: 44px;
+  height: 44px;
+}
+
+.crop-mode-label {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@keyframes crop-panel-flash {
+  0% {
+    transform: scale(0.97);
+    box-shadow:
+      0 0 0 4px rgba(125, 211, 252, 0.28),
+      0 14px 34px rgba(0, 0, 0, 0.36);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
+  }
+}
+
+@media (max-width: 520px) {
+  .crop-mode-toolbar {
+    top: 4px;
+    right: 4px;
+    gap: 3px;
+    padding: 4px;
+  }
+
+  .crop-mode-button {
+    min-width: 86px;
+    min-height: 82px;
+    grid-template-rows: 36px auto;
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .crop-mode-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .crop-mode-icon svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .crop-prompt-instructions {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .face-pupil-color {
+    transition: none;
+  }
+}

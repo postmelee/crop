@@ -36,20 +36,32 @@ MVP 제외 범위:
 
 ## 개발 상태
 
-Phase 1 기준으로 Chrome MV3 shell이 준비됐다.
+M010 Phase 3 Stage 10 기준으로 Chrome MV3 shell과 Firefox식 overlay UI 기반이 준비됐다.
 
 - `manifest.json` source manifest
 - Vite 기반 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 산출
 - background service worker의 action icon/`open-crop` command 주입 흐름
-- content script의 `__crop_root__` Shadow DOM overlay stub
-- 중복 실행 방지와 Escape/close 제거 동작
+- content script의 `__crop_root__` Shadow DOM overlay
+- 중복 실행 방지와 Escape/Cancel 제거 동작
+- Firefox식 top-right mode toolbar와 중앙 preview prompt
+- Firefox-derived preview face SVG와 visible/full page menu icon
+- pointer 위치를 따라 움직이는 preview face 눈동자
+- Firefox 원본에 가까운 prompt 중앙 배치와 compact mode toolbar 보정
+- Firefox-derived helper 기반 DOM 요소 hover highlight
+- page-coordinate 기반 hover/click/drag selection과 window scroll-follow highlight
+- Firefox식 viewport+100 감지 기준을 적용한 large element hover 보정
+- 클릭 기반 selected rectangle 고정
+- pointer drag 기반 임의 영역 selection
+- selected rectangle 기준 Copy/Save/Cancel buttons 표시
+- selected rectangle 밖 클릭 시 idle overlay/prompt 상태 복귀
+- 중복 실행 시 mode toolbar one-shot flash와 반복 flash debounce
 
 아직 구현하지 않은 후속 범위:
 
-- 실제 DOM 요소 hover/selection UI
-- capture/crop backend
-- Copy/Save 동작
-- Firefox-derived helper 포팅
+- visible viewport capture/crop backend
+- Copy/Save button의 실제 clipboard write와 file download 동작
+- capture 전 overlay 숨김과 최종 PNG 검증
+- full page capture, scroll stitching, resize handles
 
 ## 로컬 개발
 
@@ -84,9 +96,18 @@ npm run typecheck
 
 기대 결과:
 
-- 현재 탭 오른쪽 위에 `crop` overlay stub이 표시된다.
-- 같은 탭에서 다시 실행하면 overlay가 여러 개 쌓이지 않고 기존 패널이 짧게 강조된다.
-- Escape 키 또는 overlay의 close button으로 overlay가 제거된다.
+- 현재 탭에 dark dim overlay, dashed viewport boundary, 오른쪽 위 mode toolbar가 표시된다.
+- mode toolbar에는 `보이는 영역 선택`과 `전체 페이지 선택`이 보인다. `전체 페이지 선택`은 MVP 범위 밖이므로 현재 비활성 placeholder다.
+- 중앙에는 영역 선택 안내 문구, Cancel button, pointer 위치에 따라 눈동자가 움직이는 preview face가 표시된다.
+- 일반 DOM 요소에 마우스를 올리면 dashed hover highlight가 표시된다.
+- viewport 밖으로 이어지는 요소와 화면보다 큰 partially visible 요소는 page 좌표 기준으로 선택되어, 선택 후 window scroll 시 테두리가 같은 문서 영역을 따라간다.
+- hover highlight 상태에서 클릭하면 selected rectangle이 고정되고 Copy/Save/Cancel buttons가 선택 영역 근처에 표시된다.
+- selected rectangle 밖을 클릭하면 선택이 해제되고 중앙 prompt와 mode toolbar가 다시 보이며, 같은 클릭으로 새 선택이 즉시 발생하지 않는다.
+- 마우스를 누른 채 40px 이상 드래그하면 임의 영역 selected rectangle이 생성되고 Copy/Save/Cancel buttons가 표시된다.
+- Copy/Save buttons는 현재 UI만 표시한다. 실제 clipboard write와 file download는 후속 Phase에서 연결한다.
+- 중앙 Cancel button, selected 상태의 Cancel button, 또는 Escape 키로 overlay가 제거된다.
+- 처음 overlay를 열 때 mode toolbar flash가 반복되지 않는다.
+- 같은 탭에서 다시 실행하면 overlay가 여러 개 쌓이지 않고 기존 mode toolbar가 한 번만 짧게 강조된다.
 - `chrome://`, Chrome Web Store 같은 제한 페이지에서는 주입이 실패할 수 있으며 background console warning으로 확인한다.
 
 ## 소스 구조

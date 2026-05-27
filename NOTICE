@@ -24,6 +24,21 @@ Chrome MV3 visible-viewport selection helpers. Firefox privileged APIs, closed
 shadow root access, cross-origin iframe traversal, full-page capture, and
 scroll stitching are not part of this adaptation.
 
+Task #5 Stage 6 adds Firefox Screenshots UI asset adaptations:
+
+- Upstream repository: https://github.com/mozilla-firefox/firefox
+- Upstream source paths:
+  `browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs`,
+  `browser/components/screenshots/content/menu-visible.svg`, and
+  `browser/components/screenshots/content/menu-fullpage.svg`
+- Local derived file:
+  `src/firefox-derived/screenshots-ui-assets.ts`
+
+The local UI asset file adapts the Firefox Screenshots preview face SVG and
+menu icons for Chrome MV3 Shadow DOM rendering. Firefox product branding,
+privileged APIs, localization ids, telemetry, and full-page capture behavior
+are not part of this adaptation.
+
 The Mozilla Public License 2.0 text is available in `LICENSE-MPL-2.0` and at:
 
 https://mozilla.org/MPL/2.0/

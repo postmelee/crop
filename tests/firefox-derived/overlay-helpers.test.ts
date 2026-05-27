@@ -128,6 +128,25 @@ describe("getBestRectForElement", () => {
     );
   });
 
+  it("can return page-coordinate rects without clipping visible element bounds", () => {
+    const scrolledViewport = new WindowDimensions({
+      clientWidth: 800,
+      clientHeight: 600,
+      scrollWidth: 1000,
+      scrollHeight: 1800,
+      scrollX: 0,
+      scrollY: 320
+    });
+    const target = fixtureElement("section", rectFromEdges(120, -180, 520, 460));
+
+    expect(
+      getBestRectForElement(asElement(target), {
+        windowDimensions: scrolledViewport,
+        coordinateSpace: "page"
+      })
+    ).toEqual(rectFromEdges(120, 140, 520, 780));
+  });
+
   it("can extend a previous rect with the next sibling when the parent is too large", () => {
     const parent = fixtureElement("main", rectFromEdges(0, 0, 1600, 1200));
     const first = parent.append(fixtureElement("div", rectFromEdges(50, 50, 240, 70)));

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   intersectRects,
   normalizeRect,
+  pageRectToViewportRect,
   readWindowDimensions,
   rectFromEdges,
   rectsIntersect,
+  viewportRectToPageRect,
   WindowDimensions
 } from "../../src/firefox-derived/window-dimensions";
 
@@ -55,6 +57,24 @@ describe("WindowDimensions", () => {
     expect(dimensions.isInViewport({ left: 100, top: 10, right: 120, bottom: 20 })).toBe(false);
     expect(dimensions.clipRectToViewport({ left: -10, top: 20, right: 40, bottom: 100 })).toEqual(
       rectFromEdges(0, 20, 40, 80)
+    );
+  });
+
+  it("projects rects between viewport and page coordinate spaces", () => {
+    const dimensions = new WindowDimensions({
+      clientWidth: 320,
+      clientHeight: 240,
+      scrollWidth: 900,
+      scrollHeight: 1200,
+      scrollX: 40,
+      scrollY: 160
+    });
+
+    expect(viewportRectToPageRect(rectFromEdges(10, -20, 210, 180), dimensions)).toEqual(
+      rectFromEdges(50, 140, 250, 340)
+    );
+    expect(pageRectToViewportRect(rectFromEdges(50, 140, 250, 340), dimensions)).toEqual(
+      rectFromEdges(10, -20, 210, 180)
     );
   });
 
