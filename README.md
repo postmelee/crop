@@ -1,94 +1,114 @@
 # crop
 
-`crop` is a Chrome MV3 extension project for visible-area screenshot capture with element selection. The target MVP is a lightweight browser extension that lets a user open an overlay, hover DOM elements, select a visible region, and copy or save the resulting PNG.
+`crop`은 Chrome MV3 확장 프로젝트다. 목표 MVP는 사용자가 확장 아이콘 또는 단축키로 오버레이를 열고, DOM 요소를 선택해 visible viewport 안의 PNG를 복사하거나 저장하는 가벼운 스크린샷 UX를 제공하는 것이다.
 
-This repository is in Phase 0. It currently defines the project rules, licensing baseline, and build/setup direction before runtime extension code is implemented.
+## MVP 방향
 
-## MVP Direction
+MVP 포함 범위:
 
-Included in the MVP:
+- Chrome Manifest V3 확장
+- action icon과 keyboard command 진입점
+- Shadow DOM 기반 overlay UI
+- DOM 요소 hover 하이라이트
+- 선택 영역 Copy, Save, Cancel 동작
+- visible viewport 캡처
+- `activeTab`, `scripting`, `clipboardWrite` 권한 전략
 
-- Chrome Manifest V3 extension
-- action icon and keyboard command entry points
-- Shadow DOM overlay UI
-- hover-based DOM element highlight
-- selected region Copy, Save, and Cancel actions
-- visible viewport capture only
-- `activeTab`, `scripting`, and `clipboardWrite` permission strategy
-
-Excluded from the MVP:
+MVP 제외 범위:
 
 - full page capture
 - scroll stitching
-- `debugger` permission
-- `<all_urls>` host permission
-- telemetry or server upload
+- `debugger` 권한
+- `<all_urls>` host 권한
+- telemetry 또는 server upload
 
-## Repository Method
+## 저장소 운영 방식
 
-This repository follows Hyper-Waterfall. Work is tracked through GitHub Issues, task branches, daily orders, plans, implementation plans, stage reports, final reports, and pull requests.
+이 저장소는 Hyper-Waterfall을 따른다. 작업은 GitHub Issue, task branch, 오늘할일, 수행계획서, 구현계획서, 단계 보고서, 최종 보고서, PR 단위로 추적한다.
 
-Key local references:
+주요 로컬 참조:
 
-- `AGENTS.md`: repository rules for coding agents
-- `mydocs/manual/`: Hyper-Waterfall manuals
-- `mydocs/plans/`: task plans and implementation plans
-- `mydocs/working/`: stage reports
-- `mydocs/report/`: final reports
+- `AGENTS.md`: 코딩 에이전트용 저장소 규칙
+- `mydocs/manual/`: Hyper-Waterfall 매뉴얼
+- `mydocs/plans/`: 수행계획서와 구현계획서
+- `mydocs/working/`: 단계 보고서
+- `mydocs/report/`: 최종 보고서
 
-## Development Status
+## 개발 상태
 
-Phase 0 prepares the repository:
+Phase 1 기준으로 Chrome MV3 shell이 준비됐다.
 
-- TypeScript and Vite build baseline
-- license and third-party notices
-- source directory boundaries
-- Firefox-derived code policy
+- `manifest.json` source manifest
+- Vite 기반 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 산출
+- background service worker의 action icon/`open-crop` command 주입 흐름
+- content script의 `__crop_root__` Shadow DOM overlay stub
+- 중복 실행 방지와 Escape/close 제거 동작
 
-Runtime files such as `manifest.json`, background service worker, content script injection, overlay UI, and capture/crop behavior are intentionally deferred to later tasks.
+아직 구현하지 않은 후속 범위:
 
-## Local Development
+- 실제 DOM 요소 hover/selection UI
+- capture/crop backend
+- Copy/Save 동작
+- Firefox-derived helper 포팅
 
-Prerequisites:
+## 로컬 개발
 
-- Node.js 20 or newer
+필수 환경:
+
+- Node.js 20 이상
 - npm
 
-Install dependencies:
+의존성 설치:
 
 ```bash
 npm install
 ```
 
-Run the Phase 0 build checks:
+빌드와 타입체크:
 
 ```bash
 npm run build
 npm run typecheck
 ```
 
-The Phase 0 Vite configuration uses a virtual no-op entry so the build pipeline can be validated before real MV3 runtime entrypoints exist. Later tasks will replace that probe with actual extension entrypoints such as the background service worker and content scripts.
+빌드 결과는 `dist/`에 생성된다. Chrome에 로드할 대상 폴더도 `dist/`다.
 
-## Source Layout
+## Chrome Unpacked Extension 로드
 
-Initial source boundaries:
+1. `npm run build`를 실행한다.
+2. Chrome에서 `chrome://extensions`를 연다.
+3. Developer mode를 켠다.
+4. Load unpacked를 선택하고 이 저장소의 `dist/` 폴더를 지정한다.
+5. 일반 웹 페이지 탭에서 `crop` action icon을 클릭한다.
+6. 등록 가능한 환경에서는 `Ctrl+Shift+P`, macOS에서는 `Command+Shift+P`도 확인한다.
 
-- `src/background/`: Chrome extension service worker code
-- `src/content/`: injected content script code
-- `src/content/overlay/`: Shadow DOM overlay UI code
-- `src/firefox-derived/`: files adapted from Mozilla Firefox Screenshots under MPL-2.0
-- `src/shared/`: shared message, rectangle, filename, crop, and clipboard helpers
+기대 결과:
 
-Phase 0 creates these boundaries without adding runtime implementation. Firefox-derived source should not be mixed into Chrome-specific directories.
+- 현재 탭 오른쪽 위에 `crop` overlay stub이 표시된다.
+- 같은 탭에서 다시 실행하면 overlay가 여러 개 쌓이지 않고 기존 패널이 짧게 강조된다.
+- Escape 키 또는 overlay의 close button으로 overlay가 제거된다.
+- `chrome://`, Chrome Web Store 같은 제한 페이지에서는 주입이 실패할 수 있으며 background console warning으로 확인한다.
 
-## Branding
+## 소스 구조
 
-The product name is `crop`.
+초기 source boundary:
 
-This project is not affiliated with, endorsed by, or sponsored by Mozilla or Firefox. Mozilla and Firefox names appear only in licensing, attribution, and technical source-reference contexts where needed to identify upstream material.
+- `src/background/`: Chrome extension service worker 코드
+- `src/content/`: injected content script 코드
+- `src/content/overlay/`: Shadow DOM overlay UI 코드
+- `src/firefox-derived/`: MPL-2.0을 유지하는 Mozilla Firefox Screenshots 유래 코드
+- `src/shared/`: message, rectangle, filename, crop, clipboard 공용 helper
 
-## License
+Firefox-derived source는 Chrome 전용 디렉터리와 섞지 않는다.
 
-New code in this repository is intended to be distributed under the MIT License unless a file says otherwise. See `LICENSE`.
+## 브랜딩
 
-Files adapted from Mozilla Firefox Screenshots source code must keep Mozilla Public License 2.0 notices and live under `src/firefox-derived/`. See `LICENSE-MPL-2.0`, `NOTICE`, and `THIRD_PARTY.md`.
+제품명은 `crop`이다.
+
+이 프로젝트는 Mozilla 또는 Firefox와 제휴, 보증, 후원을 받지 않는다. Mozilla와 Firefox 이름은 upstream material 식별이 필요한 라이선스, attribution, 기술 출처 맥락에서만 사용한다.
+
+## 라이선스
+
+이 저장소의 신규 코드는 파일에 별도 표시가 없는 한 MIT License 배포를 의도한다. 자세한 내용은 `LICENSE`를 참조한다.
+
+Mozilla Firefox Screenshots source에서 각색한 파일은 Mozilla Public License 2.0 notice를 유지하고 `src/firefox-derived/` 아래에 둔다. `LICENSE-MPL-2.0`, `NOTICE`, `THIRD_PARTY.md`를 함께 참조한다.

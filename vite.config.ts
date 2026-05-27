@@ -1,43 +1,32 @@
 import { defineConfig, type Plugin } from "vite";
+import manifest from "./manifest.json" with { type: "json" };
 
-const phase0Entry = "virtual:crop-phase0-entry";
-const resolvedPhase0Entry = `\0${phase0Entry}`;
-
-function phase0Entrypoint(): Plugin {
+function extensionManifest(): Plugin {
   return {
-    name: "crop-phase0-entrypoint",
-    resolveId(id) {
-      if (id === phase0Entry) {
-        return resolvedPhase0Entry;
-      }
-
-      return null;
-    },
-    load(id) {
-      if (id === resolvedPhase0Entry) {
-        return "export {};";
-      }
-
-      return null;
-    },
-    generateBundle(_options, bundle) {
-      for (const fileName of Object.keys(bundle)) {
-        delete bundle[fileName];
-      }
+    name: "crop-extension-manifest",
+    generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "manifest.json",
+        source: `${JSON.stringify(manifest, null, 2)}\n`
+      });
     }
   };
 }
 
 export default defineConfig({
-  plugins: [phase0Entrypoint()],
+  plugins: [extensionManifest()],
   build: {
     outDir: "dist",
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
-      input: phase0Entry,
+      input: {
+        "background/service-worker": "src/background/service-worker.ts",
+        "content/inject": "src/content/inject.ts"
+      },
       output: {
-        entryFileNames: "assets/[name].js",
+        entryFileNames: "[name].js",
         chunkFileNames: "assets/[name].js",
         assetFileNames: "assets/[name][extname]"
       }
