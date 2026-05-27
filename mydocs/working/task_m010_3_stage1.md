@@ -32,7 +32,7 @@ test -f dist/manifest.json
 find dist -maxdepth 3 -type f -print
 npm run typecheck
 node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('dist/manifest.json','utf8')); console.log('dist manifest ok')"
-node -e "const m=require('./dist/manifest.json'); console.log(m.manifest_version, m.name, m.permissions.join(','), m.background.service_worker, m.commands._execute_action.suggested_key.default, m.commands._execute_action.suggested_key.mac)"
+node -e "const m=require('./dist/manifest.json'); const c=m.commands['open-crop']; console.log(m.manifest_version, m.name, m.permissions.join(','), m.background.service_worker, Object.keys(m.commands).join(','), c.suggested_key.default, c.suggested_key.mac)"
 rg "debugger|<all_urls>" manifest.json dist/manifest.json
 git diff --check
 ```
@@ -44,7 +44,8 @@ git diff --check
 - OK: `dist/background/service-worker.js`, `dist/content/inject.js`와 각 sourcemap이 생성됐다.
 - OK: `npm run typecheck`가 성공했다.
 - OK: `dist/manifest.json` JSON parse가 성공했다.
-- OK: built manifest가 `manifest_version=3`, `name=crop`, `permissions=activeTab,scripting,clipboardWrite`, `background/service-worker.js`, `Ctrl+Shift+S`, `Command+Shift+S`를 가진다.
+- OK: built manifest가 `manifest_version=3`, `name=crop`, `permissions=activeTab,scripting,clipboardWrite`, `background/service-worker.js`, `open-crop`, `Ctrl+Shift+P`, `Command+Shift+P`를 가진다.
+- NOTE: Stage 1 최초 검증 시점의 shortcut 후보는 후속 smoke 수정에서 `open-crop` custom command와 `Ctrl+Shift+P`/`Command+Shift+P`로 대체됐다. 이 보고서의 manifest 검증 기록은 현재 PR head 기준으로 정정했다.
 - OK: `debugger`와 `<all_urls>`는 `manifest.json`과 `dist/manifest.json`에서 발견되지 않았다.
 - OK: `git diff --check`가 경고 없이 통과했다.
 

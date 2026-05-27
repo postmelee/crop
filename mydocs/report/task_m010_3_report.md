@@ -62,7 +62,7 @@ GitHub Issue: [#3](https://github.com/postmelee/crop/issues/3)
 | `open-crop` shortcut smoke | OK — 작업지시자가 로컬 Chrome UI에서 `Command+Shift+P` 단축키 정상 동작을 확인했다. |
 | 중복 실행이 overlay를 중복으로 쌓지 않음 | OK — content script DOM smoke에서 script 2회 실행 후 `rootCount=1` 확인 |
 | `git diff --check` 통과 | OK — whitespace 경고 없음 |
-| PR 준비 전 `git status --short` 빈 출력 | 최종 커밋 후 확인 예정 |
+| PR 준비 전 `git status --short` 빈 출력 | OK — PR #10 최신 push 전후 `git status --short --branch`가 `## local/task3`만 출력함을 확인했다. |
 
 ### 단계별 검증 결과
 

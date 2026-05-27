@@ -6,7 +6,7 @@ Stage: 2
 
 ## 단계 목적
 
-Stage 2는 MV3 background service worker에서 확장 아이콘 클릭과 `_execute_action` 단축키 실행을 같은 content script 주입 흐름으로 연결하는 단계다. Stage 1에서 확정한 `content/inject.js` output 경로를 `chrome.scripting.executeScript()`의 대상 파일로 사용했다.
+Stage 2는 MV3 background service worker에서 확장 아이콘 클릭과 `open-crop` 단축키 실행을 같은 content script 주입 흐름으로 연결하는 단계다. Stage 1에서 확정한 `content/inject.js` output 경로를 `chrome.scripting.executeScript()`의 대상 파일로 사용했다.
 
 ## 산출물
 
