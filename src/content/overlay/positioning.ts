@@ -22,8 +22,19 @@ export interface ActionButtonsPresentation {
   readonly transform: string;
 }
 
+export interface Point {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface EyeOffsetPresentation {
+  readonly x: string;
+  readonly y: string;
+}
+
 const ACTION_BUTTONS_EDGE_MARGIN = 8;
 const ACTION_BUTTONS_GAP = 8;
+const EYE_OFFSET_SCALE = 10;
 
 export function getHighlightPresentation(rect: ViewportRect | null): HighlightPresentation {
   if (!rect) {
@@ -98,6 +109,41 @@ export function applyActionButtonsPresentation(
 
   element.hidden = presentation.hidden;
   element.style.transform = presentation.transform;
+}
+
+export function getEyeOffsetPresentation(
+  pointer: Point,
+  viewport: ViewportSize
+): EyeOffsetPresentation {
+  if (viewport.clientWidth <= 0 || viewport.clientHeight <= 0) {
+    return {
+      x: "0px",
+      y: "0px"
+    };
+  }
+
+  const x = Math.floor(
+    (EYE_OFFSET_SCALE * (pointer.x - viewport.clientWidth / 2)) / viewport.clientWidth
+  );
+  const y = Math.floor(
+    (EYE_OFFSET_SCALE * (pointer.y - viewport.clientHeight / 2)) / viewport.clientHeight
+  );
+
+  return {
+    x: toCssPixel(x),
+    y: toCssPixel(y)
+  };
+}
+
+export function applyEyeOffsetPresentation(
+  element: HTMLElement,
+  pointer: Point,
+  viewport: ViewportSize
+): void {
+  const presentation = getEyeOffsetPresentation(pointer, viewport);
+
+  element.style.setProperty("--crop-eye-x", presentation.x);
+  element.style.setProperty("--crop-eye-y", presentation.y);
 }
 
 function toCssPixel(value: number): string {

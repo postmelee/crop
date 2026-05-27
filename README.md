@@ -36,13 +36,15 @@ MVP 제외 범위:
 
 ## 개발 상태
 
-M010 Phase 3 기준으로 Chrome MV3 shell과 Firefox식 overlay UI 기반이 준비됐다.
+M010 Phase 3 Stage 5 기준으로 Chrome MV3 shell과 Firefox식 overlay UI 기반이 준비됐다.
 
 - `manifest.json` source manifest
 - Vite 기반 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 산출
 - background service worker의 action icon/`open-crop` command 주입 흐름
 - content script의 `__crop_root__` Shadow DOM overlay
-- 중복 실행 방지와 Escape/close 제거 동작
+- 중복 실행 방지와 Escape/Cancel 제거 동작
+- Firefox식 top-right mode toolbar와 중앙 preview prompt
+- pointer 위치를 따라 움직이는 preview face 눈동자
 - Firefox-derived helper 기반 DOM 요소 hover highlight
 - 클릭 기반 selected rectangle 고정
 - selected rectangle 기준 Copy/Save/Cancel buttons 표시
@@ -87,12 +89,14 @@ npm run typecheck
 
 기대 결과:
 
-- 현재 탭에 dim overlay와 오른쪽 위 `crop` panel이 표시된다.
+- 현재 탭에 dark dim overlay, dashed viewport boundary, 오른쪽 위 mode toolbar가 표시된다.
+- mode toolbar에는 `보이는 영역 선택`과 `전체 페이지 선택`이 보인다. `전체 페이지 선택`은 MVP 범위 밖이므로 현재 비활성 placeholder다.
+- 중앙에는 영역 선택 안내 문구, Cancel button, pointer 위치에 따라 눈동자가 움직이는 preview face가 표시된다.
 - 일반 DOM 요소에 마우스를 올리면 dashed hover highlight가 표시된다.
 - hover highlight 상태에서 클릭하면 selected rectangle이 고정되고 Copy/Save/Cancel buttons가 선택 영역 근처에 표시된다.
 - Copy/Save buttons는 현재 UI만 표시한다. 실제 clipboard write와 file download는 후속 Phase에서 연결한다.
-- Cancel button, Escape 키, 또는 오른쪽 위 close button으로 overlay가 제거된다.
-- 같은 탭에서 다시 실행하면 overlay가 여러 개 쌓이지 않고 기존 panel이 짧게 강조된다.
+- 중앙 Cancel button, selected 상태의 Cancel button, 또는 Escape 키로 overlay가 제거된다.
+- 같은 탭에서 다시 실행하면 overlay가 여러 개 쌓이지 않고 기존 mode toolbar가 짧게 강조된다.
 - `chrome://`, Chrome Web Store 같은 제한 페이지에서는 주입이 실패할 수 있으며 background console warning으로 확인한다.
 
 ## 소스 구조

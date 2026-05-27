@@ -12,6 +12,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | 2 | hover highlight와 Firefox-derived helper 연결 | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/positioning.test.ts` | `npm run test`, hover helper grep |
 | 3 | selection 상태와 action buttons 배치 | `src/content/overlay/state-machine.ts`, `src/content/overlay/crop-template.ts` | `npm run test`, selection/buttons grep |
 | 4 | README smoke 절차와 통합 검증 | `README.md`, `mydocs/report/task_m010_5_report.md` | `npm run build`, `npm run typecheck`, `npm run test`, Chrome smoke |
+| 5 | Firefox식 시각 정렬과 눈동자 포인터 추적 | `src/content/overlay/crop-template.ts`, `src/content/overlay/crop-overlay.css`, `src/content/overlay/positioning.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
 
 ## 문서 위치 확인
 
@@ -199,6 +200,67 @@ git status --short
 Task #5 Stage 4 + 최종 보고서: Firefox식 overlay UI 완료
 ```
 
+## Stage 5 — Firefox식 시각 정렬과 눈동자 포인터 추적
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m010_5_stage5.md`
+
+수정:
+
+- `src/content/overlay/crop-template.ts`
+- `src/content/overlay/crop-overlay.ts`
+- `src/content/overlay/crop-overlay.css`
+- `src/content/overlay/positioning.ts`
+- `tests/content/overlay/positioning.test.ts`
+- `README.md`
+- `mydocs/report/task_m010_5_report.md`
+- `mydocs/orders/20260527.md`
+
+### Firefox 원본 분석 기준
+
+아래 Mozilla Firefox 원본 구현은 구조와 동작 방식만 참고한다. 제품명, 아이콘, SVG path, XUL/Mozilla 전용 API, localization id, CSS token은 복사하지 않는다.
+
+- `browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs`: 초기 preview container, cancel button, hover/selection 상태 전환, 눈동자 이동식
+- `browser/components/screenshots/overlay/overlay.css`: dark preview overlay, centered instructions, dashed hover/selection outline
+- `browser/components/screenshots/screenshots-buttons.js`: visible page/full page 버튼 패널 구조
+- `browser/components/screenshots/screenshots-buttons.css`: top-right 버튼 패널 배치와 icon-above-label button 형태
+
+### 변경 내용
+
+- 기존 작은 `crop` panel을 Firefox식 top-right mode toolbar로 교체한다.
+- toolbar는 `보이는 영역 선택`을 활성 상태로 표시하고, `전체 페이지 선택`은 MVP 범위 밖이므로 비활성 placeholder로 둔다.
+- 초기 상태에서 중앙 preview prompt를 표시한다.
+- prompt에는 `crop` 자체 CSS/DOM으로 만든 face mark를 사용하고, 포인터 위치에 따라 두 눈동자가 같은 방향으로 이동하도록 구현한다.
+- 눈동자 이동은 Firefox 원본과 같은 개념으로 viewport 중심 대비 pointer 좌표를 `translate(x, y)`로 변환하되, 현재 CSS custom property 구조에 맞춰 적용한다.
+- selected 상태에서는 prompt를 숨기고 기존 Copy/Save/Cancel action buttons는 유지한다.
+- Firefox 또는 Mozilla 제품명, 원본 SVG path, 원본 아이콘 asset은 UI에 사용하지 않는다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm run test
+rg "crop-mode-toolbar|crop-prompt|crop-eye|보이는 영역 선택|전체 페이지 선택" src/content README.md
+git diff --check
+```
+
+자동 smoke:
+
+- `dist/content/inject.js`를 CDP로 직접 주입한다.
+- overlay root, mode toolbar, prompt, face/eye DOM이 생성되는지 확인한다.
+- pointermove 후 눈동자 CSS custom property가 바뀌는지 확인한다.
+- DOM 요소 hover, click selected, Cancel/Escape teardown 회귀가 없는지 확인한다.
+
+### 커밋
+
+```text
+Task #5 Stage 5: Firefox식 overlay 시각 정렬
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -218,6 +280,7 @@ Task #5 Stage 4 + 최종 보고서: Firefox식 overlay UI 완료
 - Stage 2는 Stage 1에서 overlay module shell, CSS inline 방식, 반복 주입 안전성이 검증된 후 진행한다.
 - Stage 3은 Stage 2에서 hover rect 표시와 helper 연결이 검증된 후 진행한다.
 - Stage 4는 Stage 1~3 검증과 단계 보고서 승인이 끝난 후 진행한다.
+- Stage 5는 작업지시자의 추가 UI parity 요청 승인 이후 진행한다.
 - capture/crop backend는 Task #5 final report와 PR merge 이후 #6에서 진행한다.
 
 ## 위험과 대응
@@ -228,6 +291,7 @@ Task #5 Stage 4 + 최종 보고서: Firefox식 overlay UI 완료
 - **Copy/Save 오해**: 이번 task에서는 UI만 구현하고 action은 후속 #6/#7에서 연결한다는 점을 README와 보고서에 명시한다.
 - **CSS raw import type 문제**: `?raw` declaration을 추가하거나 동등한 inline CSS 방식을 Stage 1에서 검증한다.
 - **수동 smoke 제약**: 로컬 Chrome 검증이 제한되면 자동 검증 결과와 함께 검증 한계를 보고서에 남기고 작업지시자 확인을 요청한다.
+- **Firefox 동일성 한계**: Firefox 제품명, 원본 아이콘/SVG, full page capture 동작은 이번 task에서 복제하지 않고 `crop` 브랜딩과 MVP visible viewport 범위를 유지한다.
 
 ## 승인 요청 사항
 

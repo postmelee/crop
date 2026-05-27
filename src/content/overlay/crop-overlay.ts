@@ -8,6 +8,7 @@ import {
 } from "./crop-template";
 import {
   applyActionButtonsPresentation,
+  applyEyeOffsetPresentation,
   applyHighlightPresentation,
   type ElementSize
 } from "./positioning";
@@ -96,6 +97,13 @@ export function mountCropOverlay(): void {
   };
 
   const handlePointerMove = (event: PointerEvent): void => {
+    const pointer = {
+      x: event.clientX,
+      y: event.clientY
+    };
+
+    updatePromptEyes(pointer);
+
     if (overlayState.status === "selected") {
       return;
     }
@@ -105,10 +113,7 @@ export function mountCropOverlay(): void {
       return;
     }
 
-    queueHoverUpdate({
-      x: event.clientX,
-      y: event.clientY
-    });
+    queueHoverUpdate(pointer);
   };
 
   const queueHoverUpdate = (pointer: PointerPosition): void => {
@@ -208,7 +213,19 @@ export function mountCropOverlay(): void {
     animationFrameId = null;
   };
 
-  template = createCropOverlayTemplate(shadowRoot, requestClose);
+  const updatePromptEyes = (pointer: PointerPosition): void => {
+    if (!template) {
+      return;
+    }
+
+    const windowDimensions = readWindowDimensions();
+    applyEyeOffsetPresentation(template.prompt, pointer, {
+      clientWidth: windowDimensions.clientWidth,
+      clientHeight: windowDimensions.clientHeight
+    });
+  };
+
+  template = createCropOverlayTemplate(shadowRoot);
   document.documentElement.append(host);
   renderOverlayState();
   window.addEventListener("keydown", handleKeyDown, true);

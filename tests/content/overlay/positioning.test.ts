@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { rectFromEdges } from "../../../src/firefox-derived/window-dimensions";
 import {
   getActionButtonsPresentation,
+  getEyeOffsetPresentation,
   getHighlightPresentation
 } from "../../../src/content/overlay/positioning";
 
@@ -72,6 +73,46 @@ describe("getActionButtonsPresentation", () => {
     ).toEqual({
       hidden: false,
       transform: "translate(572px, 148px)"
+    });
+  });
+});
+
+describe("getEyeOffsetPresentation", () => {
+  const viewport = {
+    clientWidth: 800,
+    clientHeight: 600
+  };
+
+  it("keeps pupils centered when the pointer is at viewport center", () => {
+    expect(getEyeOffsetPresentation({ x: 400, y: 300 }, viewport)).toEqual({
+      x: "0px",
+      y: "0px"
+    });
+  });
+
+  it("moves pupils toward the pointer within the Firefox-style viewport scale", () => {
+    expect(getEyeOffsetPresentation({ x: 800, y: 600 }, viewport)).toEqual({
+      x: "5px",
+      y: "5px"
+    });
+    expect(getEyeOffsetPresentation({ x: 0, y: 0 }, viewport)).toEqual({
+      x: "-5px",
+      y: "-5px"
+    });
+  });
+
+  it("falls back to a centered pupil offset for invalid viewport dimensions", () => {
+    expect(
+      getEyeOffsetPresentation(
+        { x: 800, y: 600 },
+        {
+          clientWidth: 0,
+          clientHeight: 0
+        }
+      )
+    ).toEqual({
+      x: "0px",
+      y: "0px"
     });
   });
 });
