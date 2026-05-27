@@ -1,4 +1,4 @@
-import { rectFromEdges, type ViewportRect } from "../../firefox-derived/window-dimensions";
+import { rectFromEdges, type PageRect } from "../../firefox-derived/window-dimensions";
 
 export type CropOverlayStatus =
   | "idle"
@@ -15,8 +15,8 @@ export interface CropOverlayPoint {
 
 export interface CropOverlayState {
   readonly status: CropOverlayStatus;
-  readonly hoverRect: ViewportRect | null;
-  readonly selectedRect: ViewportRect | null;
+  readonly hoverRect: PageRect | null;
+  readonly selectedRect: PageRect | null;
   readonly dragStart: CropOverlayPoint | null;
 }
 
@@ -32,11 +32,11 @@ export function createInitialOverlayState(): CropOverlayState {
 export type CropOverlayEvent =
   | {
       readonly type: "hover";
-      readonly rect: ViewportRect | null;
+      readonly rect: PageRect | null;
     }
   | {
       readonly type: "select";
-      readonly rect?: ViewportRect | null;
+      readonly rect?: PageRect | null;
     }
   | {
       readonly type: "dragStart";
@@ -162,6 +162,6 @@ export function transitionOverlayState(
   }
 }
 
-function getRectDistance(rect: ViewportRect): number {
+function getRectDistance(rect: PageRect): number {
   return Math.hypot(rect.width, rect.height);
 }

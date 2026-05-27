@@ -9,6 +9,7 @@ import {
   type RectLike,
   type ViewportRect,
   WindowDimensions,
+  viewportRectToPageRect,
   readWindowDimensions
 } from "./window-dimensions";
 
@@ -36,6 +37,7 @@ export interface BestRectOptions {
   readonly windowDimensions?: WindowDimensions;
   readonly previousRect?: RectLike | null;
   readonly thresholds?: Partial<DetectionThresholds>;
+  readonly coordinateSpace?: "viewport" | "page";
 }
 
 export interface HitTestResult {
@@ -94,6 +96,7 @@ export function getBestRectForElement(
 
   const thresholds = getThresholds(options.thresholds);
   const windowDimensions = options.windowDimensions ?? readDimensionsForElement(element);
+  const coordinateSpace = options.coordinateSpace ?? "viewport";
   let node: Element | null = element;
   let selectedRect = options.previousRect
     ? windowDimensions.clipRectToViewport(options.previousRect)
@@ -111,11 +114,12 @@ export function getBestRectForElement(
     if (!visibleRect) {
       break;
     }
+    const candidateRect = toCoordinateSpaceRect(rawRect, windowDimensions, coordinateSpace);
 
-    if (isAbsolutelyTooSmall(visibleRect, thresholds)) {
+    if (isAbsolutelyTooSmall(candidateRect, thresholds)) {
       const parent = getParentElement(node);
       if (!parent) {
-        selectedRect = visibleRect;
+        selectedRect = candidateRect;
         selectedNode = node;
         break;
       }
@@ -125,7 +129,7 @@ export function getBestRectForElement(
 
     if (isTooLarge(rawRect, thresholds)) {
       if (!selectedRect) {
-        selectedRect = getViewportFallbackRect(rawRect, windowDimensions, thresholds);
+        selectedRect = getFallbackRect(rawRect, windowDimensions, thresholds, coordinateSpace);
         selectedNode = node;
       } else {
         attemptExtend = true;
@@ -133,10 +137,10 @@ export function getBestRectForElement(
       break;
     }
 
-    selectedRect = visibleRect;
+    selectedRect = candidateRect;
     selectedNode = node;
 
-    if (isBelowPreferredSize(visibleRect, thresholds) || isDoNotAutoselectTag(node)) {
+    if (isBelowPreferredSize(candidateRect, thresholds) || isDoNotAutoselectTag(node)) {
       const parent = getParentElement(node);
       if (parent) {
         node = parent;
@@ -151,13 +155,24 @@ export function getBestRectForElement(
     return null;
   }
 
-  const articleRect = getArticleParentRect(selectedNode, windowDimensions, thresholds);
+  const articleRect = getArticleParentRect(
+    selectedNode,
+    windowDimensions,
+    thresholds,
+    coordinateSpace
+  );
   if (articleRect) {
     return articleRect;
   }
 
   if (attemptExtend) {
-    return tryExtendWithSibling(selectedNode, selectedRect, windowDimensions, thresholds);
+    return tryExtendWithSibling(
+      selectedNode,
+      selectedRect,
+      windowDimensions,
+      thresholds,
+      coordinateSpace
+    );
   }
 
   return selectedRect;
@@ -204,17 +219,22 @@ function getDeepestOpenShadowElementFromPoint(
 function getArticleParentRect(
   node: Element,
   windowDimensions: WindowDimensions,
-  thresholds: DetectionThresholds
+  thresholds: DetectionThresholds,
+  coordinateSpace: "viewport" | "page"
 ): ViewportRect | null {
   let current = getParentElement(node);
 
   while (current) {
     if (current.getAttribute?.("role") === "article") {
       const rawRect = getBoundingClientRect(current);
-      const rect = getVisibleRectForElement(current, windowDimensions);
+      const visibleRect = rawRect ? windowDimensions.clipRectToViewport(rawRect) : null;
+      const rect = rawRect
+        ? toCoordinateSpaceRect(rawRect, windowDimensions, coordinateSpace)
+        : null;
 
       if (
         rawRect &&
+        visibleRect &&
         rect &&
         !isTooLarge(rawRect, thresholds) &&
         !isAbsolutelyTooSmall(rect, thresholds)
@@ -235,17 +255,19 @@ function tryExtendWithSibling(
   node: Element,
   rect: ViewportRect,
   windowDimensions: WindowDimensions,
-  thresholds: DetectionThresholds
+  thresholds: DetectionThresholds,
+  coordinateSpace: "viewport" | "page"
 ): ViewportRect {
   const sibling = getNextElementSibling(node);
   if (!sibling) {
     return rect;
   }
 
-  const siblingRect = getVisibleRectForElement(sibling, windowDimensions);
-  if (!siblingRect) {
+  const rawSiblingRect = getBoundingClientRect(sibling);
+  if (!rawSiblingRect || !windowDimensions.clipRectToViewport(rawSiblingRect)) {
     return rect;
   }
+  const siblingRect = toCoordinateSpaceRect(rawSiblingRect, windowDimensions, coordinateSpace);
 
   const combined = unionRects(rect, siblingRect);
   if (isTooLarge(combined, thresholds)) {
@@ -255,26 +277,27 @@ function tryExtendWithSibling(
   return combined;
 }
 
-function getViewportFallbackRect(
+function getFallbackRect(
   rect: ViewportRect,
   windowDimensions: WindowDimensions,
-  thresholds: DetectionThresholds
+  thresholds: DetectionThresholds,
+  coordinateSpace: "viewport" | "page"
 ): ViewportRect | null {
   const viewportRect = intersectRects(rect, windowDimensions.viewportRect);
   if (!viewportRect || isAbsolutelyTooSmall(viewportRect, thresholds)) {
     return null;
   }
 
-  if (!isTooLarge(viewportRect, thresholds)) {
-    return viewportRect;
-  }
+  const fallbackViewportRect = isTooLarge(viewportRect, thresholds)
+    ? rectFromEdges(
+        viewportRect.left,
+        viewportRect.top,
+        Math.min(viewportRect.left + thresholds.maxDetectWidth, viewportRect.right),
+        Math.min(viewportRect.top + thresholds.maxDetectHeight, viewportRect.bottom)
+      )
+    : viewportRect;
 
-  return rectFromEdges(
-    viewportRect.left,
-    viewportRect.top,
-    Math.min(viewportRect.left + thresholds.maxDetectWidth, viewportRect.right),
-    Math.min(viewportRect.top + thresholds.maxDetectHeight, viewportRect.bottom)
-  );
+  return toCoordinateSpaceRect(fallbackViewportRect, windowDimensions, coordinateSpace);
 }
 
 function getBoundingClientRect(element: Element): ViewportRect | null {
@@ -293,6 +316,14 @@ function unionRects(first: ViewportRect, second: ViewportRect): ViewportRect {
     Math.max(first.right, second.right),
     Math.max(first.bottom, second.bottom)
   );
+}
+
+function toCoordinateSpaceRect(
+  rect: ViewportRect,
+  windowDimensions: WindowDimensions,
+  coordinateSpace: "viewport" | "page"
+): ViewportRect {
+  return coordinateSpace === "page" ? viewportRectToPageRect(rect, windowDimensions) : rect;
 }
 
 function getParentElement(element: Element): Element | null {

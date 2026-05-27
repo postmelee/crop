@@ -17,7 +17,12 @@ import {
   getBestRectForElement,
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
-import { readWindowDimensions, type ViewportRect } from "../../firefox-derived/window-dimensions";
+import {
+  pageRectToViewportRect,
+  readWindowDimensions,
+  type PageRect,
+  type ViewportRect
+} from "../../firefox-derived/window-dimensions";
 import {
   createInitialOverlayState,
   transitionOverlayState,
@@ -70,6 +75,7 @@ export function mountCropOverlay(): void {
   const shadowRoot = host.attachShadow({ mode: "open" });
   let template: CropOverlayTemplate | null = null;
   let pendingPointer: PointerPosition | null = null;
+  let lastPointer: PointerPosition | null = null;
   let animationFrameId: number | null = null;
   let overlayState: CropOverlayState = createInitialOverlayState();
 
@@ -79,6 +85,8 @@ export function mountCropOverlay(): void {
     window.removeEventListener("pointermove", handlePointerMove, true);
     window.removeEventListener("pointerup", handlePointerUp, true);
     window.removeEventListener("click", handleClick, true);
+    window.removeEventListener("scroll", handleViewportChange, true);
+    window.removeEventListener("resize", handleViewportChange, true);
     cancelPendingHoverUpdate();
     host.remove();
   };
@@ -104,6 +112,8 @@ export function mountCropOverlay(): void {
       x: event.clientX,
       y: event.clientY
     };
+    lastPointer = pointer;
+    const pagePointer = toPagePoint(pointer);
 
     updatePromptEyes(pointer);
 
@@ -112,7 +122,7 @@ export function mountCropOverlay(): void {
       event.stopPropagation();
       overlayState = transitionOverlayState(overlayState, {
         type: "dragMove",
-        point: pointer
+        point: pagePointer
       });
       renderOverlayState();
       return;
@@ -140,10 +150,10 @@ export function mountCropOverlay(): void {
     cancelPendingHoverUpdate();
     overlayState = transitionOverlayState(overlayState, {
       type: "dragStart",
-      point: {
+      point: toPagePoint({
         x: event.clientX,
         y: event.clientY
-      }
+      })
     });
     renderOverlayState();
   };
@@ -188,6 +198,7 @@ export function mountCropOverlay(): void {
 
   const clearHover = (): void => {
     cancelPendingHoverUpdate();
+    lastPointer = null;
     overlayState = transitionOverlayState(overlayState, {
       type: "hover",
       rect: null
@@ -236,22 +247,37 @@ export function mountCropOverlay(): void {
     host.setAttribute("data-crop-state", overlayState.status);
 
     if (template) {
-      const activeRect = overlayState.selectedRect ?? overlayState.hoverRect;
+      const windowDimensions = readWindowDimensions();
+      const activeRect = projectPageRectToViewport(
+        overlayState.selectedRect ?? overlayState.hoverRect,
+        windowDimensions
+      );
       const selectionRect =
         overlayState.status === "selected" || overlayState.status === "dragging"
-          ? overlayState.selectedRect
+          ? projectPageRectToViewport(overlayState.selectedRect, windowDimensions)
           : null;
+      const visibleSelectionRect = selectionRect
+        ? windowDimensions.clipRectToViewport(selectionRect)
+        : null;
       applyHighlightPresentation(template.highlight, activeRect);
-      applySelectionMaskPresentation(template.selectionMask, selectionRect);
+      applySelectionMaskPresentation(template.selectionMask, visibleSelectionRect);
       template.highlight.classList.toggle(
         "crop-highlight--selected",
         overlayState.status === "selected" || overlayState.status === "dragging"
       );
-      updateActionButtons(
-        template,
-        overlayState.status === "selected" ? overlayState.selectedRect : null
-      );
+      updateActionButtons(template, overlayState.status === "selected" ? visibleSelectionRect : null);
     }
+  };
+
+  const handleViewportChange = (): void => {
+    if (overlayState.status === "idle" || overlayState.status === "hovering") {
+      if (lastPointer) {
+        queueHoverUpdate(lastPointer);
+      }
+      return;
+    }
+
+    renderOverlayState();
   };
 
   const cancelPendingHoverUpdate = (): void => {
@@ -285,21 +311,50 @@ export function mountCropOverlay(): void {
   window.addEventListener("pointermove", handlePointerMove, true);
   window.addEventListener("pointerup", handlePointerUp, true);
   window.addEventListener("click", handleClick, true);
+  window.addEventListener("scroll", handleViewportChange, true);
+  window.addEventListener("resize", handleViewportChange, true);
 }
 
 function resolveHoverRect(
   pointer: PointerPosition,
   host: HTMLElement
-): ViewportRect | null {
-  const hit = getElementFromPoint(pointer.x, pointer.y);
+): PageRect | null {
+  const hit = getPageElementFromPoint(pointer, host);
 
   if (!hit.element || isCropOverlayElement(hit.element, host)) {
     return null;
   }
 
   return getBestRectForElement(hit.element, {
-    windowDimensions: readWindowDimensions()
+    windowDimensions: readWindowDimensions(),
+    coordinateSpace: "page"
   });
+}
+
+function getPageElementFromPoint(pointer: PointerPosition, host: HTMLElement) {
+  const previousDisplay = host.style.display;
+  host.style.display = "none";
+
+  try {
+    return getElementFromPoint(pointer.x, pointer.y);
+  } finally {
+    host.style.display = previousDisplay;
+  }
+}
+
+function toPagePoint(pointer: PointerPosition): PointerPosition {
+  const windowDimensions = readWindowDimensions();
+  return {
+    x: pointer.x + windowDimensions.scrollX,
+    y: pointer.y + windowDimensions.scrollY
+  };
+}
+
+function projectPageRectToViewport(
+  rect: PageRect | null,
+  windowDimensions = readWindowDimensions()
+): ViewportRect | null {
+  return rect ? pageRectToViewportRect(rect, windowDimensions) : null;
 }
 
 function isCropOverlayEvent(event: Event, host: HTMLElement): boolean {
@@ -307,6 +362,11 @@ function isCropOverlayEvent(event: Event, host: HTMLElement): boolean {
 }
 
 function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
+  const rootNode = element.getRootNode();
+  if (rootNode instanceof ShadowRoot && rootNode.host === host) {
+    return true;
+  }
+
   return element === host || element.closest(`[${ROOT_ATTRIBUTE}="true"]`) === host;
 }
 

@@ -15,6 +15,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | 5 | Firefox식 시각 정렬과 눈동자 포인터 추적 | `src/content/overlay/crop-template.ts`, `src/content/overlay/crop-overlay.css`, `src/content/overlay/positioning.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
 | 6 | Firefox 원본 UI 자산과 drag selection 포팅 | `src/firefox-derived/screenshots-ui-assets.ts`, `src/content/overlay/state-machine.ts`, `src/content/overlay/crop-overlay.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP drag smoke |
 | 7 | Firefox UI parity 세부 보정 | `src/firefox-derived/screenshots-ui-assets.ts`, `src/content/overlay/crop-overlay.css` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
+| 8 | page-coordinate selection과 scroll-follow highlight | `src/firefox-derived/window-dimensions.ts`, `src/firefox-derived/overlay-helpers.ts`, `src/content/overlay/crop-overlay.ts`, `src/content/overlay/state-machine.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP scroll smoke |
 
 ## 문서 위치 확인
 
@@ -379,6 +380,65 @@ git diff --check
 Task #5 Stage 7: Firefox UI parity 세부 보정
 ```
 
+## Stage 8 — page-coordinate selection과 scroll-follow highlight
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m010_5_stage8.md`
+
+수정:
+
+- `src/firefox-derived/window-dimensions.ts`
+- `src/firefox-derived/overlay-helpers.ts`
+- `src/content/overlay/crop-overlay.ts`
+- `src/content/overlay/state-machine.ts`
+- `tests/firefox-derived/overlay-helpers.test.ts`
+- `tests/firefox-derived/window-dimensions.test.ts`
+- `README.md`
+- `mydocs/report/task_m010_5_report.md`
+- `mydocs/orders/20260527.md`
+
+### 변경 내용
+
+- 후속 이슈로 분리한 작업을 먼저 등록한다.
+  - #12: drag selection edge auto-scroll
+  - #13: selected region resize/move handles와 keyboard 조정
+  - #14: iframe/nested context 요소 선택 지원
+  - #15: full page capture와 scroll stitching
+- 현재 Stage 8에는 Firefox 원본의 `Region`/`WindowDimensions` 구조를 참고한 page-coordinate selection만 반영한다.
+- hover/click/drag selection rect를 viewport 좌표가 아니라 page/document 좌표로 저장한다.
+- 렌더링 시 현재 `scrollX`/`scrollY`를 빼서 Shadow DOM fixed overlay에 표시할 viewport 좌표로 투영한다.
+- 화면 밖으로 이어지는 요소도 clipping 전 bounding rect를 page 좌표로 저장해 스크롤 후 테두리가 같은 문서 영역을 따라가게 한다.
+- `scroll`/`resize` 이벤트에서 selected highlight, selection mask, action buttons를 다시 배치한다.
+- hover 상태에서는 마지막 pointer client 좌표 기준으로 scroll 후 hover target을 재계산한다.
+- drag 중 edge auto-scroll, selected resize/move handles, iframe 내부 탐색, full page capture는 각각 #12~#15 후속 이슈로 제외한다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm run test
+rg "coordinateSpace|pageRectToViewportRect|viewportRectToPageRect|scroll-follow|handleViewportChange" src tests README.md mydocs
+git diff --check
+```
+
+자동 smoke:
+
+- `dist/content/inject.js`를 CDP로 직접 주입한다.
+- partially visible element hover가 page-coordinate rect로 저장되는지 확인한다.
+- click selected 후 window scroll을 수행하면 highlight transform이 현재 scroll에 맞게 바뀌는지 확인한다.
+- scroll 후 action buttons와 selection mask가 visible intersection 기준으로 유지되는지 확인한다.
+- 기존 hover click selection, drag selection, Cancel/Escape teardown 회귀가 없는지 확인한다.
+
+### 커밋
+
+```text
+Task #5 Stage 8: page-coordinate selection 적용
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -401,6 +461,7 @@ Task #5 Stage 7: Firefox UI parity 세부 보정
 - Stage 5는 작업지시자의 추가 UI parity 요청 승인 이후 진행한다.
 - Stage 6은 작업지시자의 원본에 최대한 가까운 포팅 요청 승인 이후 진행한다.
 - Stage 7은 작업지시자의 frame/hover 제외 UI parity 보정 요청 승인 이후 진행한다.
+- Stage 8은 작업지시자의 후속 이슈 분리와 현재 작업 반영 요청 승인 이후 진행한다.
 - capture/crop backend는 Task #5 final report와 PR merge 이후 #6에서 진행한다.
 
 ## 위험과 대응
@@ -414,6 +475,7 @@ Task #5 Stage 7: Firefox UI parity 세부 보정
 - **Firefox 동일성 한계**: Firefox 제품명, 원본 아이콘/SVG, full page capture 동작은 이번 task에서 복제하지 않고 `crop` 브랜딩과 MVP visible viewport 범위를 유지한다.
 - **MPL 자산 혼입 위험**: Firefox 원본 SVG path와 menu icon은 `src/firefox-derived/`로 분리하고 `NOTICE`, `THIRD_PARTY.md`에 출처를 기록한다.
 - **drag와 click 이벤트 충돌**: pointerdown/up drag 흐름과 click selection 흐름이 중복 실행되지 않도록 selected 상태에서는 click 후속 처리를 no-op으로 둔다.
+- **page 좌표와 fixed overlay 좌표 혼동**: state에는 page rect를 저장하고 render 직전에 viewport rect로 투영하는 helper를 테스트로 고정한다.
 
 ## 승인 요청 사항
 

@@ -14,6 +14,8 @@ export interface ViewportRect extends RectLike {
   readonly height: number;
 }
 
+export type PageRect = ViewportRect;
+
 export interface WindowDimensionsInput {
   readonly clientWidth?: number | null;
   readonly clientHeight?: number | null;
@@ -282,6 +284,32 @@ export function rectFromEdges(
     width: Math.max(0, right - left),
     height: Math.max(0, bottom - top)
   };
+}
+
+export function viewportRectToPageRect(
+  rect: RectLike,
+  windowDimensions: WindowDimensions
+): PageRect {
+  const normalized = normalizeRect(rect);
+  return rectFromEdges(
+    normalized.left + windowDimensions.scrollX,
+    normalized.top + windowDimensions.scrollY,
+    normalized.right + windowDimensions.scrollX,
+    normalized.bottom + windowDimensions.scrollY
+  );
+}
+
+export function pageRectToViewportRect(
+  rect: RectLike,
+  windowDimensions: WindowDimensions
+): ViewportRect {
+  const normalized = normalizeRect(rect);
+  return rectFromEdges(
+    normalized.left - windowDimensions.scrollX,
+    normalized.top - windowDimensions.scrollY,
+    normalized.right - windowDimensions.scrollX,
+    normalized.bottom - windowDimensions.scrollY
+  );
 }
 
 function toNonNegative(value: number): number {
