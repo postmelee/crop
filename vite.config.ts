@@ -14,8 +14,25 @@ function extensionManifest(): Plugin {
   };
 }
 
+function contentScriptWrapper(): Plugin {
+  return {
+    name: "crop-content-script-wrapper",
+    renderChunk(code, chunk) {
+      if (chunk.name !== "content/inject") {
+        return null;
+      }
+
+      // Keep a stable marker after minification so wrapper checks do not rely on formatting.
+      return {
+        code: `(() => {\n"content/inject";\n${code}\n})();\n`,
+        map: null
+      };
+    }
+  };
+}
+
 export default defineConfig({
-  plugins: [extensionManifest()],
+  plugins: [extensionManifest(), contentScriptWrapper()],
   build: {
     outDir: "dist",
     emptyOutDir: true,
