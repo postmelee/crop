@@ -1,0 +1,99 @@
+# Task #5 최종 보고서
+
+GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
+마일스톤: M010
+
+## 작업 요약
+
+- 대상 이슈: #5
+- 마일스톤: M010
+- 단계 수: 4
+- 작업 목적: Chrome MV3 content script 안에 Firefox식 overlay UI 기반을 구현하고 hover/select/cancel 흐름을 연결한다.
+
+## 변경 파일 목록과 영향 범위
+
+| 경로 | 변경 요약 | 영향 범위 |
+|---|---|---|
+| `src/content/inject.ts` | content script entry를 `mountCropOverlay()` bootstrap으로 축소 | content script entrypoint |
+| `src/content/overlay/crop-overlay.ts` | overlay mount, 중복 실행 flash, hover helper 연결, click selection, Cancel/Escape teardown 구현 | overlay runtime controller |
+| `src/content/overlay/crop-template.ts` | Shadow DOM template, panel, highlight, Copy/Save/Cancel buttons 생성 | overlay DOM 구조 |
+| `src/content/overlay/crop-overlay.css` | dim layer, hover/selected highlight, action buttons, panel 스타일 | overlay UI styling |
+| `src/content/overlay/state-machine.ts` | `idle`, `hovering`, `selected`, `closing` 상태와 전이 구현 | overlay 상태 모델 |
+| `src/content/overlay/positioning.ts` | highlight placement와 action buttons clamp/flip placement helper 구현 | overlay layout helper |
+| `src/vite-env.d.ts` | `*.css?raw` import declaration 추가 | TypeScript build support |
+| `vite.config.ts` | `content/inject` chunk IIFE wrapper plugin 추가 | content script repeated-injection safety |
+| `tests/content/overlay/positioning.test.ts` | highlight와 action buttons placement 단위 테스트 추가 | 자동 테스트 |
+| `tests/content/overlay/state-machine.test.ts` | overlay 상태 전이 단위 테스트 추가 | 자동 테스트 |
+| `README.md` | 개발 상태와 Chrome unpacked smoke 기대 결과를 Phase 3 기준으로 갱신 | 기여자 로컬 실행 문서 |
+| `mydocs/plans/task_m010_5.md` | 수행계획서 작성 | Hyper-Waterfall 작업 추적 |
+| `mydocs/plans/task_m010_5_impl.md` | 구현계획서 작성 | Hyper-Waterfall 작업 추적 |
+| `mydocs/working/task_m010_5_stage1.md` | Stage 1 완료 보고서 작성 | 단계 검증 기록 |
+| `mydocs/working/task_m010_5_stage2.md` | Stage 2 완료 보고서 작성 | 단계 검증 기록 |
+| `mydocs/working/task_m010_5_stage3.md` | Stage 3 완료 보고서 작성 | 단계 검증 기록 |
+| `mydocs/orders/20260527.md` | #5 오늘할일 완료 처리 | 작업 상태 기록 |
+
+## 문서 위치 검증
+
+| 파일 | 계획된 위치 | 실제 위치 | 결과 | 근거 |
+|---|---|---|---|---|
+| `README.md` | 루트 `README.md` | `README.md` | OK | 수행계획서와 구현계획서에서 Chrome unpacked smoke 기대 결과의 위치를 루트 README로 결정했다. |
+| 공식 제품 문서 루트 | 해당 없음 | 해당 없음 | OK | 이번 task는 `docs/`, `specs/`, `site/`, `website/`, `adr/` 같은 제품 문서 루트를 만들지 않았다. |
+| `task_m010_5_report.md` | `mydocs/report/` | `mydocs/report/task_m010_5_report.md` | OK | 최종 보고서 템플릿 위치 정책과 일치한다. |
+
+## 변경 전·후 정량 비교
+
+| 지표 | 변경 전 | 변경 후 |
+|---|---|---|
+| content overlay entry | `src/content/inject.ts` inline stub 207줄 | `inject.ts` 3줄 bootstrap + `src/content/overlay/` 5개 module 757줄 |
+| overlay 상태 모델 | 없음 | `state-machine.ts` 73줄, 6개 상태 전이 테스트 |
+| overlay placement helper | 없음 | `positioning.ts` 110줄, 7개 placement 테스트 |
+| 전체 Vitest | 3개 test file, 25개 test | 5개 test file, 38개 test |
+| 단계 보고서 | 없음 | Stage 1~3 보고서 3개, 총 210줄 |
+| README smoke 기대 결과 | overlay stub 기준 | hover highlight, selected rectangle, Copy/Save/Cancel buttons 기준 |
+
+## 검증 결과
+
+| 수용 기준 | 결과 |
+|---|---|
+| `npm run build` 통과 | OK — Vite v6.4.2 production build 성공, `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 생성 |
+| `npm run typecheck` 통과 | OK — `tsc --noEmit` 성공 |
+| `npm run test` 통과 | OK — Vitest v3.2.4, 5개 test file, 38개 test 통과 |
+| Shadow DOM overlay 구조 구현 | OK — `#__crop_root__`, `data-crop-root`, `attachShadow`, raw CSS inline import 확인 |
+| content script 반복 주입 안전성 | OK — `content/inject` bundle IIFE wrapper와 두 번째 content script 주입 후 root count 1 확인 |
+| Task #4 helper hover 연결 | OK — `getElementFromPoint`, `getBestRectForElement`, `readWindowDimensions`, `pointermove` 연결 확인 |
+| hover highlight 표시 | OK — CDP content-script smoke에서 hover 상태 `hidden: false`, transform/width/height style 적용 확인 |
+| click selection 고정 | OK — CDP content-script smoke에서 `data-crop-state="selected"`와 `crop-highlight--selected` 확인 |
+| Copy/Save/Cancel buttons 표시 | OK — CDP content-script smoke에서 `data-crop-action` 값 `copy,save,cancel`과 button text `Copy/Save/Cancel` 확인 |
+| Cancel button teardown | OK — CDP content-script smoke에서 Cancel click 후 `#__crop_root__` 제거 확인 |
+| Escape teardown | OK — CDP content-script smoke에서 Escape key 후 `#__crop_root__` 제거 확인 |
+| Copy/Save 실제 동작 제외 | OK — Copy/Save는 active-looking no-op UI만 제공하고 capture/crop/clipboard/download handler는 추가하지 않음 |
+| README smoke 절차 갱신 | OK — 개발 상태와 Chrome unpacked extension 기대 결과를 overlay UI 기준으로 갱신 |
+| `git diff --check` 통과 | OK — whitespace 경고 없음 |
+
+### 단계별 검증 결과
+
+- Stage 1: [`task_m010_5_stage1.md`](../working/task_m010_5_stage1.md) — overlay module shell과 Shadow DOM template 분리, build/typecheck/grep/diff 검증 통과
+- Stage 2: [`task_m010_5_stage2.md`](../working/task_m010_5_stage2.md) — hover highlight와 Task #4 helper 연결, typecheck/test/grep/build 검증 통과
+- Stage 3: [`task_m010_5_stage3.md`](../working/task_m010_5_stage3.md) — selection 상태와 action buttons 구현, typecheck/test/grep/build 검증 통과
+- Stage 4: 통합 검증 — `npm run build`, `npm run typecheck`, `npm run test`, README/source grep, `git diff --check`, CDP content-script smoke 통과
+
+## 잔여 위험과 후속 작업
+
+### 잔여 위험
+
+- Chrome CDP의 `Input.dispatchKeyEvent`는 browser-level extension command를 트리거하지 않아 action icon 또는 `open-crop` shortcut 진입점 자동 smoke는 완료하지 못했다.
+- Computer Use도 현재 Chrome URL에서 차단되어 OS-level 단축키 입력 검증은 진행하지 못했다.
+- 별도 임시 Chrome 프로필에서 command-line `--load-extension` 로드는 환경 제약이 있어 extension registration이 안정적으로 유지되지 않았다. 최종 UI 흐름은 `dist/content/inject.js`를 CDP로 직접 주입해 검증했다.
+- Copy/Save는 이번 task에서 의도적으로 no-op이다. 실제 capture/crop/clipboard/download 동작은 #6/#7에서 구현해야 한다.
+- overlay가 최종 PNG에 포함되지 않는지 여부는 capture backend가 아직 없으므로 이번 task에서 검증하지 않았다.
+
+### 후속 작업 후보
+
+- #6 Phase 4: `chrome.tabs.captureVisibleTab()` 기반 visible viewport capture/crop backend 구현
+- #7 Phase 5: Copy/Save 동작과 UX polish 구현
+- Chrome 수동 smoke: 작업지시자 로컬 Chrome에서 `dist/` reload 후 action icon 또는 `Command+Shift+P`로 진입점 확인
+- capture 직전 overlay 숨김과 최종 PNG exclusion 검증
+
+## 작업지시자 승인 요청
+
+- 최종 보고서와 수용 기준 검증 결과를 승인하면 PR 게시 절차로 진행한다.
