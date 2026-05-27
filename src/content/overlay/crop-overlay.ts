@@ -103,6 +103,8 @@ export function mountCropOverlay(): void {
   let lastPointer: PointerPosition | null = null;
   let animationFrameId: number | null = null;
   let overlayState: CropOverlayState = createInitialOverlayState();
+  let suppressNextDocumentClick = false;
+  let suppressDocumentClickTimeoutId: number | null = null;
 
   const removeOverlay = (): void => {
     window.removeEventListener("keydown", handleKeyDown, true);
@@ -112,6 +114,7 @@ export function mountCropOverlay(): void {
     window.removeEventListener("click", handleClick, true);
     window.removeEventListener("scroll", handleViewportChange, true);
     window.removeEventListener("resize", handleViewportChange, true);
+    clearSuppressedDocumentClick();
     cancelPendingHoverUpdate();
     host.remove();
   };
@@ -167,6 +170,28 @@ export function mountCropOverlay(): void {
 
   const handlePointerDown = (event: PointerEvent): void => {
     if (isCropOverlayEvent(event, host) || event.button !== 0) {
+      return;
+    }
+
+    if (overlayState.status === "selected") {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressFollowingDocumentClick();
+
+      const pagePointer = toPagePoint({
+        x: event.clientX,
+        y: event.clientY
+      });
+
+      if (
+        overlayState.selectedRect &&
+        !isPointInsidePageRect(pagePointer, overlayState.selectedRect)
+      ) {
+        overlayState = transitionOverlayState(overlayState, { type: "resetSelection" });
+        cancelPendingHoverUpdate();
+        renderOverlayState();
+      }
+
       return;
     }
 
@@ -253,6 +278,13 @@ export function mountCropOverlay(): void {
       return;
     }
 
+    if (suppressNextDocumentClick) {
+      event.preventDefault();
+      event.stopPropagation();
+      clearSuppressedDocumentClick();
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
 
@@ -314,6 +346,23 @@ export function mountCropOverlay(): void {
 
     window.cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
+  };
+
+  const suppressFollowingDocumentClick = (): void => {
+    clearSuppressedDocumentClick();
+    suppressNextDocumentClick = true;
+    suppressDocumentClickTimeoutId = window.setTimeout(clearSuppressedDocumentClick, 800);
+  };
+
+  const clearSuppressedDocumentClick = (): void => {
+    suppressNextDocumentClick = false;
+
+    if (suppressDocumentClickTimeoutId === null) {
+      return;
+    }
+
+    window.clearTimeout(suppressDocumentClickTimeoutId);
+    suppressDocumentClickTimeoutId = null;
   };
 
   const updatePromptEyes = (pointer: PointerPosition): void => {
@@ -395,6 +444,15 @@ function projectPageRectToViewport(
   windowDimensions = readWindowDimensions()
 ): ViewportRect | null {
   return rect ? pageRectToViewportRect(rect, windowDimensions) : null;
+}
+
+function isPointInsidePageRect(point: PointerPosition, rect: PageRect): boolean {
+  return (
+    point.x >= rect.left &&
+    point.x <= rect.right &&
+    point.y >= rect.top &&
+    point.y <= rect.bottom
+  );
 }
 
 function isCropOverlayEvent(event: Event, host: HTMLElement): boolean {

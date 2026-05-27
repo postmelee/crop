@@ -50,6 +50,9 @@ export type CropOverlayEvent =
       readonly type: "dragEnd";
     }
   | {
+      readonly type: "resetSelection";
+    }
+  | {
       readonly type: "cancel";
     };
 
@@ -151,6 +154,9 @@ export function transitionOverlayState(
       }
 
       return state;
+
+    case "resetSelection":
+      return state.status === "selected" ? createInitialOverlayState() : state;
 
     case "cancel":
       return {

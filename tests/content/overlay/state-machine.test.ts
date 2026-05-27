@@ -61,6 +61,26 @@ describe("transitionOverlayState", () => {
     expect(transitionOverlayState(selected, { type: "hover", rect: nextRect })).toBe(selected);
   });
 
+  it("resets a selected rect back to idle", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+
+    expect(transitionOverlayState(selected, { type: "resetSelection" })).toEqual(
+      createInitialOverlayState()
+    );
+  });
+
+  it("ignores resetSelection outside selected state", () => {
+    const hovering = transitionOverlayState(createInitialOverlayState(), {
+      type: "hover",
+      rect
+    });
+
+    expect(transitionOverlayState(hovering, { type: "resetSelection" })).toBe(hovering);
+  });
+
   it("moves to closing when canceled", () => {
     expect(transitionOverlayState(createInitialOverlayState(), { type: "cancel" })).toEqual({
       status: "closing",

@@ -7,7 +7,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 
 - 대상 이슈: #5
 - 마일스톤: M010
-- 단계 수: 9
+- 단계 수: 10
 - 작업 목적: Chrome MV3 content script 안에 Firefox식 overlay UI 기반을 구현하고 hover/click/drag select/cancel 흐름을 연결한다.
 
 ## 변경 파일 목록과 영향 범위
@@ -16,23 +16,23 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 |---|---|---|
 | `src/content/inject.ts` | content script entry를 `mountCropOverlay()` bootstrap으로 축소 | content script entrypoint |
 | `src/firefox-derived/screenshots-ui-assets.ts` | Firefox Screenshots preview face SVG와 visible/full page menu icon SVG를 Chrome-compatible factory로 분리하고 icon fill rule 보정 | MPL-derived UI asset boundary |
-| `src/content/overlay/crop-overlay.ts` | overlay mount, 중복 실행 one-shot flash/debounce, hover helper 연결, 눈동자 pointer offset 갱신, page-coordinate click/drag selection, viewport+100 large element 감지, scroll-follow render, Cancel/Escape teardown 구현 | overlay runtime controller |
+| `src/content/overlay/crop-overlay.ts` | overlay mount, 중복 실행 one-shot flash/debounce, hover helper 연결, 눈동자 pointer offset 갱신, page-coordinate click/drag selection, selected outside click reset/suppress, viewport+100 large element 감지, scroll-follow render, Cancel/Escape teardown 구현 | overlay runtime controller |
 | `src/content/overlay/crop-template.ts` | Shadow DOM template, Firefox-derived mode icon/face, selection mask, highlight, Copy/Save/Cancel buttons 생성, initial mount flash 제거 | overlay DOM 구조 |
 | `src/content/overlay/crop-overlay.css` | Firefox 원본 수치에 가까운 dark preview, prompt/face, toolbar, selection mask, hover/selected highlight 스타일과 Stage 7 prompt/panel 세부 보정 | overlay UI styling |
-| `src/content/overlay/state-machine.ts` | `idle`, `hovering`, `draggingReady`, `dragging`, `selected`, `closing` 상태와 page rect 전이 구현 | overlay 상태 모델 |
+| `src/content/overlay/state-machine.ts` | `idle`, `hovering`, `draggingReady`, `dragging`, `selected`, `closing` 상태와 page rect/reset 전이 구현 | overlay 상태 모델 |
 | `src/content/overlay/positioning.ts` | highlight placement, selection mask, action buttons clamp/flip placement, eye offset helper 구현 | overlay layout helper |
 | `src/firefox-derived/overlay-helpers.ts` | `getBestRectForElement()`의 page coordinate 반환 옵션 추가 | Firefox-derived geometry helper |
 | `src/firefox-derived/window-dimensions.ts` | viewport/page rect projection helper 추가 | Firefox-derived geometry helper |
 | `src/vite-env.d.ts` | `*.css?raw` import declaration 추가 | TypeScript build support |
 | `vite.config.ts` | `content/inject` chunk IIFE wrapper plugin 추가 | content script repeated-injection safety |
 | `tests/content/overlay/positioning.test.ts` | highlight, action buttons placement, eye offset 단위 테스트 추가 | 자동 테스트 |
-| `tests/content/overlay/state-machine.test.ts` | hover/click/drag 상태 전이 단위 테스트 추가 | 자동 테스트 |
+| `tests/content/overlay/state-machine.test.ts` | hover/click/drag/reset 상태 전이 단위 테스트 추가 | 자동 테스트 |
 | `tests/firefox-derived/overlay-helpers.test.ts` | page-coordinate best rect 단위 테스트 추가 | 자동 테스트 |
 | `tests/firefox-derived/window-dimensions.test.ts` | viewport/page rect projection 단위 테스트 추가 | 자동 테스트 |
 | `NOTICE` | Stage 6 Firefox-derived UI asset 출처 추가 | 라이선스 고지 |
 | `THIRD_PARTY.md` | Stage 6 local adaptation target과 upstream SVG 출처 추가 | third-party attribution |
 | `src/firefox-derived/README.md` | Firefox-derived UI asset boundary 설명 추가 | 기여자 안내 |
-| `README.md` | 개발 상태와 Chrome unpacked smoke 기대 결과를 Phase 3 Stage 9 기준으로 갱신 | 기여자 로컬 실행 문서 |
+| `README.md` | 개발 상태와 Chrome unpacked smoke 기대 결과를 Phase 3 Stage 10 기준으로 갱신 | 기여자 로컬 실행 문서 |
 | `mydocs/plans/task_m010_5.md` | 수행계획서 작성 | Hyper-Waterfall 작업 추적 |
 | `mydocs/plans/task_m010_5_impl.md` | 구현계획서 작성 | Hyper-Waterfall 작업 추적 |
 | `mydocs/working/task_m010_5_stage1.md` | Stage 1 완료 보고서 작성 | 단계 검증 기록 |
@@ -43,6 +43,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | `mydocs/working/task_m010_5_stage7.md` | Stage 7 완료 보고서 작성 | 단계 검증 기록 |
 | `mydocs/working/task_m010_5_stage8.md` | Stage 8 완료 보고서 작성 | 단계 검증 기록 |
 | `mydocs/working/task_m010_5_stage9.md` | Stage 9 완료 보고서 작성 | 단계 검증 기록 |
+| `mydocs/working/task_m010_5_stage10.md` | Stage 10 완료 보고서 작성 | 단계 검증 기록 |
 | `mydocs/orders/20260527.md` | #5 오늘할일 완료 처리 | 작업 상태 기록 |
 
 ## 문서 위치 검증
@@ -57,12 +58,12 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 
 | 지표 | 변경 전 | 변경 후 |
 |---|---|---|
-| content overlay entry | `src/content/inject.ts` inline stub 207줄 | `inject.ts` 3줄 bootstrap + overlay/controller/assets로 분리, `dist/content/inject.js` 28.07 kB |
-| overlay 상태 모델 | 없음 | `state-machine.ts`에 page-coordinate drag 상태 포함, 11개 상태 전이 테스트 |
+| content overlay entry | `src/content/inject.ts` inline stub 207줄 | `inject.ts` 3줄 bootstrap + overlay/controller/assets로 분리, `dist/content/inject.js` 28.59 kB |
+| overlay 상태 모델 | 없음 | `state-machine.ts`에 page-coordinate drag/reset 상태 포함, 13개 상태 전이 테스트 |
 | overlay placement helper | 없음 | `positioning.ts`에 highlight/action/eye/mask helper, 10개 placement/eye offset 테스트 |
-| 전체 Vitest | 3개 test file, 25개 test | 5개 test file, 48개 test |
-| 단계 보고서 | 없음 | Stage 1~3, Stage 5~9 보고서 8개 |
-| README smoke 기대 결과 | overlay stub 기준 | 원본 face/icon, compact mode toolbar, 중앙 prompt, page-coordinate hover/click/drag selection, viewport+100 large element 감지, scroll-follow highlight, Copy/Save/Cancel buttons 기준 |
+| 전체 Vitest | 3개 test file, 25개 test | 5개 test file, 50개 test |
+| 단계 보고서 | 없음 | Stage 1~3, Stage 5~10 보고서 9개 |
+| README smoke 기대 결과 | overlay stub 기준 | 원본 face/icon, compact mode toolbar, 중앙 prompt, page-coordinate hover/click/drag selection, selected outside click reset, viewport+100 large element 감지, scroll-follow highlight, Copy/Save/Cancel buttons 기준 |
 
 ## 검증 결과
 
@@ -70,7 +71,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 |---|---|
 | `npm run build` 통과 | OK — Vite v6.4.2 production build 성공, `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 생성 |
 | `npm run typecheck` 통과 | OK — `tsc --noEmit` 성공 |
-| `npm run test` 통과 | OK — Vitest v3.2.4, 5개 test file, 48개 test 통과 |
+| `npm run test` 통과 | OK — Vitest v3.2.4, 5개 test file, 50개 test 통과 |
 | Shadow DOM overlay 구조 구현 | OK — `#__crop_root__`, `data-crop-root`, `attachShadow`, raw CSS inline import 확인 |
 | content script 반복 주입 안전성 | OK — `content/inject` bundle IIFE wrapper와 두 번째 content script 주입 후 root count 1 확인 |
 | Firefox식 mode toolbar 표시 | OK — CDP content-script smoke에서 `보이는 영역 선택`, `전체 페이지 선택` 버튼과 full page disabled placeholder 확인 |
@@ -86,6 +87,8 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | 화면 밖 요소 page-coordinate rect 유지 | OK — scroll-follow CDP smoke에서 `translate(120px, 300px)`, `360x860` hover/selected rect 확인 |
 | large element 감지 threshold 보정 | OK — 900px viewport에서 860px 높이 target이 Firefox식 `clientHeight + 100` 기준으로 잘리지 않고 감지됨 확인 |
 | click selection 고정 | OK — CDP content-script smoke에서 `data-crop-state="selected"`와 `crop-highlight--selected` 확인 |
+| selected outside click 초기화 | OK — CDP content-script smoke에서 selected box 밖 클릭 후 `data-crop-state="idle"`, prompt `flex`, panel `flex`, highlight/actions hidden 확인 |
+| selected outside click 재선택 방지 | OK — 같은 outside click sequence 이후 selected rect가 즉시 재생성되지 않고 idle 상태 유지 확인 |
 | scroll-follow highlight | OK — selected 상태에서 `window.scrollTo(0, 180)` 후 860px 선택 rect의 highlight transform이 `translate(120px, 120px)`로 재투영되고 action buttons/mask 유지 확인 |
 | drag selection 고정 | OK — CDP content-script smoke에서 pointerdown/move/up 후 `data-crop-state="selected"`, drag rect width/height, selection mask, action buttons 확인 |
 | Copy/Save/Cancel buttons 표시 | OK — CDP content-script smoke에서 `data-crop-action` 값 `copy,save,cancel`과 button text `Copy/Save/Cancel` 확인 |
@@ -106,6 +109,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 - Stage 7: [`task_m010_5_stage7.md`](../working/task_m010_5_stage7.md) — icon fill rule, prompt 중앙 배치, prompt/panel typography와 compact toolbar 보정, build/typecheck/test/grep/diff/CDP smoke 통과
 - Stage 8: [`task_m010_5_stage8.md`](../working/task_m010_5_stage8.md) — page-coordinate hover/click/drag selection, scroll-follow highlight, overlay-hidden hit-test 보정, build/typecheck/test/grep/diff/CDP smoke 통과
 - Stage 9: [`task_m010_5_stage9.md`](../working/task_m010_5_stage9.md) — initial panel flash 제거, 중복 실행 flash cleanup/debounce, viewport+100 large element 감지 보정, build/typecheck/test/grep/diff/CDP smoke 통과
+- Stage 10: [`task_m010_5_stage10.md`](../working/task_m010_5_stage10.md) — selected outside click reset과 click sequence suppress 구현, build/typecheck/test/grep/diff/CDP smoke 통과
 
 ## 잔여 위험과 후속 작업
 

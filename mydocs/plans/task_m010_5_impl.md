@@ -17,6 +17,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | 7 | Firefox UI parity 세부 보정 | `src/firefox-derived/screenshots-ui-assets.ts`, `src/content/overlay/crop-overlay.css` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
 | 8 | page-coordinate selection과 scroll-follow highlight | `src/firefox-derived/window-dimensions.ts`, `src/firefox-derived/overlay-helpers.ts`, `src/content/overlay/crop-overlay.ts`, `src/content/overlay/state-machine.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP scroll smoke |
 | 9 | panel flash 반복과 large element rect 보정 | `src/content/overlay/crop-template.ts`, `src/content/overlay/crop-overlay.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
+| 10 | selected outside click 초기화 | `src/content/overlay/crop-overlay.ts`, `src/content/overlay/state-machine.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
 
 ## 문서 위치 확인
 
@@ -489,6 +490,54 @@ git diff --check
 Task #5 Stage 9: overlay flash와 large rect 보정
 ```
 
+## Stage 10 — selected outside click 초기화
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m010_5_stage10.md`
+
+수정:
+
+- `src/content/overlay/state-machine.ts`
+- `src/content/overlay/crop-overlay.ts`
+- `tests/content/overlay/state-machine.test.ts`
+- `README.md`
+- `mydocs/report/task_m010_5_report.md`
+- `mydocs/orders/20260527.md`
+
+### 변경 내용
+
+- selected 상태에서 action button이 아닌 문서 영역을 클릭하면 해당 pointer/click sequence를 crop 선택으로 재사용하지 않는다.
+- selected box 밖 클릭은 현재 selection을 해제하고 idle overlay/prompt/mode toolbar 상태로 복귀한다.
+- selected box 안 클릭은 selection을 유지하고 page click/crop selection을 발생시키지 않는다.
+- action button click, Cancel/Escape teardown, hover click selection, drag selection은 유지한다.
+- reset 동작은 state-machine event로 표현해 단위 테스트로 고정한다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm run test
+rg "resetSelection|suppressNextDocumentClick|isPointInsidePageRect|selected outside" src/content tests README.md mydocs
+git diff --check
+```
+
+자동 smoke:
+
+- `dist/content/inject.js`를 CDP로 직접 주입한다.
+- hover click selection 후 selected box 밖을 클릭하면 `data-crop-state="idle"`로 돌아오고 prompt와 mode toolbar가 다시 보이는지 확인한다.
+- 같은 outside click으로 새 selected rect가 즉시 생성되지 않는지 확인한다.
+- 기존 duplicate guard, panel flash cleanup, hover click selection, action Cancel, Escape, drag selection 회귀가 없는지 확인한다.
+
+### 커밋
+
+```text
+Task #5 Stage 10: selected outside click 초기화
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -513,6 +562,7 @@ Task #5 Stage 9: overlay flash와 large rect 보정
 - Stage 7은 작업지시자의 frame/hover 제외 UI parity 보정 요청 승인 이후 진행한다.
 - Stage 8은 작업지시자의 후속 이슈 분리와 현재 작업 반영 요청 승인 이후 진행한다.
 - Stage 9는 작업지시자의 smoke bug report 이후 현재 작업 내 bugfix로 진행한다.
+- Stage 10은 작업지시자의 selected outside click bug report 이후 현재 작업 내 bugfix로 진행한다.
 - capture/crop backend는 Task #5 final report와 PR merge 이후 #6에서 진행한다.
 
 ## 위험과 대응
@@ -528,6 +578,7 @@ Task #5 Stage 9: overlay flash와 large rect 보정
 - **drag와 click 이벤트 충돌**: pointerdown/up drag 흐름과 click selection 흐름이 중복 실행되지 않도록 selected 상태에서는 click 후속 처리를 no-op으로 둔다.
 - **page 좌표와 fixed overlay 좌표 혼동**: state에는 page rect를 저장하고 render 직전에 viewport rect로 투영하는 helper를 테스트로 고정한다.
 - **flash animation 반복**: initial mount에서는 animation class를 붙이지 않고, duplicate flash에는 animation cleanup과 debounce를 적용한다.
+- **selected 상태 click sequence 재사용 위험**: selected 상태 문서 pointerdown에서 click sequence를 suppress해 같은 클릭이 새 crop 선택으로 이어지지 않게 한다.
 
 ## 승인 요청 사항
 
