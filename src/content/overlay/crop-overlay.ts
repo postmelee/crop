@@ -6,17 +6,33 @@ import {
   ROOT_ATTRIBUTE,
   ROOT_ID
 } from "./crop-template";
-import { applyHighlightPresentation } from "./positioning";
+import {
+  applyActionButtonsPresentation,
+  applyHighlightPresentation,
+  type ElementSize
+} from "./positioning";
 import {
   getBestRectForElement,
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
 import { readWindowDimensions, type ViewportRect } from "../../firefox-derived/window-dimensions";
+import {
+  createInitialOverlayState,
+  transitionOverlayState,
+  type CropOverlayState
+} from "./state-machine";
 
 interface PointerPosition {
   readonly x: number;
   readonly y: number;
 }
+
+type CropAction = "copy" | "save" | "cancel";
+
+const FALLBACK_ACTIONS_SIZE: ElementSize = {
+  width: 242,
+  height: 50
+};
 
 function flashExistingOverlay(existingRoot: HTMLElement): boolean {
   if (existingRoot.getAttribute(ROOT_ATTRIBUTE) !== "true") {
@@ -53,12 +69,20 @@ export function mountCropOverlay(): void {
   let template: CropOverlayTemplate | null = null;
   let pendingPointer: PointerPosition | null = null;
   let animationFrameId: number | null = null;
+  let overlayState: CropOverlayState = createInitialOverlayState();
 
   const removeOverlay = (): void => {
     window.removeEventListener("keydown", handleKeyDown, true);
     window.removeEventListener("pointermove", handlePointerMove, true);
+    window.removeEventListener("click", handleClick, true);
     cancelPendingHoverUpdate();
     host.remove();
+  };
+
+  const requestClose = (): void => {
+    overlayState = transitionOverlayState(overlayState, { type: "cancel" });
+    renderOverlayState();
+    removeOverlay();
   };
 
   const handleKeyDown = (event: KeyboardEvent): void => {
@@ -68,10 +92,14 @@ export function mountCropOverlay(): void {
 
     event.preventDefault();
     event.stopPropagation();
-    removeOverlay();
+    requestClose();
   };
 
   const handlePointerMove = (event: PointerEvent): void => {
+    if (overlayState.status === "selected") {
+      return;
+    }
+
     if (isCropOverlayEvent(event, host)) {
       clearHover();
       return;
@@ -102,14 +130,70 @@ export function mountCropOverlay(): void {
 
     const pointer = pendingPointer;
     pendingPointer = null;
-    applyHighlightPresentation(template.highlight, resolveHoverRect(pointer, host));
+    overlayState = transitionOverlayState(overlayState, {
+      type: "hover",
+      rect: resolveHoverRect(pointer, host)
+    });
+    renderOverlayState();
   };
 
   const clearHover = (): void => {
     cancelPendingHoverUpdate();
+    overlayState = transitionOverlayState(overlayState, {
+      type: "hover",
+      rect: null
+    });
+    renderOverlayState();
+  };
+
+  const handleClick = (event: MouseEvent): void => {
+    const action = getCropActionFromEvent(event);
+
+    if (action) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (action === "cancel") {
+        requestClose();
+      }
+
+      return;
+    }
+
+    if (isCropOverlayEvent(event, host)) {
+      return;
+    }
+
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (overlayState.status === "selected") {
+      return;
+    }
+
+    overlayState = transitionOverlayState(overlayState, {
+      type: "select",
+      rect: overlayState.hoverRect ?? resolveHoverRect({ x: event.clientX, y: event.clientY }, host)
+    });
+    cancelPendingHoverUpdate();
+    renderOverlayState();
+  };
+
+  const renderOverlayState = (): void => {
+    host.setAttribute("data-crop-state", overlayState.status);
 
     if (template) {
-      applyHighlightPresentation(template.highlight, null);
+      const activeRect = overlayState.selectedRect ?? overlayState.hoverRect;
+      applyHighlightPresentation(template.highlight, activeRect);
+      template.highlight.classList.toggle(
+        "crop-highlight--selected",
+        overlayState.status === "selected"
+      );
+      updateActionButtons(template, overlayState.selectedRect);
     }
   };
 
@@ -124,10 +208,12 @@ export function mountCropOverlay(): void {
     animationFrameId = null;
   };
 
-  template = createCropOverlayTemplate(shadowRoot, removeOverlay);
+  template = createCropOverlayTemplate(shadowRoot, requestClose);
   document.documentElement.append(host);
+  renderOverlayState();
   window.addEventListener("keydown", handleKeyDown, true);
   window.addEventListener("pointermove", handlePointerMove, true);
+  window.addEventListener("click", handleClick, true);
 }
 
 function resolveHoverRect(
@@ -151,4 +237,50 @@ function isCropOverlayEvent(event: Event, host: HTMLElement): boolean {
 
 function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
   return element === host || element.closest(`[${ROOT_ATTRIBUTE}="true"]`) === host;
+}
+
+function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect | null): void {
+  if (!rect) {
+    applyActionButtonsPresentation(
+      template.actions,
+      null,
+      { clientWidth: 0, clientHeight: 0 },
+      FALLBACK_ACTIONS_SIZE
+    );
+    return;
+  }
+
+  template.actions.hidden = false;
+  const windowDimensions = readWindowDimensions();
+  const actionsRect = template.actions.getBoundingClientRect();
+  const actionsSize = {
+    width: actionsRect.width || FALLBACK_ACTIONS_SIZE.width,
+    height: actionsRect.height || FALLBACK_ACTIONS_SIZE.height
+  };
+
+  applyActionButtonsPresentation(
+    template.actions,
+    rect,
+    {
+      clientWidth: windowDimensions.clientWidth,
+      clientHeight: windowDimensions.clientHeight
+    },
+    actionsSize
+  );
+}
+
+function getCropActionFromEvent(event: Event): CropAction | null {
+  for (const eventTarget of event.composedPath()) {
+    if (!(eventTarget instanceof HTMLElement)) {
+      continue;
+    }
+
+    const action = eventTarget.dataset.cropAction;
+
+    if (action === "copy" || action === "save" || action === "cancel") {
+      return action;
+    }
+  }
+
+  return null;
 }

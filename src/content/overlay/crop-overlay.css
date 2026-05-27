@@ -51,6 +51,73 @@
   display: none;
 }
 
+.crop-highlight--selected {
+  border-style: solid;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 0 0 2px rgba(13, 143, 138, 0.9),
+    0 14px 34px rgba(15, 23, 42, 0.32);
+}
+
+.crop-actions {
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 16px);
+  min-height: 40px;
+  padding: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.26);
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.crop-actions[hidden] {
+  display: none;
+}
+
+.crop-action {
+  min-width: 68px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.08);
+  color: #10201f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 0;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.crop-action:hover {
+  background: rgba(15, 23, 42, 0.14);
+}
+
+.crop-action:focus-visible {
+  outline: 2px solid #0d8f8a;
+  outline-offset: 2px;
+}
+
+.crop-action--copy,
+.crop-action--save {
+  background: #0d8f8a;
+  color: #ffffff;
+}
+
+.crop-action--copy:hover,
+.crop-action--save:hover {
+  background: #087a76;
+}
+
 .crop-panel {
   position: fixed;
   top: 16px;
