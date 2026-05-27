@@ -40,6 +40,10 @@ const FALLBACK_ACTIONS_SIZE: ElementSize = {
   width: 242,
   height: 50
 };
+const PANEL_FLASH_DEBOUNCE_MS = 800;
+const FIREFOX_DETECT_VIEWPORT_MARGIN = 100;
+const FIREFOX_MIN_MAX_DETECT_HEIGHT = 700;
+const FIREFOX_MIN_MAX_DETECT_WIDTH = 1000;
 
 function flashExistingOverlay(existingRoot: HTMLElement): boolean {
   if (existingRoot.getAttribute(ROOT_ATTRIBUTE) !== "true") {
@@ -54,11 +58,32 @@ function flashExistingOverlay(existingRoot: HTMLElement): boolean {
     return false;
   }
 
+  restartPanelFlash(panel);
+
+  return true;
+}
+
+function restartPanelFlash(panel: HTMLElement): void {
+  const now = panel.ownerDocument.defaultView?.performance.now() ?? performance.now();
+  const lastFlashAt = Number(panel.dataset.cropPanelLastFlashAt ?? Number.NEGATIVE_INFINITY);
+
+  if (panel.dataset.cropPanelFlashing === "true" || now - lastFlashAt < PANEL_FLASH_DEBOUNCE_MS) {
+    return;
+  }
+
+  panel.dataset.cropPanelLastFlashAt = String(now);
+  panel.dataset.cropPanelFlashing = "true";
+
+  const finish = (): void => {
+    panel.classList.remove(FLASH_CLASS);
+    delete panel.dataset.cropPanelFlashing;
+  };
+
+  panel.addEventListener("animationend", finish, { once: true });
+  panel.addEventListener("animationcancel", finish, { once: true });
   panel.classList.remove(FLASH_CLASS);
   void panel.offsetWidth;
   panel.classList.add(FLASH_CLASS);
-
-  return true;
 }
 
 export function mountCropOverlay(): void {
@@ -325,10 +350,25 @@ function resolveHoverRect(
     return null;
   }
 
+  const windowDimensions = readWindowDimensions();
   return getBestRectForElement(hit.element, {
-    windowDimensions: readWindowDimensions(),
-    coordinateSpace: "page"
+    windowDimensions,
+    coordinateSpace: "page",
+    thresholds: getHoverDetectionThresholds(windowDimensions)
   });
+}
+
+function getHoverDetectionThresholds(windowDimensions = readWindowDimensions()) {
+  return {
+    maxDetectHeight: Math.max(
+      windowDimensions.clientHeight + FIREFOX_DETECT_VIEWPORT_MARGIN,
+      FIREFOX_MIN_MAX_DETECT_HEIGHT
+    ),
+    maxDetectWidth: Math.max(
+      windowDimensions.clientWidth + FIREFOX_DETECT_VIEWPORT_MARGIN,
+      FIREFOX_MIN_MAX_DETECT_WIDTH
+    )
+  };
 }
 
 function getPageElementFromPoint(pointer: PointerPosition, host: HTMLElement) {

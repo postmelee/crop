@@ -16,6 +16,7 @@ GitHub Issue: [#5](https://github.com/postmelee/crop/issues/5)
 | 6 | Firefox 원본 UI 자산과 drag selection 포팅 | `src/firefox-derived/screenshots-ui-assets.ts`, `src/content/overlay/state-machine.ts`, `src/content/overlay/crop-overlay.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP drag smoke |
 | 7 | Firefox UI parity 세부 보정 | `src/firefox-derived/screenshots-ui-assets.ts`, `src/content/overlay/crop-overlay.css` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
 | 8 | page-coordinate selection과 scroll-follow highlight | `src/firefox-derived/window-dimensions.ts`, `src/firefox-derived/overlay-helpers.ts`, `src/content/overlay/crop-overlay.ts`, `src/content/overlay/state-machine.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP scroll smoke |
+| 9 | panel flash 반복과 large element rect 보정 | `src/content/overlay/crop-template.ts`, `src/content/overlay/crop-overlay.ts` | `npm run build`, `npm run typecheck`, `npm run test`, CDP smoke |
 
 ## 문서 위치 확인
 
@@ -439,6 +440,55 @@ git diff --check
 Task #5 Stage 8: page-coordinate selection 적용
 ```
 
+## Stage 9 — panel flash 반복과 large element rect 보정
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m010_5_stage9.md`
+
+수정:
+
+- `src/content/overlay/crop-template.ts`
+- `src/content/overlay/crop-overlay.ts`
+- `README.md`
+- `mydocs/report/task_m010_5_report.md`
+- `mydocs/orders/20260527.md`
+
+### 변경 내용
+
+- 우측 상단 mode toolbar의 flash animation을 initial mount에서 실행하지 않는다.
+- 이미 overlay가 열린 상태에서 다시 실행될 때만 flash animation을 시작하고, animation end/cancel 후 class를 제거한다.
+- 반복 주입이나 단축키 repeat으로 flash가 계속 재시작되지 않도록 짧은 debounce를 둔다.
+- Firefox 원본 `updateWindowDimensions()`의 `clientHeight + 100`, `clientWidth + 100` detect max 조정 방식을 참고해 hover rect 탐지 threshold를 viewport 크기 기준으로 넘긴다.
+- Stage 8의 page-coordinate selection과 scroll-follow 동작은 유지한다.
+- drag edge auto-scroll, resize handles, iframe 내부 탐색, full page capture는 기존 후속 이슈 #12~#15 범위로 유지한다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm run test
+rg "PANEL_FLASH_DEBOUNCE_MS|getHoverDetectionThresholds|animationend|animationcancel|crop-panel--flash" src/content README.md mydocs
+git diff --check
+```
+
+자동 smoke:
+
+- `dist/content/inject.js`를 CDP로 직접 주입한다.
+- initial mount 후 mode toolbar에 `crop-panel--flash` class가 남지 않는지 확인한다.
+- 중복 주입 flash 후 animation class가 제거되는지 확인한다.
+- partially visible large element가 viewport+100 기준의 page-coordinate rect로 감지되는지 확인한다.
+- 기존 hover click selection, drag selection, scroll-follow, Cancel/Escape teardown 회귀가 없는지 확인한다.
+
+### 커밋
+
+```text
+Task #5 Stage 9: overlay flash와 large rect 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -462,6 +512,7 @@ Task #5 Stage 8: page-coordinate selection 적용
 - Stage 6은 작업지시자의 원본에 최대한 가까운 포팅 요청 승인 이후 진행한다.
 - Stage 7은 작업지시자의 frame/hover 제외 UI parity 보정 요청 승인 이후 진행한다.
 - Stage 8은 작업지시자의 후속 이슈 분리와 현재 작업 반영 요청 승인 이후 진행한다.
+- Stage 9는 작업지시자의 smoke bug report 이후 현재 작업 내 bugfix로 진행한다.
 - capture/crop backend는 Task #5 final report와 PR merge 이후 #6에서 진행한다.
 
 ## 위험과 대응
@@ -476,6 +527,7 @@ Task #5 Stage 8: page-coordinate selection 적용
 - **MPL 자산 혼입 위험**: Firefox 원본 SVG path와 menu icon은 `src/firefox-derived/`로 분리하고 `NOTICE`, `THIRD_PARTY.md`에 출처를 기록한다.
 - **drag와 click 이벤트 충돌**: pointerdown/up drag 흐름과 click selection 흐름이 중복 실행되지 않도록 selected 상태에서는 click 후속 처리를 no-op으로 둔다.
 - **page 좌표와 fixed overlay 좌표 혼동**: state에는 page rect를 저장하고 render 직전에 viewport rect로 투영하는 helper를 테스트로 고정한다.
+- **flash animation 반복**: initial mount에서는 animation class를 붙이지 않고, duplicate flash에는 animation cleanup과 debounce를 적용한다.
 
 ## 승인 요청 사항
 

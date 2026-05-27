@@ -93,7 +93,6 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   actions.append(copyButton, saveButton, cancelButton);
   shell.append(dim, frame, selectionMask.container, highlight, prompt, actions, panel);
   shadowRoot.append(style, shell);
-  panel.classList.add(FLASH_CLASS);
 
   return { panel, highlight, actions, prompt, selectionMask };
 }
