@@ -1,19 +1,41 @@
 # Firefox-derived code
 
-This directory is reserved for code adapted from Mozilla Firefox Screenshots.
+This directory is the boundary for code adapted from Mozilla Firefox
+Screenshots. Firefox-derived files in this directory are tracked separately so
+the MPL-covered boundary stays visible to contributors and build tooling.
 
-No Mozilla Firefox source file has been copied into this repository as of
-Phase 0. Future imports must update this file, `NOTICE`, and `THIRD_PARTY.md`
-with exact upstream source paths, upstream revision, local paths, and a
-modification summary.
+## Task #4 Upstream Source
 
-## Planned Upstream Sources
+- Repository: https://github.com/mozilla-firefox/firefox
+- Commit: `e28b34ab33dbf49364999070168cbb7e11e8e5bd`
+- Source path:
+  `browser/components/screenshots/overlayHelpers.mjs`
+- Source URL:
+  https://github.com/mozilla-firefox/firefox/blob/e28b34ab33dbf49364999070168cbb7e11e8e5bd/browser/components/screenshots/overlayHelpers.mjs
+- Reference view:
+  https://searchfox.org/firefox-main/source/browser/components/screenshots/overlayHelpers.mjs
 
-- `browser/components/screenshots/overlayHelpers.mjs`
-- `browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs`
+## Local Adaptation Targets
+
+| Local path | Upstream scope | Task #4 responsibility |
+|---|---|---|
+| `overlay-helpers.ts` | Element hit-test, `getBestRectForElement`, small/large element and heading/article heuristics | Chrome MV3-safe helper functions for Phase 3 overlay UI |
+| `region.ts` | `Region` geometry class | Visible viewport-only region math |
+| `window-dimensions.ts` | `WindowDimensions` class | Explicit viewport dimensions for Chrome content scripts |
+
+## Excluded Upstream Sources
+
+The following Firefox Screenshots files are not imported in Task #4:
+
+- `browser/components/screenshots/ScreenshotsHelperChild.sys.mjs`
 - `browser/components/screenshots/overlay/overlay.css`
 - `browser/components/screenshots/screenshots-buttons.js`
 - `browser/components/screenshots/screenshots-buttons.css`
+
+`ScreenshotsHelperChild.sys.mjs` may be used only as context for understanding
+Firefox's privileged iframe lookup path. This project does not port Firefox
+actors, XPCOM, `ChromeUtils`, `Services`, `mozInnerScreenX/Y`, or privileged
+closed shadow root access.
 
 ## License
 
