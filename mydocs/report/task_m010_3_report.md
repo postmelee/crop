@@ -58,8 +58,8 @@ GitHub Issue: [#3](https://github.com/postmelee/crop/issues/3)
 | content overlay stub DOM 동작 | OK — headless Chrome DOM smoke에서 중복 실행 후 `#__crop_root__` 1개, Shadow DOM 있음, close 후 제거 확인 |
 | 사용자 unpacked smoke 후속 수정 | OK — 첫 실행 후 재클릭 강조 실패, close 후 재실행 실패 증상을 content script IIFE 격리로 수정했다. headless Chrome DOM smoke에서 반복 실행, close, 재실행을 확인했다. |
 | 사용자 shortcut smoke 후속 수정 | OK — 등록된 shortcut이 동작하지 않는 증상을 reserved `_execute_action` 의존 대신 `open-crop` custom command와 `commands.onCommand` 직접 처리로 수정했고, 기본 suggested shortcut을 `Ctrl+Shift+P` / macOS `Command+Shift+P`로 조정했다. |
-| Chrome unpacked extension action icon smoke | 제한 — 이 환경의 Chrome `--load-extension` 임시 프로필 smoke에서 crop extension이 Preferences에 등록되지 않아 action icon 클릭 자동 검증은 수행하지 못했다. README에 수동 절차를 남겼다. |
-| `open-crop` shortcut smoke | 제한 — 위와 같은 `--load-extension` 제약으로 실제 extension command smoke는 수행하지 못했다. manifest와 background handler, content script DOM smoke로 부분 확인했다. |
+| Chrome unpacked extension action icon smoke | OK — 작업지시자가 로컬 Chrome UI에서 `dist/` load unpacked 후 action icon 첫 실행, 재클릭 강조, close 후 재실행을 확인했다. |
+| `open-crop` shortcut smoke | OK — 작업지시자가 로컬 Chrome UI에서 `Command+Shift+P` 단축키 정상 동작을 확인했다. |
 | 중복 실행이 overlay를 중복으로 쌓지 않음 | OK — content script DOM smoke에서 script 2회 실행 후 `rootCount=1` 확인 |
 | `git diff --check` 통과 | OK — whitespace 경고 없음 |
 | PR 준비 전 `git status --short` 빈 출력 | 최종 커밋 후 확인 예정 |
@@ -74,7 +74,7 @@ GitHub Issue: [#3](https://github.com/postmelee/crop/issues/3)
 
 ### 잔여 위험
 
-- 현재 환경에서는 Chrome `--load-extension` 기반 자동 smoke가 crop extension을 실제 unpacked extension으로 등록하지 못했다. PR 리뷰 또는 merge 전 로컬 Chrome UI에서 README 절차로 action icon과 shortcut을 한 번 더 확인해야 한다.
+- Codex 환경에서는 Chrome `--load-extension` 기반 자동 smoke가 crop extension을 실제 unpacked extension으로 등록하지 못했다. 대신 작업지시자가 로컬 Chrome UI에서 README 절차로 action icon과 `Command+Shift+P` shortcut smoke를 확인했다.
 - `Ctrl+Shift+P` 또는 `Command+Shift+P`는 환경이나 Chrome shortcut 충돌에 따라 미등록될 수 있다. Phase 1은 `chrome.commands.getAll()` warning까지만 처리한다. [Chrome commands 공식 문서](https://developer.chrome.com/docs/extensions/reference/api/commands)와 [activeTab 공식 문서](https://developer.chrome.com/docs/extensions/develop/concepts/activeTab)에 따라 shortcut은 `open-crop` custom command로 받고, keyboard shortcut invocation이 `activeTab`을 부여하는 흐름으로 구성했다.
 - overlay는 shell 검증용 stub이다. 실제 hover/select/capture/Copy/Save UX는 후속 Phase 이슈에서 구현한다.
 
