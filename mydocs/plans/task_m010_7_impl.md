@@ -214,6 +214,54 @@ git diff --check
 Task #7 Stage 4: 실패 fallback UX와 smoke 검증
 ```
 
+## Stage 4.2 — Save 다운로드 권한 보정
+
+### 배경
+
+Stage 4.1 manual smoke에서 Copy는 성공했으나 Save는 계속 다운로드가 시작되지 않았다. `<a download>` 방식은 capture/crop 비동기 처리 이후 합성 클릭으로 실행되어 Chrome 사용자 활성화 정책에 막힐 수 있으므로, 작업지시자 승인에 따라 `downloads` 권한과 background download API를 도입한다.
+
+### 산출물
+
+수정:
+
+- `manifest.json`
+- `src/shared/messages.ts`
+- `tests/shared/messages.test.ts`
+- `src/background/service-worker.ts`
+- `src/content/overlay/crop-overlay.ts`
+- `mydocs/working/task_m010_7_stage4_2.md`
+
+### 변경 내용
+
+- `manifest.json`에 `downloads` 권한을 추가한다.
+- content script는 crop PNG data URL과 sanitizer를 거친 filename을 background로 전달한다.
+- background service worker는 `chrome.downloads.download({ url, filename, saveAs: false, conflictAction: "uniquify" })`를 실행한다.
+- Runtime message와 response validator는 `src/shared/messages.ts`에 정의해 content/background/test가 같은 계약을 사용한다.
+- `debugger`, `<all_urls>` 권한은 추가하지 않는다.
+- visible viewport capture/crop 제한은 유지하고, viewport 밖 이미지 포함은 후속 full page/scroll stitching 범위로 둔다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm run test
+rg "downloads|downloadPng|CropDownload|chrome.downloads|<all_urls>|debugger" manifest.json src tests mydocs
+git diff --check
+```
+
+시나리오 검증:
+
+- Chrome unpacked extension에서 extension reload 후 Save 클릭
+- PNG 파일이 다운로드되는지 확인
+- Copy 성공과 overlay flicker 보정이 유지되는지 확인
+
+### 커밋
+
+```text
+Task #7 [Stage 4.2]: downloads API로 Save 보정
+```
+
 ## Stage 5 — README, 최종 보고서, 통합 검증
 
 ### 산출물
@@ -279,8 +327,8 @@ Task #7 Stage 5 + 최종 보고서: Copy/Save 완료
 - **Clipboard 사용자 활성화 만료**: capture/crop 이후 clipboard write가 실패하면 overlay를 유지하고 Save fallback을 안내한다. 실패는 Stage 4에서 수동 또는 mock path로 검증한다.
 - **Clipboard API surface 차이**: `ClipboardItem` 또는 image clipboard write가 content script context에서 제한될 수 있다. helper에서 capability와 write 실패를 분리하고, 실제 Chrome manual smoke로 최종 판단한다.
 - **toast와 overlay capture 오염**: toast는 Copy 성공 이후에만 생성하고, capture 전 overlay 숨김은 #6의 `captureVisibleTabWithoutOverlay()` 흐름을 유지한다.
-- **download 권한 범위 확대 위험**: `<a download>` 기반으로 구현하고 `manifest.json`에 `downloads`, `debugger`, `<all_urls>`가 추가되지 않았는지 Stage 3과 Stage 5에서 확인한다.
-- **object URL 누수**: Save helper는 object URL 생성과 revoke를 한 경계에서 관리한다.
+- **download 권한 범위 확대 위험**: Stage 4.2에서 작업지시자 승인에 따라 `downloads` 권한을 추가한다. `debugger`, `<all_urls>`는 계속 추가하지 않는다.
+- **data URL download 크기 위험**: Save는 visible viewport crop PNG data URL을 background `chrome.downloads.download()`로 전달한다. 대용량 full page capture는 후속 이슈에서 별도 backend를 검토한다.
 - **파일명 sanitizer 누락**: 예약 문자, 제어 문자, 빈 title, 긴 title, `.png` 중복을 Stage 1 unit test로 고정한다.
 - **자동 smoke 한계**: Chrome extension clipboard/download는 자동화가 불안정할 수 있으므로 manual smoke 절차와 결과를 Stage 보고서에 남긴다.
 
@@ -289,5 +337,6 @@ Task #7 Stage 5 + 최종 보고서: Copy/Save 완료
 - 5단계 분할과 각 Stage 산출물/검증 명령 승인
 - Stage 2에서 Copy 성공 시 overlay를 제거하고 별도 toast root를 표시하는 구조 승인
 - Stage 3에서 `chrome.downloads` 권한 없이 `<a download>` 기반 Save를 구현하는 구조 승인
+- Stage 4.2에서 manual smoke 실패에 따라 `downloads` 권한과 background `chrome.downloads.download()`를 도입하는 구조 승인 완료
 - Stage 4에서 Clipboard API 실패를 fallback UX와 manual/mock smoke 조합으로 검증하는 것 승인
-- `downloads`, `debugger`, `<all_urls>` 권한을 추가하지 않는 것 승인
+- `debugger`, `<all_urls>` 권한을 추가하지 않는 것 승인

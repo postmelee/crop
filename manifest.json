@@ -3,7 +3,7 @@
   "name": "crop",
   "version": "0.1.0",
   "description": "Capture visible elements on the current page.",
-  "permissions": ["activeTab", "scripting", "clipboardWrite"],
+  "permissions": ["activeTab", "scripting", "clipboardWrite", "downloads"],
   "background": {
     "service_worker": "background/service-worker.js",
     "type": "module"

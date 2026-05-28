@@ -43,10 +43,11 @@ interface PointerPosition {
   readonly y: number;
 }
 
-const CROP_CAPTURE_VISIBLE_TAB_MESSAGE = "crop.captureVisibleTab";
-
 type CropAction = "copy" | "save" | "cancel";
 type CaptureAction = Exclude<CropAction, "cancel">;
+
+const CROP_CAPTURE_VISIBLE_TAB_MESSAGE = "crop.captureVisibleTab";
+const CROP_DOWNLOAD_PNG_MESSAGE = "crop.downloadPng";
 
 interface CropCaptureVisibleTabRequest {
   readonly type: typeof CROP_CAPTURE_VISIBLE_TAB_MESSAGE;
@@ -62,7 +63,23 @@ type CropCaptureVisibleTabResponse =
       readonly error: string;
     };
 
-type CropRuntimeMessage = CropCaptureVisibleTabRequest;
+interface CropDownloadPngRequest {
+  readonly type: typeof CROP_DOWNLOAD_PNG_MESSAGE;
+  readonly dataUrl: string;
+  readonly filename: string;
+}
+
+type CropDownloadPngResponse =
+  | {
+      readonly ok: true;
+      readonly downloadId: number;
+    }
+  | {
+      readonly ok: false;
+      readonly error: string;
+    };
+
+type CropRuntimeMessage = CropCaptureVisibleTabRequest | CropDownloadPngRequest;
 
 interface CropContentChromeApi {
   readonly runtime?: {
@@ -421,7 +438,7 @@ export function mountCropOverlay(): void {
         return;
       }
 
-      const filename = downloadPngDataUrl(result.dataUrl, document.title);
+      const filename = await requestPngDownload(result.dataUrl, document.title);
       host.dataset.cropDownloadStatus = "ok";
       host.dataset.cropDownloadFilename = filename;
       showCompletionToast({
@@ -779,17 +796,23 @@ function showCompletionToast(options: CompletionToastOptions): void {
   dismissTimeoutId = window.setTimeout(removeToast, TOAST_AUTO_DISMISS_MS);
 }
 
-function downloadPngDataUrl(dataUrl: string, title: string): string {
+async function requestPngDownload(dataUrl: string, title: string): Promise<string> {
   pngDataUrlToBlob(dataUrl);
   const filename = createPngFilename(title);
-  const link = document.createElement("a");
-  link.href = dataUrl;
-  link.download = filename;
-  link.rel = "noopener";
-  link.style.display = "none";
-  document.documentElement.append(link);
-  link.click();
-  link.remove();
+
+  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    throw new Error("Chrome runtime messaging is unavailable.");
+  }
+
+  const response = await chrome.runtime.sendMessage(createDownloadPngRequest(dataUrl, filename));
+
+  if (!isCropDownloadPngResponse(response)) {
+    throw new Error("Invalid download response from background service worker.");
+  }
+
+  if (!response.ok) {
+    throw new Error(response.error);
+  }
 
   return filename;
 }
@@ -830,6 +853,14 @@ function createCaptureVisibleTabRequest(): CropCaptureVisibleTabRequest {
   };
 }
 
+function createDownloadPngRequest(dataUrl: string, filename: string): CropDownloadPngRequest {
+  return {
+    type: CROP_DOWNLOAD_PNG_MESSAGE,
+    dataUrl,
+    filename
+  };
+}
+
 function isCropCaptureVisibleTabResponse(
   message: unknown
 ): message is CropCaptureVisibleTabResponse {
@@ -839,6 +870,22 @@ function isCropCaptureVisibleTabResponse(
 
   if (message.ok === true) {
     return "dataUrl" in message && typeof message.dataUrl === "string";
+  }
+
+  if (message.ok === false) {
+    return "error" in message && typeof message.error === "string";
+  }
+
+  return false;
+}
+
+function isCropDownloadPngResponse(message: unknown): message is CropDownloadPngResponse {
+  if (typeof message !== "object" || message === null || !("ok" in message)) {
+    return false;
+  }
+
+  if (message.ok === true) {
+    return "downloadId" in message && typeof message.downloadId === "number";
   }
 
   if (message.ok === false) {

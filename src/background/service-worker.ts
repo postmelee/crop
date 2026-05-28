@@ -1,6 +1,10 @@
 import {
+  isCropDownloadPngRequest,
   isCropCaptureVisibleTabRequest,
-  type CropCaptureVisibleTabResponse
+  type CropCaptureVisibleTabResponse,
+  type CropDownloadPngRequest,
+  type CropDownloadPngResponse,
+  type CropRuntimeResponse
 } from "../shared/messages";
 
 type CropTab = {
@@ -29,6 +33,13 @@ type CaptureVisibleTabOptions = {
   format: "png";
 };
 
+type DownloadOptions = {
+  url: string;
+  filename: string;
+  saveAs?: boolean;
+  conflictAction?: "uniquify" | "overwrite" | "prompt";
+};
+
 type MessageSender = {
   tab?: CropTab;
 };
@@ -38,7 +49,7 @@ type SendMessageResponse<TResponse> = (response: TResponse) => void;
 type RuntimeMessageListener = (
   message: unknown,
   sender: MessageSender,
-  sendResponse: SendMessageResponse<CropCaptureVisibleTabResponse>
+  sendResponse: SendMessageResponse<CropRuntimeResponse>
 ) => boolean | void;
 
 type ChromeApi = {
@@ -54,6 +65,9 @@ type ChromeApi = {
       message?: string;
     };
     onMessage: ChromeEvent<RuntimeMessageListener>;
+  };
+  downloads: {
+    download(options: DownloadOptions): Promise<number>;
   };
   scripting: {
     executeScript(injection: ScriptInjection): Promise<unknown[]>;
@@ -161,6 +175,27 @@ async function captureVisibleTab(sender: MessageSender): Promise<CropCaptureVisi
   }
 }
 
+async function downloadPng(message: CropDownloadPngRequest): Promise<CropDownloadPngResponse> {
+  try {
+    const downloadId = await chrome.downloads.download({
+      url: message.dataUrl,
+      filename: message.filename,
+      saveAs: false,
+      conflictAction: "uniquify"
+    });
+
+    return {
+      ok: true,
+      downloadId
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: formatError(error)
+    };
+  }
+}
+
 chrome.action.onClicked.addListener((tab) => {
   void injectCrop(tab, "action");
 });
@@ -174,13 +209,17 @@ chrome.commands.onCommand.addListener((command, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!isCropCaptureVisibleTabRequest(message)) {
-    return false;
+  if (isCropCaptureVisibleTabRequest(message)) {
+    void captureVisibleTab(sender).then(sendResponse);
+    return true;
   }
 
-  void captureVisibleTab(sender).then(sendResponse);
+  if (isCropDownloadPngRequest(message)) {
+    void downloadPng(message).then(sendResponse);
+    return true;
+  }
 
-  return true;
+  return false;
 });
 
 void warnIfShortcutMissing();
