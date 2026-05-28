@@ -94,7 +94,6 @@ const FALLBACK_ACTIONS_SIZE: ElementSize = {
 };
 const PANEL_FLASH_DEBOUNCE_MS = 800;
 const TOAST_AUTO_DISMISS_MS = 2400;
-const OBJECT_URL_REVOKE_DELAY_MS = 1000;
 const FIREFOX_DETECT_VIEWPORT_MARGIN = 100;
 const FIREFOX_MIN_MAX_DETECT_HEIGHT = 700;
 const FIREFOX_MIN_MAX_DETECT_WIDTH = 1000;
@@ -374,39 +373,7 @@ export function mountCropOverlay(): void {
     setActionStatus(null);
     setCapturePending(true);
 
-    void captureSelectedRegion(action, selectedRect)
-      .then(async (result) => {
-        if (overlayRemoved) {
-          return;
-        }
-
-        recordCaptureSuccess(result);
-
-        if (result.action === "copy") {
-          await writePngDataUrlToClipboard(result.dataUrl);
-          host.dataset.cropClipboardStatus = "ok";
-          showCompletionToast({
-            result,
-            message: "복사 완료",
-            status: "copied"
-          });
-          removeOverlay();
-          return;
-        }
-
-        if (result.action === "save") {
-          const filename = downloadPngDataUrl(result.dataUrl, document.title);
-          host.dataset.cropDownloadStatus = "ok";
-          host.dataset.cropDownloadFilename = filename;
-          showCompletionToast({
-            result,
-            message: "저장 완료",
-            status: "saved",
-            filename
-          });
-          removeOverlay();
-        }
-      })
+    void performCaptureAction(action, selectedRect)
       .catch((error) => {
         if (overlayRemoved) {
           return;
@@ -423,6 +390,54 @@ export function mountCropOverlay(): void {
           renderOverlayState();
         }
       });
+  };
+
+  const performCaptureAction = async (
+    action: CaptureAction,
+    selectedRect: PageRect
+  ): Promise<void> => {
+    const previousVisibility = host.style.visibility;
+    host.style.visibility = "hidden";
+
+    try {
+      await waitForNextPaint();
+      const result = await captureSelectedRegion(action, selectedRect);
+
+      if (overlayRemoved) {
+        return;
+      }
+
+      recordCaptureSuccess(result);
+
+      if (result.action === "copy") {
+        await writePngDataUrlToClipboard(result.dataUrl);
+        host.dataset.cropClipboardStatus = "ok";
+        showCompletionToast({
+          result,
+          message: "복사 완료",
+          status: "copied"
+        });
+        removeOverlay();
+        return;
+      }
+
+      const filename = downloadPngDataUrl(result.dataUrl, document.title);
+      host.dataset.cropDownloadStatus = "ok";
+      host.dataset.cropDownloadFilename = filename;
+      showCompletionToast({
+        result,
+        message: "저장 완료",
+        status: "saved",
+        filename
+      });
+      removeOverlay();
+    } catch (error) {
+      if (!overlayRemoved) {
+        host.style.visibility = previousVisibility;
+      }
+
+      throw error;
+    }
   };
 
   const recordCaptureSuccess = (result: CropCapturePipelineResult): void => {
@@ -465,7 +480,7 @@ export function mountCropOverlay(): void {
       throw new Error("Selected area is outside the visible viewport.");
     }
 
-    const captureResponse = await captureVisibleTabWithoutOverlay();
+    const captureResponse = await requestVisibleTabCapture();
 
     if (!captureResponse.ok) {
       throw new Error(captureResponse.error);
@@ -488,18 +503,6 @@ export function mountCropOverlay(): void {
       outputWidth: cropResult.outputWidth,
       outputHeight: cropResult.outputHeight
     };
-  };
-
-  const captureVisibleTabWithoutOverlay = async (): Promise<CropCaptureVisibleTabResponse> => {
-    const previousVisibility = host.style.visibility;
-    host.style.visibility = "hidden";
-
-    try {
-      await waitForNextPaint();
-      return await requestVisibleTabCapture();
-    } finally {
-      host.style.visibility = previousVisibility;
-    }
   };
 
   const setCapturePending = (isPending: boolean): void => {
@@ -777,23 +780,16 @@ function showCompletionToast(options: CompletionToastOptions): void {
 }
 
 function downloadPngDataUrl(dataUrl: string, title: string): string {
-  if (typeof window.URL.createObjectURL !== "function") {
-    throw new Error("Object URL download API is unavailable.");
-  }
-
-  const blob = pngDataUrlToBlob(dataUrl);
+  pngDataUrlToBlob(dataUrl);
   const filename = createPngFilename(title);
-  const objectUrl = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = objectUrl;
+  link.href = dataUrl;
   link.download = filename;
+  link.rel = "noopener";
   link.style.display = "none";
   document.documentElement.append(link);
   link.click();
   link.remove();
-  window.setTimeout(() => {
-    window.URL.revokeObjectURL(objectUrl);
-  }, OBJECT_URL_REVOKE_DELAY_MS);
 
   return filename;
 }
