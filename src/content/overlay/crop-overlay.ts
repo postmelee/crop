@@ -1,10 +1,12 @@
 import {
   createCropOverlayTemplate,
+  createCropToastTemplate,
   type CropOverlayTemplate,
   FLASH_CLASS,
   PANEL_ATTRIBUTE,
   ROOT_ATTRIBUTE,
-  ROOT_ID
+  ROOT_ID,
+  TOAST_ROOT_ID
 } from "./crop-template";
 import {
   applyActionButtonsPresentation,
@@ -29,6 +31,7 @@ import {
   type CropOverlayState
 } from "./state-machine";
 import { cropPngDataUrl } from "../../shared/crop-image";
+import { writePngDataUrlToClipboard } from "../../shared/clipboard";
 import { clipPageRectToViewport, type CropRect, type ViewportMetrics } from "../../shared/rect";
 
 interface PointerPosition {
@@ -86,6 +89,7 @@ const FALLBACK_ACTIONS_SIZE: ElementSize = {
   height: 50
 };
 const PANEL_FLASH_DEBOUNCE_MS = 800;
+const TOAST_AUTO_DISMISS_MS = 2400;
 const FIREFOX_DETECT_VIEWPORT_MARGIN = 100;
 const FIREFOX_MIN_MAX_DETECT_HEIGHT = 700;
 const FIREFOX_MIN_MAX_DETECT_WIDTH = 1000;
@@ -152,8 +156,14 @@ export function mountCropOverlay(): void {
   let suppressNextDocumentClick = false;
   let suppressDocumentClickTimeoutId: number | null = null;
   let pendingCapture = false;
+  let overlayRemoved = false;
 
   const removeOverlay = (): void => {
+    if (overlayRemoved) {
+      return;
+    }
+
+    overlayRemoved = true;
     window.removeEventListener("keydown", handleKeyDown, true);
     window.removeEventListener("pointerdown", handlePointerDown, true);
     window.removeEventListener("pointermove", handlePointerMove, true);
@@ -359,24 +369,57 @@ export function mountCropOverlay(): void {
     setCapturePending(true);
 
     void captureSelectedRegion(action, selectedRect)
-      .then((result) => {
-        captureHost.__cropLastCaptureResult = result;
-        host.dataset.cropCaptureStatus = "ok";
-        host.dataset.cropCaptureAction = result.action;
-        host.dataset.cropCaptureWidth = String(result.outputWidth);
-        host.dataset.cropCaptureHeight = String(result.outputHeight);
-        delete host.dataset.cropCaptureError;
+      .then(async (result) => {
+        if (overlayRemoved) {
+          return;
+        }
+
+        recordCaptureSuccess(result);
+
+        if (result.action === "copy") {
+          await writePngDataUrlToClipboard(result.dataUrl);
+          host.dataset.cropClipboardStatus = "ok";
+          showCopyCompleteToast(result);
+          removeOverlay();
+        }
       })
       .catch((error) => {
-        host.dataset.cropCaptureStatus = "error";
-        host.dataset.cropCaptureError = formatCaptureError(error);
-        console.warn(`[crop] Failed to capture selected area: ${formatCaptureError(error)}.`);
+        if (overlayRemoved) {
+          return;
+        }
+
+        recordCaptureFailure(error, action);
+        console.warn(`[crop] Failed to ${action} selected area: ${formatCaptureError(error)}.`);
       })
       .finally(() => {
         pendingCapture = false;
-        setCapturePending(false);
-        renderOverlayState();
+
+        if (!overlayRemoved) {
+          setCapturePending(false);
+          renderOverlayState();
+        }
       });
+  };
+
+  const recordCaptureSuccess = (result: CropCapturePipelineResult): void => {
+    captureHost.__cropLastCaptureResult = result;
+    host.dataset.cropCaptureStatus = "ok";
+    host.dataset.cropCaptureAction = result.action;
+    host.dataset.cropCaptureWidth = String(result.outputWidth);
+    host.dataset.cropCaptureHeight = String(result.outputHeight);
+    delete host.dataset.cropCaptureError;
+    delete host.dataset.cropClipboardStatus;
+  };
+
+  const recordCaptureFailure = (error: unknown, action: CaptureAction): void => {
+    host.dataset.cropCaptureStatus = "error";
+    host.dataset.cropCaptureError = formatCaptureError(error);
+
+    if (action === "copy") {
+      host.dataset.cropClipboardStatus = "error";
+    } else {
+      delete host.dataset.cropClipboardStatus;
+    }
   };
 
   const captureSelectedRegion = async (
@@ -643,6 +686,31 @@ function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect |
     },
     actionsSize
   );
+}
+
+function showCopyCompleteToast(result: CropCapturePipelineResult): void {
+  document.getElementById(TOAST_ROOT_ID)?.remove();
+
+  const toast = createCropToastTemplate("복사 완료");
+  toast.host.dataset.cropToastStatus = "copied";
+  toast.host.dataset.cropToastAction = result.action;
+  toast.host.dataset.cropToastWidth = String(result.outputWidth);
+  toast.host.dataset.cropToastHeight = String(result.outputHeight);
+
+  let dismissTimeoutId: number | null = null;
+
+  const removeToast = (): void => {
+    if (dismissTimeoutId !== null) {
+      window.clearTimeout(dismissTimeoutId);
+      dismissTimeoutId = null;
+    }
+
+    toast.host.remove();
+  };
+
+  toast.closeButton.addEventListener("click", removeToast);
+  document.documentElement.append(toast.host);
+  dismissTimeoutId = window.setTimeout(removeToast, TOAST_AUTO_DISMISS_MS);
 }
 
 function getCropActionFromEvent(event: Event): CropAction | null {
