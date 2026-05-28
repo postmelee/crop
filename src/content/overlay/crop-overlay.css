@@ -180,6 +180,7 @@
   top: 0;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   max-width: calc(100vw - 16px);
   min-height: 40px;
@@ -217,6 +218,11 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
+.crop-action:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
 .crop-action:focus-visible {
   outline: 2px solid #7dd3fc;
   outline-offset: 2px;
@@ -231,6 +237,22 @@
 .crop-action--copy:hover,
 .crop-action--save:hover {
   background: #246ee0;
+}
+
+.crop-action-status {
+  flex-basis: 100%;
+  max-width: 230px;
+  padding: 1px 4px 3px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 15px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.crop-action-status[hidden] {
+  display: none;
 }
 
 .crop-mode-toolbar {

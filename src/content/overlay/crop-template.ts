@@ -16,6 +16,7 @@ export interface CropOverlayTemplate {
   readonly panel: HTMLElement;
   readonly highlight: HTMLElement;
   readonly actions: HTMLElement;
+  readonly actionStatus: HTMLElement;
   readonly prompt: HTMLElement;
   readonly selectionMask: CropSelectionMaskTemplate;
 }
@@ -88,15 +89,20 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   const copyButton = createActionButton("copy", "Copy");
   const saveButton = createActionButton("save", "Save");
   const cancelButton = createActionButton("cancel", "Cancel");
+  const actionStatus = document.createElement("div");
+  actionStatus.className = "crop-action-status";
+  actionStatus.hidden = true;
+  actionStatus.setAttribute("role", "status");
+  actionStatus.setAttribute("aria-live", "polite");
 
   instructions.append(instructionMain, instructionSub);
   prompt.append(face, instructions, promptCancelButton);
   panel.append(visibleModeButton, fullPageModeButton);
-  actions.append(copyButton, saveButton, cancelButton);
+  actions.append(copyButton, saveButton, cancelButton, actionStatus);
   shell.append(dim, frame, selectionMask.container, highlight, prompt, actions, panel);
   shadowRoot.append(style, shell);
 
-  return { panel, highlight, actions, prompt, selectionMask };
+  return { panel, highlight, actions, actionStatus, prompt, selectionMask };
 }
 
 export interface CropSelectionMaskTemplate {

@@ -371,6 +371,7 @@ export function mountCropOverlay(): void {
 
     const selectedRect = overlayState.selectedRect;
     pendingCapture = true;
+    setActionStatus(null);
     setCapturePending(true);
 
     void captureSelectedRegion(action, selectedRect)
@@ -434,6 +435,7 @@ export function mountCropOverlay(): void {
     delete host.dataset.cropClipboardStatus;
     delete host.dataset.cropDownloadStatus;
     delete host.dataset.cropDownloadFilename;
+    setActionStatus(null);
   };
 
   const recordCaptureFailure = (error: unknown, action: CaptureAction): void => {
@@ -444,9 +446,11 @@ export function mountCropOverlay(): void {
       host.dataset.cropClipboardStatus = "error";
       delete host.dataset.cropDownloadStatus;
       delete host.dataset.cropDownloadFilename;
+      setActionStatus("복사 실패. Save로 저장할 수 있습니다.", action);
     } else {
       host.dataset.cropDownloadStatus = "error";
       delete host.dataset.cropClipboardStatus;
+      setActionStatus("저장 실패. 다시 시도하세요.", action);
     }
   };
 
@@ -515,6 +519,26 @@ export function mountCropOverlay(): void {
       '[data-crop-action="copy"], [data-crop-action="save"]'
     )) {
       button.disabled = isPending;
+    }
+  };
+
+  const setActionStatus = (message: string | null, action?: CaptureAction): void => {
+    if (!template) {
+      return;
+    }
+
+    if (!message) {
+      template.actionStatus.hidden = true;
+      template.actionStatus.textContent = "";
+      delete template.actionStatus.dataset.cropActionStatus;
+      return;
+    }
+
+    template.actionStatus.hidden = false;
+    template.actionStatus.textContent = message;
+
+    if (action) {
+      template.actionStatus.dataset.cropActionStatus = action;
     }
   };
 
