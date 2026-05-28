@@ -36,7 +36,7 @@ MVP 제외 범위:
 
 ## 개발 상태
 
-M010 Phase 3 Stage 10 기준으로 Chrome MV3 shell과 Firefox식 overlay UI 기반이 준비됐다.
+M010 Phase 4 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport capture/crop backend 기반이 준비됐다.
 
 - `manifest.json` source manifest
 - Vite 기반 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 산출
@@ -53,14 +53,19 @@ M010 Phase 3 Stage 10 기준으로 Chrome MV3 shell과 Firefox식 overlay UI 기
 - 클릭 기반 selected rectangle 고정
 - pointer drag 기반 임의 영역 selection
 - selected rectangle 기준 Copy/Save/Cancel buttons 표시
+- Copy/Save buttons에서 capture/crop backend 호출
+- background service worker의 `chrome.tabs.captureVisibleTab()` 기반 visible viewport PNG capture
+- selected page-coordinate rectangle을 visible viewport intersection으로 변환하는 crop geometry helper
+- screenshot natural size와 viewport CSS size 비율 기반 source crop rect 계산
+- capture 직전 overlay host 숨김과 capture 이후 복구
 - selected rectangle 밖 클릭 시 idle overlay/prompt 상태 복귀
 - 중복 실행 시 mode toolbar one-shot flash와 반복 flash debounce
 
 아직 구현하지 않은 후속 범위:
 
-- visible viewport capture/crop backend
 - Copy/Save button의 실제 clipboard write와 file download 동작
-- capture 전 overlay 숨김과 최종 PNG 검증
+- Copy 성공 후 overlay 제거와 우측 상단 완료 toast
+- filename sanitizer와 Save download UX
 - full page capture, scroll stitching, resize handles
 
 ## 로컬 개발
@@ -104,7 +109,8 @@ npm run typecheck
 - hover highlight 상태에서 클릭하면 selected rectangle이 고정되고 Copy/Save/Cancel buttons가 선택 영역 근처에 표시된다.
 - selected rectangle 밖을 클릭하면 선택이 해제되고 중앙 prompt와 mode toolbar가 다시 보이며, 같은 클릭으로 새 선택이 즉시 발생하지 않는다.
 - 마우스를 누른 채 40px 이상 드래그하면 임의 영역 selected rectangle이 생성되고 Copy/Save/Cancel buttons가 표시된다.
-- Copy/Save buttons는 현재 UI만 표시한다. 실제 clipboard write와 file download는 후속 Phase에서 연결한다.
+- Copy/Save buttons는 capture/crop backend를 호출한다. 성공 시 overlay root에 `data-crop-capture-status="ok"`와 crop output width/height metadata가 기록된다.
+- 실제 clipboard write, file download, 성공 toast는 후속 #7 범위다. 현재 Copy/Save 성공 후에도 overlay는 재시도 가능한 상태로 복구된다.
 - 중앙 Cancel button, selected 상태의 Cancel button, 또는 Escape 키로 overlay가 제거된다.
 - 처음 overlay를 열 때 mode toolbar flash가 반복되지 않는다.
 - 같은 탭에서 다시 실행하면 overlay가 여러 개 쌓이지 않고 기존 mode toolbar가 한 번만 짧게 강조된다.

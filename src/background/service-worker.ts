@@ -1,6 +1,12 @@
+import {
+  isCropCaptureVisibleTabRequest,
+  type CropCaptureVisibleTabResponse
+} from "../shared/messages";
+
 type CropTab = {
   id?: number;
   url?: string;
+  windowId?: number;
 };
 
 type CropCommand = {
@@ -19,6 +25,22 @@ type ScriptInjection = {
   files: string[];
 };
 
+type CaptureVisibleTabOptions = {
+  format: "png";
+};
+
+type MessageSender = {
+  tab?: CropTab;
+};
+
+type SendMessageResponse<TResponse> = (response: TResponse) => void;
+
+type RuntimeMessageListener = (
+  message: unknown,
+  sender: MessageSender,
+  sendResponse: SendMessageResponse<CropCaptureVisibleTabResponse>
+) => boolean | void;
+
 type ChromeApi = {
   action: {
     onClicked: ChromeEvent<(tab: CropTab) => void>;
@@ -31,9 +53,13 @@ type ChromeApi = {
     lastError?: {
       message?: string;
     };
+    onMessage: ChromeEvent<RuntimeMessageListener>;
   };
   scripting: {
     executeScript(injection: ScriptInjection): Promise<unknown[]>;
+  };
+  tabs: {
+    captureVisibleTab(windowId?: number, options?: CaptureVisibleTabOptions): Promise<string>;
   };
 };
 
@@ -117,6 +143,24 @@ async function warnIfShortcutMissing(): Promise<void> {
   }
 }
 
+async function captureVisibleTab(sender: MessageSender): Promise<CropCaptureVisibleTabResponse> {
+  try {
+    const dataUrl = await chrome.tabs.captureVisibleTab(sender.tab?.windowId, {
+      format: "png"
+    });
+
+    return {
+      ok: true,
+      dataUrl
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: formatError(error)
+    };
+  }
+}
+
 chrome.action.onClicked.addListener((tab) => {
   void injectCrop(tab, "action");
 });
@@ -127,6 +171,16 @@ chrome.commands.onCommand.addListener((command, tab) => {
   }
 
   void injectCrop(tab, "command");
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!isCropCaptureVisibleTabRequest(message)) {
+    return false;
+  }
+
+  void captureVisibleTab(sender).then(sendResponse);
+
+  return true;
 });
 
 void warnIfShortcutMissing();
