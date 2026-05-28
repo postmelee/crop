@@ -28,13 +28,58 @@ import {
   transitionOverlayState,
   type CropOverlayState
 } from "./state-machine";
+import { cropPngDataUrl } from "../../shared/crop-image";
+import { clipPageRectToViewport, type CropRect, type ViewportMetrics } from "../../shared/rect";
 
 interface PointerPosition {
   readonly x: number;
   readonly y: number;
 }
 
+const CROP_CAPTURE_VISIBLE_TAB_MESSAGE = "crop.captureVisibleTab";
+
 type CropAction = "copy" | "save" | "cancel";
+type CaptureAction = Exclude<CropAction, "cancel">;
+
+interface CropCaptureVisibleTabRequest {
+  readonly type: typeof CROP_CAPTURE_VISIBLE_TAB_MESSAGE;
+}
+
+type CropCaptureVisibleTabResponse =
+  | {
+      readonly ok: true;
+      readonly dataUrl: string;
+    }
+  | {
+      readonly ok: false;
+      readonly error: string;
+    };
+
+type CropRuntimeMessage = CropCaptureVisibleTabRequest;
+
+interface CropContentChromeApi {
+  readonly runtime?: {
+    readonly lastError?: {
+      readonly message?: string;
+    };
+    sendMessage(message: CropRuntimeMessage): Promise<unknown>;
+  };
+}
+
+interface CropCapturePipelineResult {
+  readonly action: CaptureAction;
+  readonly dataUrl: string;
+  readonly viewportRect: CropRect;
+  readonly sourceRect: CropRect;
+  readonly outputWidth: number;
+  readonly outputHeight: number;
+}
+
+interface CropCaptureHost extends HTMLElement {
+  __cropLastCaptureResult?: CropCapturePipelineResult;
+}
+
+declare const chrome: CropContentChromeApi | undefined;
 
 const FALLBACK_ACTIONS_SIZE: ElementSize = {
   width: 242,
@@ -96,6 +141,7 @@ export function mountCropOverlay(): void {
   const host = document.createElement("div");
   host.id = ROOT_ID;
   host.setAttribute(ROOT_ATTRIBUTE, "true");
+  const captureHost = host as CropCaptureHost;
 
   const shadowRoot = host.attachShadow({ mode: "open" });
   let template: CropOverlayTemplate | null = null;
@@ -105,6 +151,7 @@ export function mountCropOverlay(): void {
   let overlayState: CropOverlayState = createInitialOverlayState();
   let suppressNextDocumentClick = false;
   let suppressDocumentClickTimeoutId: number | null = null;
+  let pendingCapture = false;
 
   const removeOverlay = (): void => {
     window.removeEventListener("keydown", handleKeyDown, true);
@@ -265,6 +312,8 @@ export function mountCropOverlay(): void {
 
       if (action === "cancel") {
         requestClose();
+      } else {
+        startCaptureAction(action);
       }
 
       return;
@@ -298,6 +347,104 @@ export function mountCropOverlay(): void {
     });
     cancelPendingHoverUpdate();
     renderOverlayState();
+  };
+
+  const startCaptureAction = (action: CaptureAction): void => {
+    if (pendingCapture || overlayState.status !== "selected" || !overlayState.selectedRect) {
+      return;
+    }
+
+    const selectedRect = overlayState.selectedRect;
+    pendingCapture = true;
+    setCapturePending(true);
+
+    void captureSelectedRegion(action, selectedRect)
+      .then((result) => {
+        captureHost.__cropLastCaptureResult = result;
+        host.dataset.cropCaptureStatus = "ok";
+        host.dataset.cropCaptureAction = result.action;
+        host.dataset.cropCaptureWidth = String(result.outputWidth);
+        host.dataset.cropCaptureHeight = String(result.outputHeight);
+        delete host.dataset.cropCaptureError;
+      })
+      .catch((error) => {
+        host.dataset.cropCaptureStatus = "error";
+        host.dataset.cropCaptureError = formatCaptureError(error);
+        console.warn(`[crop] Failed to capture selected area: ${formatCaptureError(error)}.`);
+      })
+      .finally(() => {
+        pendingCapture = false;
+        setCapturePending(false);
+        renderOverlayState();
+      });
+  };
+
+  const captureSelectedRegion = async (
+    action: CaptureAction,
+    selectedRect: PageRect
+  ): Promise<CropCapturePipelineResult> => {
+    const viewport = getViewportMetrics();
+    const viewportRect = clipPageRectToViewport(selectedRect, viewport);
+
+    if (!viewportRect) {
+      throw new Error("Selected area is outside the visible viewport.");
+    }
+
+    const captureResponse = await captureVisibleTabWithoutOverlay();
+
+    if (!captureResponse.ok) {
+      throw new Error(captureResponse.error);
+    }
+
+    const cropResult = await cropPngDataUrl({
+      dataUrl: captureResponse.dataUrl,
+      viewportCropRect: viewportRect,
+      viewportCssSize: {
+        clientWidth: viewport.clientWidth,
+        clientHeight: viewport.clientHeight
+      }
+    });
+
+    return {
+      action,
+      dataUrl: cropResult.dataUrl,
+      viewportRect,
+      sourceRect: cropResult.sourceRect,
+      outputWidth: cropResult.outputWidth,
+      outputHeight: cropResult.outputHeight
+    };
+  };
+
+  const captureVisibleTabWithoutOverlay = async (): Promise<CropCaptureVisibleTabResponse> => {
+    const previousVisibility = host.style.visibility;
+    host.style.visibility = "hidden";
+
+    try {
+      await waitForNextPaint();
+      return await requestVisibleTabCapture();
+    } finally {
+      host.style.visibility = previousVisibility;
+    }
+  };
+
+  const setCapturePending = (isPending: boolean): void => {
+    if (!template) {
+      return;
+    }
+
+    if (isPending) {
+      host.dataset.cropCapturePending = "true";
+      template.actions.setAttribute("aria-busy", "true");
+    } else {
+      delete host.dataset.cropCapturePending;
+      template.actions.removeAttribute("aria-busy");
+    }
+
+    for (const button of template.actions.querySelectorAll<HTMLButtonElement>(
+      '[data-crop-action="copy"], [data-crop-action="save"]'
+    )) {
+      button.disabled = isPending;
+    }
   };
 
   const renderOverlayState = (): void => {
@@ -512,4 +659,77 @@ function getCropActionFromEvent(event: Event): CropAction | null {
   }
 
   return null;
+}
+
+async function requestVisibleTabCapture(): Promise<CropCaptureVisibleTabResponse> {
+  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    throw new Error("Chrome runtime messaging is unavailable.");
+  }
+
+  const response = await chrome.runtime.sendMessage(createCaptureVisibleTabRequest());
+
+  if (!isCropCaptureVisibleTabResponse(response)) {
+    throw new Error("Invalid capture response from background service worker.");
+  }
+
+  return response;
+}
+
+function createCaptureVisibleTabRequest(): CropCaptureVisibleTabRequest {
+  return {
+    type: CROP_CAPTURE_VISIBLE_TAB_MESSAGE
+  };
+}
+
+function isCropCaptureVisibleTabResponse(
+  message: unknown
+): message is CropCaptureVisibleTabResponse {
+  if (typeof message !== "object" || message === null || !("ok" in message)) {
+    return false;
+  }
+
+  if (message.ok === true) {
+    return "dataUrl" in message && typeof message.dataUrl === "string";
+  }
+
+  if (message.ok === false) {
+    return "error" in message && typeof message.error === "string";
+  }
+
+  return false;
+}
+
+function waitForNextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.setTimeout(resolve, 0);
+    });
+  });
+}
+
+function getViewportMetrics(): ViewportMetrics {
+  const windowDimensions = readWindowDimensions();
+
+  return {
+    clientWidth: windowDimensions.clientWidth,
+    clientHeight: windowDimensions.clientHeight,
+    scrollX: windowDimensions.scrollX,
+    scrollY: windowDimensions.scrollY
+  };
+}
+
+function formatCaptureError(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.length > 0) {
+    return error;
+  }
+
+  if (typeof chrome !== "undefined" && chrome.runtime?.lastError?.message) {
+    return chrome.runtime.lastError.message;
+  }
+
+  return "Unknown error";
 }

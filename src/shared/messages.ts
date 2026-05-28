@@ -32,3 +32,21 @@ export function isCropCaptureVisibleTabRequest(
     message.type === CROP_CAPTURE_VISIBLE_TAB_MESSAGE
   );
 }
+
+export function isCropCaptureVisibleTabResponse(
+  message: unknown
+): message is CropCaptureVisibleTabResponse {
+  if (typeof message !== "object" || message === null || !("ok" in message)) {
+    return false;
+  }
+
+  if (message.ok === true) {
+    return "dataUrl" in message && typeof message.dataUrl === "string";
+  }
+
+  if (message.ok === false) {
+    return "error" in message && typeof message.error === "string";
+  }
+
+  return false;
+}
