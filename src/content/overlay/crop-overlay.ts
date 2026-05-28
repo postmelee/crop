@@ -30,8 +30,12 @@ import {
   transitionOverlayState,
   type CropOverlayState
 } from "./state-machine";
+import {
+  pngDataUrlToBlob,
+  writePngDataUrlToClipboard
+} from "../../shared/clipboard";
 import { cropPngDataUrl } from "../../shared/crop-image";
-import { writePngDataUrlToClipboard } from "../../shared/clipboard";
+import { createPngFilename } from "../../shared/filename";
 import { clipPageRectToViewport, type CropRect, type ViewportMetrics } from "../../shared/rect";
 
 interface PointerPosition {
@@ -90,6 +94,7 @@ const FALLBACK_ACTIONS_SIZE: ElementSize = {
 };
 const PANEL_FLASH_DEBOUNCE_MS = 800;
 const TOAST_AUTO_DISMISS_MS = 2400;
+const OBJECT_URL_REVOKE_DELAY_MS = 1000;
 const FIREFOX_DETECT_VIEWPORT_MARGIN = 100;
 const FIREFOX_MIN_MAX_DETECT_HEIGHT = 700;
 const FIREFOX_MIN_MAX_DETECT_WIDTH = 1000;
@@ -379,7 +384,25 @@ export function mountCropOverlay(): void {
         if (result.action === "copy") {
           await writePngDataUrlToClipboard(result.dataUrl);
           host.dataset.cropClipboardStatus = "ok";
-          showCopyCompleteToast(result);
+          showCompletionToast({
+            result,
+            message: "복사 완료",
+            status: "copied"
+          });
+          removeOverlay();
+          return;
+        }
+
+        if (result.action === "save") {
+          const filename = downloadPngDataUrl(result.dataUrl, document.title);
+          host.dataset.cropDownloadStatus = "ok";
+          host.dataset.cropDownloadFilename = filename;
+          showCompletionToast({
+            result,
+            message: "저장 완료",
+            status: "saved",
+            filename
+          });
           removeOverlay();
         }
       })
@@ -409,6 +432,8 @@ export function mountCropOverlay(): void {
     host.dataset.cropCaptureHeight = String(result.outputHeight);
     delete host.dataset.cropCaptureError;
     delete host.dataset.cropClipboardStatus;
+    delete host.dataset.cropDownloadStatus;
+    delete host.dataset.cropDownloadFilename;
   };
 
   const recordCaptureFailure = (error: unknown, action: CaptureAction): void => {
@@ -417,7 +442,10 @@ export function mountCropOverlay(): void {
 
     if (action === "copy") {
       host.dataset.cropClipboardStatus = "error";
+      delete host.dataset.cropDownloadStatus;
+      delete host.dataset.cropDownloadFilename;
     } else {
+      host.dataset.cropDownloadStatus = "error";
       delete host.dataset.cropClipboardStatus;
     }
   };
@@ -688,14 +716,25 @@ function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect |
   );
 }
 
-function showCopyCompleteToast(result: CropCapturePipelineResult): void {
+interface CompletionToastOptions {
+  readonly result: CropCapturePipelineResult;
+  readonly message: string;
+  readonly status: "copied" | "saved";
+  readonly filename?: string;
+}
+
+function showCompletionToast(options: CompletionToastOptions): void {
   document.getElementById(TOAST_ROOT_ID)?.remove();
 
-  const toast = createCropToastTemplate("복사 완료");
-  toast.host.dataset.cropToastStatus = "copied";
-  toast.host.dataset.cropToastAction = result.action;
-  toast.host.dataset.cropToastWidth = String(result.outputWidth);
-  toast.host.dataset.cropToastHeight = String(result.outputHeight);
+  const toast = createCropToastTemplate(options.message);
+  toast.host.dataset.cropToastStatus = options.status;
+  toast.host.dataset.cropToastAction = options.result.action;
+  toast.host.dataset.cropToastWidth = String(options.result.outputWidth);
+  toast.host.dataset.cropToastHeight = String(options.result.outputHeight);
+
+  if (options.filename) {
+    toast.host.dataset.cropToastFilename = options.filename;
+  }
 
   let dismissTimeoutId: number | null = null;
 
@@ -711,6 +750,28 @@ function showCopyCompleteToast(result: CropCapturePipelineResult): void {
   toast.closeButton.addEventListener("click", removeToast);
   document.documentElement.append(toast.host);
   dismissTimeoutId = window.setTimeout(removeToast, TOAST_AUTO_DISMISS_MS);
+}
+
+function downloadPngDataUrl(dataUrl: string, title: string): string {
+  if (typeof window.URL.createObjectURL !== "function") {
+    throw new Error("Object URL download API is unavailable.");
+  }
+
+  const blob = pngDataUrlToBlob(dataUrl);
+  const filename = createPngFilename(title);
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  link.style.display = "none";
+  document.documentElement.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => {
+    window.URL.revokeObjectURL(objectUrl);
+  }, OBJECT_URL_REVOKE_DELAY_MS);
+
+  return filename;
 }
 
 function getCropActionFromEvent(event: Event): CropAction | null {
