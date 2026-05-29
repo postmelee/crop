@@ -71,7 +71,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-24 | cross-origin iframe 후보 | 실제 웹 대표 페이지 | 외부 iframe 존재 시 | MVP 제한이면 selection boundary와 README 제한 문구로 분류한다. | 미확인: fixture 범위 밖 | 제한 | MVP 제한 후보 | Stage 4 분류 필요 |
 | P6-25 | closed shadow DOM 후보 | 실제 웹 대표 페이지 | closed shadow 존재 시 | 내부 선택이 불가능하면 제한으로 기록한다. | 미확인: fixture 범위 밖 | 제한 | MVP 제한 후보 | Stage 4 분류 필요 |
 | P6-26 | 역방향 드래그 선택 | fixture 일반 영역 | 포인터가 시작점보다 위/왼쪽으로 이동 | 선택 rect가 좌상단-우하단 좌표로 정규화된다. | 자동+수동 OK, 단 drag flicker는 P6-27로 분리 | OK | 해당 없음 | `state-machine.test.ts`, 작업지시자 Stage 3 smoke |
-| P6-27 | drag selection flicker | fixture 일반 영역 | 드래그 선택 중 | 선택 중 불필요한 흰색 가로선이 반짝이지 않는다. | Stage 4 CSS 보정 적용, 수동 재확인 필요 | MISS | 이번 task | 작업지시자 Stage 3 smoke, `crop-overlay.css` |
+| P6-27 | drag selection flicker | fixture 일반 영역 | 드래그 선택 중 | 선택 중 불필요한 흰색 가로선이 반짝이지 않는다. | Stage 4 CSS 보정 후 작업지시자 수동 재확인 OK | OK | 해당 없음 | 작업지시자 Stage 3/5 smoke, `crop-overlay.css` |
 | P6-28 | Firefox식 선택 후 편집 UI parity | 실제 웹 대표 페이지 | 요소 클릭 후 selected 상태 | resize handle, 점선 표시, 이미지 사이즈 badge, Firefox식 Copy/Save 버튼을 제공한다. | 현재 MVP 미구현, 일부는 #13과 연결, size badge/button parity는 신규 후속 후보 | 후속 | 기존 후속 + 신규 후속 후보 | 작업지시자 첨부 이미지, #13 |
 
 ## 수동 smoke 절차 초안
@@ -112,14 +112,14 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | fixture 확인 항목 전체 | OK | 작업지시자 2026-05-29 수동 smoke |
 | Chrome zoom 80%, 100%, 125%, 150% | OK | 작업지시자 2026-05-29 수동 smoke |
 | Copy/Save와 overlay 오염 방지 | OK | 작업지시자 2026-05-29 수동 smoke |
-| drag selection 중 흰색 가로선 flicker | MISS | Stage 4에서 저위험 CSS 보정 가능 여부 판단 |
+| drag selection 중 흰색 가로선 flicker | OK | Stage 4 CSS 보정 후 작업지시자 2026-05-29 수동 재확인 |
 | Firefox식 selected-state resize handle, 점선, size badge, 버튼 parity | 후속 | 현재 Task #8은 Phase 6 품질 검증 범위이므로 신규 후속 후보로 분리 |
 
 ## Stage 4 분류 결과
 
 | 항목 | 분류 | 처리 |
 |---|---|---|
-| P6-27 drag selection 흰색 가로선 flicker | 이번 task 결함 | drag 중 전체 viewport frame이 노출되지 않도록 `.crop-frame`을 dragging 상태에서 숨김. 수동 재 smoke 필요. |
+| P6-27 drag selection 흰색 가로선 flicker | 이번 task 결함 | drag 중 전체 viewport frame이 노출되지 않도록 `.crop-frame`을 dragging 상태에서 숨겼고, Stage 5 수동 재 smoke에서 보정 확인. |
 | P6-23 비HiDPI 확인 | 검증 한계 | 현재 환경에서 미확인. README와 최종 보고서에 검증 한계로 기록. |
 | P6-24 cross-origin iframe 후보 | MVP 제한 / 기존 후속 | [#14](https://github.com/postmelee/crop/issues/14) `Follow-up: iframe/nested context 요소 선택 지원`으로 연결. |
 | P6-25 closed shadow DOM 후보 | MVP 제한 / 기존 후속 | Chrome MV3 접근 제약으로 README 제한 문구에 기록. 필요 시 #14 범위에서 함께 검토. |
