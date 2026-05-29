@@ -9,11 +9,14 @@ export const ROOT_ID = "__crop_root__";
 export const ROOT_ATTRIBUTE = "data-crop-root";
 export const PANEL_ATTRIBUTE = "data-crop-panel";
 export const FLASH_CLASS = "crop-panel--flash";
+export const TOAST_ROOT_ID = "__crop_toast__";
+export const TOAST_ATTRIBUTE = "data-crop-toast-root";
 
 export interface CropOverlayTemplate {
   readonly panel: HTMLElement;
   readonly highlight: HTMLElement;
   readonly actions: HTMLElement;
+  readonly actionStatus: HTMLElement;
   readonly prompt: HTMLElement;
   readonly selectionMask: CropSelectionMaskTemplate;
 }
@@ -86,15 +89,20 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   const copyButton = createActionButton("copy", "Copy");
   const saveButton = createActionButton("save", "Save");
   const cancelButton = createActionButton("cancel", "Cancel");
+  const actionStatus = document.createElement("div");
+  actionStatus.className = "crop-action-status";
+  actionStatus.hidden = true;
+  actionStatus.setAttribute("role", "status");
+  actionStatus.setAttribute("aria-live", "polite");
 
   instructions.append(instructionMain, instructionSub);
   prompt.append(face, instructions, promptCancelButton);
   panel.append(visibleModeButton, fullPageModeButton);
-  actions.append(copyButton, saveButton, cancelButton);
+  actions.append(copyButton, saveButton, cancelButton, actionStatus);
   shell.append(dim, frame, selectionMask.container, highlight, prompt, actions, panel);
   shadowRoot.append(style, shell);
 
-  return { panel, highlight, actions, prompt, selectionMask };
+  return { panel, highlight, actions, actionStatus, prompt, selectionMask };
 }
 
 export interface CropSelectionMaskTemplate {
@@ -103,6 +111,56 @@ export interface CropSelectionMaskTemplate {
   readonly right: HTMLElement;
   readonly bottom: HTMLElement;
   readonly left: HTMLElement;
+}
+
+export interface CropToastTemplate {
+  readonly host: HTMLElement;
+  readonly closeButton: HTMLButtonElement;
+}
+
+export function createCropToastTemplate(message: string): CropToastTemplate {
+  const host = document.createElement("div");
+  host.id = TOAST_ROOT_ID;
+  host.setAttribute(TOAST_ATTRIBUTE, "true");
+
+  const shadowRoot = host.attachShadow({ mode: "open" });
+  const style = document.createElement("style");
+  style.textContent = overlayStyles;
+
+  const toast = document.createElement("div");
+  toast.className = "crop-toast";
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+
+  const indicator = document.createElement("span");
+  indicator.className = "crop-toast-indicator";
+  indicator.setAttribute("aria-hidden", "true");
+
+  const text = document.createElement("div");
+  text.className = "crop-toast-text";
+
+  const title = document.createElement("strong");
+  title.className = "crop-toast-title";
+  title.textContent = "crop";
+
+  const description = document.createElement("span");
+  description.className = "crop-toast-message";
+  description.textContent = message;
+
+  const closeButton = document.createElement("button");
+  closeButton.className = "crop-toast-close";
+  closeButton.type = "button";
+  closeButton.setAttribute("aria-label", "알림 닫기");
+  closeButton.textContent = "×";
+
+  text.append(title, description);
+  toast.append(indicator, text, closeButton);
+  shadowRoot.append(style, toast);
+
+  return {
+    host,
+    closeButton
+  };
 }
 
 interface ModeButtonOptions {

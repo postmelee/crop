@@ -1,10 +1,12 @@
 import {
   createCropOverlayTemplate,
+  createCropToastTemplate,
   type CropOverlayTemplate,
   FLASH_CLASS,
   PANEL_ATTRIBUTE,
   ROOT_ATTRIBUTE,
-  ROOT_ID
+  ROOT_ID,
+  TOAST_ROOT_ID
 } from "./crop-template";
 import {
   applyActionButtonsPresentation,
@@ -28,7 +30,12 @@ import {
   transitionOverlayState,
   type CropOverlayState
 } from "./state-machine";
+import {
+  pngDataUrlToBlob,
+  writePngDataUrlToClipboard
+} from "../../shared/clipboard";
 import { cropPngDataUrl } from "../../shared/crop-image";
+import { createPngFilename } from "../../shared/filename";
 import { clipPageRectToViewport, type CropRect, type ViewportMetrics } from "../../shared/rect";
 
 interface PointerPosition {
@@ -36,10 +43,11 @@ interface PointerPosition {
   readonly y: number;
 }
 
-const CROP_CAPTURE_VISIBLE_TAB_MESSAGE = "crop.captureVisibleTab";
-
 type CropAction = "copy" | "save" | "cancel";
 type CaptureAction = Exclude<CropAction, "cancel">;
+
+const CROP_CAPTURE_VISIBLE_TAB_MESSAGE = "crop.captureVisibleTab";
+const CROP_DOWNLOAD_PNG_MESSAGE = "crop.downloadPng";
 
 interface CropCaptureVisibleTabRequest {
   readonly type: typeof CROP_CAPTURE_VISIBLE_TAB_MESSAGE;
@@ -55,7 +63,23 @@ type CropCaptureVisibleTabResponse =
       readonly error: string;
     };
 
-type CropRuntimeMessage = CropCaptureVisibleTabRequest;
+interface CropDownloadPngRequest {
+  readonly type: typeof CROP_DOWNLOAD_PNG_MESSAGE;
+  readonly dataUrl: string;
+  readonly filename: string;
+}
+
+type CropDownloadPngResponse =
+  | {
+      readonly ok: true;
+      readonly downloadId: number;
+    }
+  | {
+      readonly ok: false;
+      readonly error: string;
+    };
+
+type CropRuntimeMessage = CropCaptureVisibleTabRequest | CropDownloadPngRequest;
 
 interface CropContentChromeApi {
   readonly runtime?: {
@@ -86,6 +110,7 @@ const FALLBACK_ACTIONS_SIZE: ElementSize = {
   height: 50
 };
 const PANEL_FLASH_DEBOUNCE_MS = 800;
+const TOAST_AUTO_DISMISS_MS = 2400;
 const FIREFOX_DETECT_VIEWPORT_MARGIN = 100;
 const FIREFOX_MIN_MAX_DETECT_HEIGHT = 700;
 const FIREFOX_MIN_MAX_DETECT_WIDTH = 1000;
@@ -152,8 +177,14 @@ export function mountCropOverlay(): void {
   let suppressNextDocumentClick = false;
   let suppressDocumentClickTimeoutId: number | null = null;
   let pendingCapture = false;
+  let overlayRemoved = false;
 
   const removeOverlay = (): void => {
+    if (overlayRemoved) {
+      return;
+    }
+
+    overlayRemoved = true;
     window.removeEventListener("keydown", handleKeyDown, true);
     window.removeEventListener("pointerdown", handlePointerDown, true);
     window.removeEventListener("pointermove", handlePointerMove, true);
@@ -356,27 +387,103 @@ export function mountCropOverlay(): void {
 
     const selectedRect = overlayState.selectedRect;
     pendingCapture = true;
+    setActionStatus(null);
     setCapturePending(true);
 
-    void captureSelectedRegion(action, selectedRect)
-      .then((result) => {
-        captureHost.__cropLastCaptureResult = result;
-        host.dataset.cropCaptureStatus = "ok";
-        host.dataset.cropCaptureAction = result.action;
-        host.dataset.cropCaptureWidth = String(result.outputWidth);
-        host.dataset.cropCaptureHeight = String(result.outputHeight);
-        delete host.dataset.cropCaptureError;
-      })
+    void performCaptureAction(action, selectedRect)
       .catch((error) => {
-        host.dataset.cropCaptureStatus = "error";
-        host.dataset.cropCaptureError = formatCaptureError(error);
-        console.warn(`[crop] Failed to capture selected area: ${formatCaptureError(error)}.`);
+        if (overlayRemoved) {
+          return;
+        }
+
+        recordCaptureFailure(error, action);
+        console.warn(`[crop] Failed to ${action} selected area: ${formatCaptureError(error)}.`);
       })
       .finally(() => {
         pendingCapture = false;
-        setCapturePending(false);
-        renderOverlayState();
+
+        if (!overlayRemoved) {
+          setCapturePending(false);
+          renderOverlayState();
+        }
       });
+  };
+
+  const performCaptureAction = async (
+    action: CaptureAction,
+    selectedRect: PageRect
+  ): Promise<void> => {
+    const previousVisibility = host.style.visibility;
+    host.style.visibility = "hidden";
+
+    try {
+      await waitForNextPaint();
+      const result = await captureSelectedRegion(action, selectedRect);
+
+      if (overlayRemoved) {
+        return;
+      }
+
+      recordCaptureSuccess(result);
+
+      if (result.action === "copy") {
+        await writePngDataUrlToClipboard(result.dataUrl);
+        host.dataset.cropClipboardStatus = "ok";
+        showCompletionToast({
+          result,
+          message: "복사 완료",
+          status: "copied"
+        });
+        removeOverlay();
+        return;
+      }
+
+      const filename = await requestPngDownload(result.dataUrl, document.title);
+      host.dataset.cropDownloadStatus = "ok";
+      host.dataset.cropDownloadFilename = filename;
+      showCompletionToast({
+        result,
+        message: "저장 완료",
+        status: "saved",
+        filename
+      });
+      removeOverlay();
+    } catch (error) {
+      if (!overlayRemoved) {
+        host.style.visibility = previousVisibility;
+      }
+
+      throw error;
+    }
+  };
+
+  const recordCaptureSuccess = (result: CropCapturePipelineResult): void => {
+    captureHost.__cropLastCaptureResult = result;
+    host.dataset.cropCaptureStatus = "ok";
+    host.dataset.cropCaptureAction = result.action;
+    host.dataset.cropCaptureWidth = String(result.outputWidth);
+    host.dataset.cropCaptureHeight = String(result.outputHeight);
+    delete host.dataset.cropCaptureError;
+    delete host.dataset.cropClipboardStatus;
+    delete host.dataset.cropDownloadStatus;
+    delete host.dataset.cropDownloadFilename;
+    setActionStatus(null);
+  };
+
+  const recordCaptureFailure = (error: unknown, action: CaptureAction): void => {
+    host.dataset.cropCaptureStatus = "error";
+    host.dataset.cropCaptureError = formatCaptureError(error);
+
+    if (action === "copy") {
+      host.dataset.cropClipboardStatus = "error";
+      delete host.dataset.cropDownloadStatus;
+      delete host.dataset.cropDownloadFilename;
+      setActionStatus("복사 실패. Save로 저장할 수 있습니다.", action);
+    } else {
+      host.dataset.cropDownloadStatus = "error";
+      delete host.dataset.cropClipboardStatus;
+      setActionStatus("저장 실패. 다시 시도하세요.", action);
+    }
   };
 
   const captureSelectedRegion = async (
@@ -390,7 +497,7 @@ export function mountCropOverlay(): void {
       throw new Error("Selected area is outside the visible viewport.");
     }
 
-    const captureResponse = await captureVisibleTabWithoutOverlay();
+    const captureResponse = await requestVisibleTabCapture();
 
     if (!captureResponse.ok) {
       throw new Error(captureResponse.error);
@@ -415,18 +522,6 @@ export function mountCropOverlay(): void {
     };
   };
 
-  const captureVisibleTabWithoutOverlay = async (): Promise<CropCaptureVisibleTabResponse> => {
-    const previousVisibility = host.style.visibility;
-    host.style.visibility = "hidden";
-
-    try {
-      await waitForNextPaint();
-      return await requestVisibleTabCapture();
-    } finally {
-      host.style.visibility = previousVisibility;
-    }
-  };
-
   const setCapturePending = (isPending: boolean): void => {
     if (!template) {
       return;
@@ -444,6 +539,26 @@ export function mountCropOverlay(): void {
       '[data-crop-action="copy"], [data-crop-action="save"]'
     )) {
       button.disabled = isPending;
+    }
+  };
+
+  const setActionStatus = (message: string | null, action?: CaptureAction): void => {
+    if (!template) {
+      return;
+    }
+
+    if (!message) {
+      template.actionStatus.hidden = true;
+      template.actionStatus.textContent = "";
+      delete template.actionStatus.dataset.cropActionStatus;
+      return;
+    }
+
+    template.actionStatus.hidden = false;
+    template.actionStatus.textContent = message;
+
+    if (action) {
+      template.actionStatus.dataset.cropActionStatus = action;
     }
   };
 
@@ -645,6 +760,63 @@ function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect |
   );
 }
 
+interface CompletionToastOptions {
+  readonly result: CropCapturePipelineResult;
+  readonly message: string;
+  readonly status: "copied" | "saved";
+  readonly filename?: string;
+}
+
+function showCompletionToast(options: CompletionToastOptions): void {
+  document.getElementById(TOAST_ROOT_ID)?.remove();
+
+  const toast = createCropToastTemplate(options.message);
+  toast.host.dataset.cropToastStatus = options.status;
+  toast.host.dataset.cropToastAction = options.result.action;
+  toast.host.dataset.cropToastWidth = String(options.result.outputWidth);
+  toast.host.dataset.cropToastHeight = String(options.result.outputHeight);
+
+  if (options.filename) {
+    toast.host.dataset.cropToastFilename = options.filename;
+  }
+
+  let dismissTimeoutId: number | null = null;
+
+  const removeToast = (): void => {
+    if (dismissTimeoutId !== null) {
+      window.clearTimeout(dismissTimeoutId);
+      dismissTimeoutId = null;
+    }
+
+    toast.host.remove();
+  };
+
+  toast.closeButton.addEventListener("click", removeToast);
+  document.documentElement.append(toast.host);
+  dismissTimeoutId = window.setTimeout(removeToast, TOAST_AUTO_DISMISS_MS);
+}
+
+async function requestPngDownload(dataUrl: string, title: string): Promise<string> {
+  pngDataUrlToBlob(dataUrl);
+  const filename = createPngFilename(title);
+
+  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    throw new Error("Chrome runtime messaging is unavailable.");
+  }
+
+  const response = await chrome.runtime.sendMessage(createDownloadPngRequest(dataUrl, filename));
+
+  if (!isCropDownloadPngResponse(response)) {
+    throw new Error("Invalid download response from background service worker.");
+  }
+
+  if (!response.ok) {
+    throw new Error(response.error);
+  }
+
+  return filename;
+}
+
 function getCropActionFromEvent(event: Event): CropAction | null {
   for (const eventTarget of event.composedPath()) {
     if (!(eventTarget instanceof HTMLElement)) {
@@ -681,6 +853,14 @@ function createCaptureVisibleTabRequest(): CropCaptureVisibleTabRequest {
   };
 }
 
+function createDownloadPngRequest(dataUrl: string, filename: string): CropDownloadPngRequest {
+  return {
+    type: CROP_DOWNLOAD_PNG_MESSAGE,
+    dataUrl,
+    filename
+  };
+}
+
 function isCropCaptureVisibleTabResponse(
   message: unknown
 ): message is CropCaptureVisibleTabResponse {
@@ -690,6 +870,22 @@ function isCropCaptureVisibleTabResponse(
 
   if (message.ok === true) {
     return "dataUrl" in message && typeof message.dataUrl === "string";
+  }
+
+  if (message.ok === false) {
+    return "error" in message && typeof message.error === "string";
+  }
+
+  return false;
+}
+
+function isCropDownloadPngResponse(message: unknown): message is CropDownloadPngResponse {
+  if (typeof message !== "object" || message === null || !("ok" in message)) {
+    return false;
+  }
+
+  if (message.ok === true) {
+    return "downloadId" in message && typeof message.downloadId === "number";
   }
 
   if (message.ok === false) {
