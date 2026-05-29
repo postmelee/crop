@@ -71,8 +71,8 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-24 | cross-origin iframe 후보 | 실제 웹 대표 페이지 | 외부 iframe 존재 시 | MVP 제한이면 selection boundary와 README 제한 문구로 분류한다. | 미확인: fixture 범위 밖 | 제한 | MVP 제한 후보 | Stage 4 분류 필요 |
 | P6-25 | closed shadow DOM 후보 | 실제 웹 대표 페이지 | closed shadow 존재 시 | 내부 선택이 불가능하면 제한으로 기록한다. | 미확인: fixture 범위 밖 | 제한 | MVP 제한 후보 | Stage 4 분류 필요 |
 | P6-26 | 역방향 드래그 선택 | fixture 일반 영역 | 포인터가 시작점보다 위/왼쪽으로 이동 | 선택 rect가 좌상단-우하단 좌표로 정규화된다. | 자동+수동 OK, 단 drag flicker는 P6-27로 분리 | OK | 해당 없음 | `state-machine.test.ts`, 작업지시자 Stage 3 smoke |
-| P6-27 | drag selection flicker | fixture 일반 영역 | 드래그 선택 중 | 선택 중 불필요한 흰색 가로선이 반짝이지 않는다. | MISS: 흰색 가로선 반짝임 발견 | MISS | 이번 task 후보 | 작업지시자 Stage 3 smoke |
-| P6-28 | Firefox식 선택 후 편집 UI parity | 실제 웹 대표 페이지 | 요소 클릭 후 selected 상태 | resize handle, 점선 표시, 이미지 사이즈 badge, Firefox식 Copy/Save 버튼을 제공한다. | 현재 MVP 미구현, 별도 parity 요구 확인 | 후속 | 신규 후속 후보 | 작업지시자 첨부 이미지 |
+| P6-27 | drag selection flicker | fixture 일반 영역 | 드래그 선택 중 | 선택 중 불필요한 흰색 가로선이 반짝이지 않는다. | Stage 4 CSS 보정 적용, 수동 재확인 필요 | MISS | 이번 task | 작업지시자 Stage 3 smoke, `crop-overlay.css` |
+| P6-28 | Firefox식 선택 후 편집 UI parity | 실제 웹 대표 페이지 | 요소 클릭 후 selected 상태 | resize handle, 점선 표시, 이미지 사이즈 badge, Firefox식 Copy/Save 버튼을 제공한다. | 현재 MVP 미구현, 일부는 #13과 연결, size badge/button parity는 신규 후속 후보 | 후속 | 기존 후속 + 신규 후속 후보 | 작업지시자 첨부 이미지, #13 |
 
 ## 수동 smoke 절차 초안
 
@@ -114,3 +114,28 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | Copy/Save와 overlay 오염 방지 | OK | 작업지시자 2026-05-29 수동 smoke |
 | drag selection 중 흰색 가로선 flicker | MISS | Stage 4에서 저위험 CSS 보정 가능 여부 판단 |
 | Firefox식 selected-state resize handle, 점선, size badge, 버튼 parity | 후속 | 현재 Task #8은 Phase 6 품질 검증 범위이므로 신규 후속 후보로 분리 |
+
+## Stage 4 분류 결과
+
+| 항목 | 분류 | 처리 |
+|---|---|---|
+| P6-27 drag selection 흰색 가로선 flicker | 이번 task 결함 | drag 중 전체 viewport frame이 노출되지 않도록 `.crop-frame`을 dragging 상태에서 숨김. 수동 재 smoke 필요. |
+| P6-23 비HiDPI 확인 | 검증 한계 | 현재 환경에서 미확인. README와 최종 보고서에 검증 한계로 기록. |
+| P6-24 cross-origin iframe 후보 | MVP 제한 / 기존 후속 | [#14](https://github.com/postmelee/crop/issues/14) `Follow-up: iframe/nested context 요소 선택 지원`으로 연결. |
+| P6-25 closed shadow DOM 후보 | MVP 제한 / 기존 후속 | Chrome MV3 접근 제약으로 README 제한 문구에 기록. 필요 시 #14 범위에서 함께 검토. |
+| P6-28 resize/move handles와 keyboard 조정 | 기존 후속 | [#13](https://github.com/postmelee/crop/issues/13) `Follow-up: 선택 영역 resize/move handles와 keyboard 조정 구현`으로 연결. |
+| P6-28 size badge와 Copy/Save button parity | 신규 후속 후보 | 새 이슈 생성은 작업지시자 별도 승인 후 진행. |
+| edge auto-scroll | 기존 후속 | [#12](https://github.com/postmelee/crop/issues/12) `Follow-up: 드래그 선택 edge auto-scroll 구현`으로 연결. |
+| viewport 밖 전체 이미지 저장 / full page | 기존 후속 | [#15](https://github.com/postmelee/crop/issues/15) `Follow-up: full page capture와 scroll stitching 구현`으로 연결. |
+
+## 신규 후속 이슈 후보
+
+제목 후보: `Follow-up: Firefox식 selected-state size badge와 action button parity 구현`
+
+범위 후보:
+
+- 요소 클릭 또는 드래그 선택 후 selected 상태에서 이미지 크기 badge를 표시한다.
+- Firefox 원본에 가까운 selected-state action toolbar 스타일을 적용한다.
+- Copy/Save/Cancel button label, icon, spacing, focus state를 Firefox식 selected UI에 맞춘다.
+- #13 resize/move handles와 충돌하지 않도록 handle hit-test 영역과 toolbar 배치를 분리한다.
+- Copy/Save capture 결과에는 size badge, handle, action toolbar가 포함되지 않아야 한다.
