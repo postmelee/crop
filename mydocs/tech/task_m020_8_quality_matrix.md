@@ -31,46 +31,48 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 
 | 항목 | 값 |
 |---|---|
-| OS | 대기 |
-| Chrome 버전 | 대기 |
+| OS | macOS, 작업지시자 Chrome 수동 smoke |
+| Chrome 버전 | 작업지시자 수동 smoke 통과, 버전 미기록 |
 | 확장 로드 경로 | `dist/` |
-| Fixture URL | 대기 |
-| 화면 배율 / DPR | 대기 |
+| Fixture URL | `http://127.0.0.1:8765/phase6_edge_cases.html` |
+| 화면 배율 / DPR | 현재 작업지시자 환경 기준 통과, 세부 DPR 미기록 |
 | 브라우저 zoom | 80%, 100%, 125%, 150% |
-| HiDPI 확인 | 대기 |
-| 비HiDPI 확인 | 대기 |
+| HiDPI 확인 | 현재 macOS/Chrome 화면 기준 수동 smoke 통과 |
+| 비HiDPI 확인 | 미확인 |
 | Windows / Linux 확인 | 제한: 현재 macOS 로컬 환경에서는 직접 확인 전 |
 
 ## 대상별 품질 매트릭스
 
 | ID | 대상 | Fixture selector | 조건 | 예상 동작 | 실제 결과 | 상태 | 후속 분류 | 근거 |
 |---|---|---|---|---|---|---|---|---|
-| P6-01 | 일반 문서 heading | `[data-crop-fixture="document-heading"]` | zoom 100% | hover outline과 click selection이 heading의 visual rect에 맞는다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-02 | 일반 문서 section | `[data-crop-fixture="document-section"]` | zoom 80/100/125/150% | 브라우저 zoom 변경 후에도 hover와 선택 좌표가 어긋나지 않는다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-03 | 카드 UI | `[data-crop-fixture="card-primary"]` | 인접 카드 포함 | 선택 영역이 형제 카드로 새지 않는다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-04 | 중첩 버튼 | `[data-crop-fixture="nested-card-button"]` | 카드 내부 버튼 hover | 버튼과 카드 중 사용자가 가리킨 요소가 일관되게 강조된다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-05 | 버튼/아이콘 밀집 영역 | `[data-crop-fixture="button-icon-section"]` | 작은 target 연속 hover | hover highlight가 작은 버튼 사이에서 잔상 없이 이동한다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-06 | code block | `[data-crop-fixture="code-block"]` | 가로 overflow 포함 | code block의 visible rect 기준으로 선택된다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-07 | 긴 table | `[data-crop-fixture="long-table"]` | 여러 row 포함 | table 전체 또는 cell hover가 예측 가능한 rect로 표시된다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-08 | sticky header | `[data-crop-fixture="sticky-header"]` | 스크롤 후 hover | sticky 위치의 현재 viewport 좌표에 맞춰 outline이 따라온다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-09 | transform/scale 요소 | `[data-crop-fixture="transform-scale-target"]` | CSS transform 적용 | 브라우저가 반환한 visual bounding rect 기준으로 선택된다. | 자동 OK, Stage 3 수동 smoke 대기 | OK | 이번 task | `phase6-regression.test.ts` |
-| P6-10 | same-document iframe | `[data-crop-fixture="same-document-iframe"]` | iframe 내부 hover | MVP에서 iframe 내부 깊은 선택이 제한이면 iframe boundary 또는 제한으로 기록한다. | 대기 | 대기 | MVP 제한 후보 | Stage 3 수동 smoke |
-| P6-11 | open shadow host | `[data-crop-fixture="open-shadow-host"]` | host hover | host 경계 선택이 안정적으로 동작한다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-12 | open shadow 내부 panel | `[data-crop-fixture="open-shadow-panel"]` | open shadow DOM | composed path 기반으로 내부 요소 rect가 잡히는지 확인한다. | 자동 OK, Stage 3 수동 smoke 대기 | OK | 이번 task | `phase6-regression.test.ts` |
-| P6-13 | viewport 밖 큰 요소 | `[data-crop-fixture="offscreen-large-element"]` | 우측 viewport 밖 확장 | 선택 outline은 요소 rect를 표시하되 Copy/Save 이미지는 visible viewport 교차 영역만 저장한다. | 자동 OK, Stage 3 수동 smoke 대기 | OK | MVP 제한 후보 | `phase6-regression.test.ts` |
-| P6-14 | scroll tail | `[data-crop-fixture="scroll-tail"]` | 하단 스크롤 후 hover | 스크롤 위치가 반영되어 outline이 target에 맞는다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-15 | Copy 액션 | 선택 완료 후 `Copy` | zoom 100% | overlay/prompt/buttons/toast가 결과 이미지에 포함되지 않고 clipboard paste가 가능하다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-16 | Save 액션 | 선택 완료 후 `Save` | zoom 100% | overlay/prompt/buttons/toast가 결과 이미지에 포함되지 않고 PNG 다운로드가 시작된다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-17 | overlay 오염 방지 | Copy/Save 결과 | selected 상태 | crop overlay, prompt, action bar, toast가 최종 PNG에 포함되지 않는다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-18 | zoom 80% | 대표 카드 + Copy/Save | Chrome zoom 80% | 선택 rect와 저장 이미지가 동일한 visible 영역을 가리킨다. | source mapping 자동 OK, Stage 3 수동 smoke 대기 | OK | 이번 task | `crop-image.test.ts` |
-| P6-19 | zoom 100% | 대표 카드 + Copy/Save | Chrome zoom 100% | 기준 zoom에서 hover, selection, Copy, Save가 통과한다. | source mapping 자동 OK, Stage 3 수동 smoke 대기 | OK | 이번 task | `crop-image.test.ts` |
-| P6-20 | zoom 125% | 대표 카드 + Copy/Save | Chrome zoom 125% | 확대 상태에서도 source crop rect가 어긋나지 않는다. | source mapping 자동 OK, Stage 3 수동 smoke 대기 | OK | 이번 task | `crop-image.test.ts`, `phase6-regression.test.ts` |
-| P6-21 | zoom 150% | 대표 카드 + Copy/Save | Chrome zoom 150% | 큰 zoom에서도 action bar가 viewport 안에 배치되고 저장 결과가 맞다. | source mapping 자동 OK, Stage 3 수동 smoke 대기 | OK | 이번 task | `crop-image.test.ts` |
-| P6-22 | HiDPI | 대표 카드 + Copy/Save | Retina / devicePixelRatio > 1 | clipboard/download 이미지가 선택 영역과 같은 픽셀 비율로 잘린다. | 대기 | 대기 | 대기 | Stage 3 수동 smoke |
-| P6-23 | 비HiDPI | 대표 카드 + Copy/Save | devicePixelRatio = 1 | 가능한 환경이면 결과를 확인하고, 없으면 미확인 제한으로 기록한다. | 대기 | 대기 | MVP 제한 후보 | Stage 3 수동 smoke |
-| P6-24 | cross-origin iframe 후보 | 실제 웹 대표 페이지 | 외부 iframe 존재 시 | MVP 제한이면 selection boundary와 README 제한 문구로 분류한다. | 대기 | 대기 | MVP 제한 후보 | Stage 3/4 |
-| P6-25 | closed shadow DOM 후보 | 실제 웹 대표 페이지 | closed shadow 존재 시 | 내부 선택이 불가능하면 제한으로 기록한다. | 대기 | 대기 | MVP 제한 후보 | Stage 3/4 |
-| P6-26 | 역방향 드래그 선택 | fixture 일반 영역 | 포인터가 시작점보다 위/왼쪽으로 이동 | 선택 rect가 좌상단-우하단 좌표로 정규화된다. | 자동 OK | OK | 이번 task | `state-machine.test.ts` |
+| P6-01 | 일반 문서 heading | `[data-crop-fixture="document-heading"]` | zoom 100% | hover outline과 click selection이 heading의 visual rect에 맞는다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-02 | 일반 문서 section | `[data-crop-fixture="document-section"]` | zoom 80/100/125/150% | 브라우저 zoom 변경 후에도 hover와 선택 좌표가 어긋나지 않는다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-03 | 카드 UI | `[data-crop-fixture="card-primary"]` | 인접 카드 포함 | 선택 영역이 형제 카드로 새지 않는다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-04 | 중첩 버튼 | `[data-crop-fixture="nested-card-button"]` | 카드 내부 버튼 hover | 버튼과 카드 중 사용자가 가리킨 요소가 일관되게 강조된다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-05 | 버튼/아이콘 밀집 영역 | `[data-crop-fixture="button-icon-section"]` | 작은 target 연속 hover | hover highlight가 작은 버튼 사이에서 잔상 없이 이동한다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-06 | code block | `[data-crop-fixture="code-block"]` | 가로 overflow 포함 | code block의 visible rect 기준으로 선택된다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-07 | 긴 table | `[data-crop-fixture="long-table"]` | 여러 row 포함 | table 전체 또는 cell hover가 예측 가능한 rect로 표시된다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-08 | sticky header | `[data-crop-fixture="sticky-header"]` | 스크롤 후 hover | sticky 위치의 현재 viewport 좌표에 맞춰 outline이 따라온다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-09 | transform/scale 요소 | `[data-crop-fixture="transform-scale-target"]` | CSS transform 적용 | 브라우저가 반환한 visual bounding rect 기준으로 선택된다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-10 | same-document iframe | `[data-crop-fixture="same-document-iframe"]` | iframe 내부 hover | MVP에서 iframe 내부 깊은 선택이 제한이면 iframe boundary 또는 제한으로 기록한다. | 수동 OK: MVP fallback 기준 통과 | OK | MVP 제한 후보 | 작업지시자 Stage 3 smoke |
+| P6-11 | open shadow host | `[data-crop-fixture="open-shadow-host"]` | host hover | host 경계 선택이 안정적으로 동작한다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-12 | open shadow 내부 panel | `[data-crop-fixture="open-shadow-panel"]` | open shadow DOM | composed path 기반으로 내부 요소 rect가 잡히는지 확인한다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-13 | viewport 밖 큰 요소 | `[data-crop-fixture="offscreen-large-element"]` | 우측 viewport 밖 확장 | 선택 outline은 요소 rect를 표시하되 Copy/Save 이미지는 visible viewport 교차 영역만 저장한다. | 자동+수동 OK: visible clipping 기준 통과 | OK | MVP 제한 후보 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-14 | scroll tail | `[data-crop-fixture="scroll-tail"]` | 하단 스크롤 후 hover | 스크롤 위치가 반영되어 outline이 target에 맞는다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-15 | Copy 액션 | 선택 완료 후 `Copy` | zoom 100% | overlay/prompt/buttons/toast가 결과 이미지에 포함되지 않고 clipboard paste가 가능하다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-16 | Save 액션 | 선택 완료 후 `Save` | zoom 100% | overlay/prompt/buttons/toast가 결과 이미지에 포함되지 않고 PNG 다운로드가 시작된다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-17 | overlay 오염 방지 | Copy/Save 결과 | selected 상태 | crop overlay, prompt, action bar, toast가 최종 PNG에 포함되지 않는다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-18 | zoom 80% | 대표 카드 + Copy/Save | Chrome zoom 80% | 선택 rect와 저장 이미지가 동일한 visible 영역을 가리킨다. | 자동+수동 OK | OK | 해당 없음 | `crop-image.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-19 | zoom 100% | 대표 카드 + Copy/Save | Chrome zoom 100% | 기준 zoom에서 hover, selection, Copy, Save가 통과한다. | 자동+수동 OK | OK | 해당 없음 | `crop-image.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-20 | zoom 125% | 대표 카드 + Copy/Save | Chrome zoom 125% | 확대 상태에서도 source crop rect가 어긋나지 않는다. | 자동+수동 OK | OK | 해당 없음 | `crop-image.test.ts`, `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-21 | zoom 150% | 대표 카드 + Copy/Save | Chrome zoom 150% | 큰 zoom에서도 action bar가 viewport 안에 배치되고 저장 결과가 맞다. | 자동+수동 OK | OK | 해당 없음 | `crop-image.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-22 | HiDPI | 대표 카드 + Copy/Save | Retina / devicePixelRatio > 1 | clipboard/download 이미지가 선택 영역과 같은 픽셀 비율로 잘린다. | 수동 OK: 현재 macOS/Chrome 화면 기준 | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
+| P6-23 | 비HiDPI | 대표 카드 + Copy/Save | devicePixelRatio = 1 | 가능한 환경이면 결과를 확인하고, 없으면 미확인 제한으로 기록한다. | 미확인: 현재 환경 없음 | 제한 | MVP 제한 후보 | Stage 3 환경 한계 |
+| P6-24 | cross-origin iframe 후보 | 실제 웹 대표 페이지 | 외부 iframe 존재 시 | MVP 제한이면 selection boundary와 README 제한 문구로 분류한다. | 미확인: fixture 범위 밖 | 제한 | MVP 제한 후보 | Stage 4 분류 필요 |
+| P6-25 | closed shadow DOM 후보 | 실제 웹 대표 페이지 | closed shadow 존재 시 | 내부 선택이 불가능하면 제한으로 기록한다. | 미확인: fixture 범위 밖 | 제한 | MVP 제한 후보 | Stage 4 분류 필요 |
+| P6-26 | 역방향 드래그 선택 | fixture 일반 영역 | 포인터가 시작점보다 위/왼쪽으로 이동 | 선택 rect가 좌상단-우하단 좌표로 정규화된다. | 자동+수동 OK, 단 drag flicker는 P6-27로 분리 | OK | 해당 없음 | `state-machine.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-27 | drag selection flicker | fixture 일반 영역 | 드래그 선택 중 | 선택 중 불필요한 흰색 가로선이 반짝이지 않는다. | MISS: 흰색 가로선 반짝임 발견 | MISS | 이번 task 후보 | 작업지시자 Stage 3 smoke |
+| P6-28 | Firefox식 선택 후 편집 UI parity | 실제 웹 대표 페이지 | 요소 클릭 후 selected 상태 | resize handle, 점선 표시, 이미지 사이즈 badge, Firefox식 Copy/Save 버튼을 제공한다. | 현재 MVP 미구현, 별도 parity 요구 확인 | 후속 | 신규 후속 후보 | 작업지시자 첨부 이미지 |
 
 ## 수동 smoke 절차 초안
 
@@ -102,3 +104,13 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | transform/scale 요소의 visual bounding rect 사용 | OK | `tests/content/overlay/phase6-regression.test.ts` |
 | nested open shadow root hit-test traversal | OK | `tests/content/overlay/phase6-regression.test.ts` |
 | 역방향 드래그 선택 rect 정규화 | OK | `tests/content/overlay/state-machine.test.ts` |
+
+## Stage 3 수동 smoke 결과
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| fixture 확인 항목 전체 | OK | 작업지시자 2026-05-29 수동 smoke |
+| Chrome zoom 80%, 100%, 125%, 150% | OK | 작업지시자 2026-05-29 수동 smoke |
+| Copy/Save와 overlay 오염 방지 | OK | 작업지시자 2026-05-29 수동 smoke |
+| drag selection 중 흰색 가로선 flicker | MISS | Stage 4에서 저위험 CSS 보정 가능 여부 판단 |
+| Firefox식 selected-state resize handle, 점선, size badge, 버튼 parity | 후속 | 현재 Task #8은 Phase 6 품질 검증 범위이므로 신규 후속 후보로 분리 |
