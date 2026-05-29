@@ -1,4 +1,8 @@
-import { rectFromEdges, type PageRect } from "../../firefox-derived/window-dimensions";
+import {
+  normalizeRect,
+  rectFromEdges,
+  type PageRect
+} from "../../firefox-derived/window-dimensions";
 
 export type CropOverlayStatus =
   | "idle"
@@ -110,11 +114,8 @@ export function transitionOverlayState(
         return state;
       }
 
-      const selectedRect = rectFromEdges(
-        state.dragStart.x,
-        state.dragStart.y,
-        event.point.x,
-        event.point.y
+      const selectedRect = normalizeRect(
+        rectFromEdges(state.dragStart.x, state.dragStart.y, event.point.x, event.point.y)
       );
 
       if (

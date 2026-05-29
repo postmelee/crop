@@ -142,6 +142,25 @@ describe("transitionOverlayState", () => {
     });
   });
 
+  it("normalizes the dragged region when the pointer moves above and left of the start", () => {
+    const draggingReady = transitionOverlayState(createInitialOverlayState(), {
+      type: "dragStart",
+      point: { x: 120, y: 140 }
+    });
+
+    expect(
+      transitionOverlayState(draggingReady, {
+        type: "dragMove",
+        point: { x: 40, y: 50 }
+      })
+    ).toEqual({
+      status: "dragging",
+      hoverRect: null,
+      selectedRect: rectFromEdges(40, 50, 120, 140),
+      dragStart: { x: 120, y: 140 }
+    });
+  });
+
   it("selects the dragged region on pointer up", () => {
     const draggingReady = transitionOverlayState(createInitialOverlayState(), {
       type: "dragStart",

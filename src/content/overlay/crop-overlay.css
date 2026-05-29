@@ -44,6 +44,10 @@
   background: transparent;
 }
 
+:host([data-crop-state="dragging"]) .crop-frame {
+  display: none;
+}
+
 .crop-selection-mask {
   position: fixed;
   inset: 0;

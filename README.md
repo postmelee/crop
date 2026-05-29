@@ -69,9 +69,18 @@ M010 Phase 5 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewp
 
 아직 구현하지 않은 후속 범위:
 
-- full page capture, scroll stitching, resize handles
-- selection resize/move handles와 keyboard 조정
-- iframe/nested context 내부 선택 고도화
+- #12 drag selection edge auto-scroll
+- #13 selection resize/move handles와 keyboard 조정
+- #14 iframe/nested context 내부 선택 고도화
+- #15 full page capture와 scroll stitching
+- Firefox식 selected-state size badge와 Copy/Save button parity
+
+현재 제한:
+
+- 현재 버전은 `chrome.tabs.captureVisibleTab()` 기반 visible viewport 캡처만 저장한다.
+- 화면 밖으로 이어지는 요소를 선택할 수 있어도 실제 Copy/Save PNG는 화면에 보이는 viewport 교차 영역만 포함한다.
+- cross-origin iframe 내부, nested browsing context, closed shadow DOM 내부 선택은 MVP 범위 밖이다.
+- Firefox식 선택 후 resize handle, move handle, keyboard 조정, size badge는 후속 작업 범위다.
 
 ## 로컬 개발
 

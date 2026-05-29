@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en" data-crop-fixture="phase6-edge-cases">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>crop Phase 6 edge case fixture</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fb;
+        --ink: #18202b;
+        --muted: #5f6b7a;
+        --line: #d5dbe5;
+        --panel: #ffffff;
+        --accent: #2f6fed;
+        --accent-soft: #dbe7ff;
+        --warn: #b85900;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 980px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, rgba(47, 111, 237, 0.08), transparent 360px),
+          var(--bg);
+      }
+
+      .fixture-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 58px;
+        padding: 12px 28px;
+        color: #f8fbff;
+        background: #202a37;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow: 0 10px 32px rgba(18, 32, 54, 0.2);
+      }
+
+      .fixture-sticky nav {
+        display: flex;
+        gap: 8px;
+      }
+
+      .fixture-sticky a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        padding: 0 12px;
+        color: #f8fbff;
+        text-decoration: none;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 8px;
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 72px));
+        margin: 32px auto 96px;
+      }
+
+      .page-title {
+        margin: 0 0 24px;
+        font-size: 36px;
+        line-height: 1.15;
+      }
+
+      .section {
+        margin: 24px 0;
+        padding: 24px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(28, 39, 55, 0.06);
+      }
+
+      .section h2 {
+        margin: 0 0 12px;
+        font-size: 22px;
+      }
+
+      .section p {
+        color: var(--muted);
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        min-height: 168px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fbfcff;
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 18px;
+      }
+
+      .button-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      button,
+      .icon-button {
+        min-height: 40px;
+        padding: 0 12px;
+        color: #1b3159;
+        font: inherit;
+        background: #eef4ff;
+        border: 1px solid #b8cdf8;
+        border-radius: 8px;
+      }
+
+      .icon-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        text-decoration: none;
+      }
+
+      pre {
+        overflow: auto;
+        margin: 0;
+        padding: 18px;
+        color: #e9f0ff;
+        background: #18202b;
+        border-radius: 10px;
+      }
+
+      code {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        font-size: 14px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        text-align: left;
+        border: 1px solid var(--line);
+      }
+
+      th {
+        background: #eef2f8;
+      }
+
+      .transform-stage {
+        min-height: 210px;
+        padding: 28px;
+        overflow: hidden;
+        background:
+          linear-gradient(135deg, rgba(47, 111, 237, 0.12), transparent),
+          #fff;
+      }
+
+      .transform-target {
+        width: 420px;
+        min-height: 128px;
+        padding: 20px;
+        color: #132344;
+        background: #dbe7ff;
+        border: 2px solid #2f6fed;
+        border-radius: 12px;
+        transform: translateX(34px) scale(0.86) rotate(-1.5deg);
+        transform-origin: left top;
+      }
+
+      .embedded-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      iframe {
+        width: 100%;
+        height: 260px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      .shadow-host {
+        display: block;
+        min-height: 260px;
+        padding: 12px;
+        border: 1px dashed #6b7a90;
+        border-radius: 10px;
+      }
+
+      .offscreen-wrap {
+        overflow: visible;
+      }
+
+      .offscreen-large {
+        width: 138vw;
+        min-width: 1480px;
+        min-height: 520px;
+        padding: 28px;
+        color: #1d2a13;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.8), transparent),
+          repeating-linear-gradient(45deg, #cdeec3 0 18px, #a8d899 18px 36px);
+        border: 3px dashed #2e7d32;
+        border-radius: 12px;
+      }
+
+      .offscreen-large h2 {
+        max-width: 680px;
+      }
+
+      .offscreen-large p {
+        max-width: 760px;
+        color: #31502c;
+      }
+
+      .footer-space {
+        height: 420px;
+        padding-top: 48px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="fixture-sticky" data-crop-fixture="sticky-header">
+      <strong>crop Phase 6 edge case fixture</strong>
+      <nav aria-label="fixture sections">
+        <a href="#document">Document</a>
+        <a href="#cards">Cards</a>
+        <a href="#embed">iframe and shadow</a>
+        <a href="#offscreen">Large element</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1 class="page-title" data-crop-fixture="document-heading">
+        Phase 6 quality and edge case coverage
+      </h1>
+
+      <section id="document" class="section" data-crop-fixture="document-section">
+        <h2>General document content</h2>
+        <p>
+          This block provides simple headings, paragraphs, links, and inline
+          text for normal hover and click selection smoke. It should remain
+          selectable at browser zoom 80, 100, 125, and 150 percent.
+        </p>
+        <p>
+          <a href="#cards">Jump to cards</a>
+          <span aria-hidden="true"> | </span>
+          <a href="#code">Jump to code</a>
+        </p>
+      </section>
+
+      <section id="cards" class="section" data-crop-fixture="cards-section">
+        <h2>Card UI</h2>
+        <div class="cards">
+          <article class="card" data-crop-fixture="card-primary">
+            <strong>Primary card</strong>
+            <p>Tests rectangular card hover boundaries and Copy output.</p>
+          </article>
+          <article class="card" data-crop-fixture="card-secondary">
+            <strong>Secondary card</strong>
+            <p>Tests adjacent card selection without leaking to siblings.</p>
+          </article>
+          <article class="card" data-crop-fixture="card-with-actions">
+            <strong>Card with actions</strong>
+            <p>Tests nested button hit targets inside a card.</p>
+            <button type="button" data-crop-fixture="nested-card-button">
+              Action
+            </button>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" data-crop-fixture="button-icon-section">
+        <h2>Dense button and icon area</h2>
+        <div class="button-grid">
+          <button type="button" data-crop-fixture="button-1">Copy</button>
+          <button type="button" data-crop-fixture="button-2">Save</button>
+          <button type="button" data-crop-fixture="button-3">Share</button>
+          <button type="button" data-crop-fixture="button-4">More</button>
+          <a class="icon-button" href="#document" data-crop-fixture="icon-link-1">A</a>
+          <a class="icon-button" href="#offscreen" data-crop-fixture="icon-link-2">B</a>
+        </div>
+      </section>
+
+      <section id="code" class="section" data-crop-fixture="code-section">
+        <h2>Code block</h2>
+        <pre data-crop-fixture="code-block"><code>const state = {
+  fixture: "phase6",
+  zoomTargets: [80, 100, 125, 150],
+  actions: ["Copy", "Save"],
+};
+
+function cropVisibleViewport(rect, viewport) {
+  return {
+    x: Math.max(rect.x, viewport.x),
+    y: Math.max(rect.y, viewport.y),
+    width: Math.min(rect.right, viewport.right) - Math.max(rect.x, viewport.x),
+    height: Math.min(rect.bottom, viewport.bottom) - Math.max(rect.y, viewport.y),
+  };
+}</code></pre>
+      </section>
+
+      <section class="section" data-crop-fixture="long-table-section">
+        <h2>Long table</h2>
+        <table data-crop-fixture="long-table">
+          <thead>
+            <tr>
+              <th>Case</th>
+              <th>Target</th>
+              <th>Expected</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>01</td><td>Heading</td><td>Stable hover</td><td>Low</td></tr>
+            <tr><td>02</td><td>Card</td><td>Sibling isolation</td><td>Low</td></tr>
+            <tr><td>03</td><td>Button</td><td>Nested target</td><td>Low</td></tr>
+            <tr><td>04</td><td>Code</td><td>Monospace block</td><td>Low</td></tr>
+            <tr><td>05</td><td>Table</td><td>Cell boundaries</td><td>Medium</td></tr>
+            <tr><td>06</td><td>Sticky</td><td>Scroll alignment</td><td>Medium</td></tr>
+            <tr><td>07</td><td>Transform</td><td>Bounding rect</td><td>Medium</td></tr>
+            <tr><td>08</td><td>iframe</td><td>MVP fallback</td><td>High</td></tr>
+            <tr><td>09</td><td>shadow</td><td>Open shadow traversal</td><td>Medium</td></tr>
+            <tr><td>10</td><td>Offscreen</td><td>Visible clipping</td><td>High</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section transform-stage" data-crop-fixture="transform-section">
+        <h2>Transform and scale</h2>
+        <div class="transform-target" data-crop-fixture="transform-scale-target">
+          CSS transform target. The overlay should use the visual bounding box
+          returned by the browser, not the untransformed layout box.
+        </div>
+      </section>
+
+      <section id="embed" class="section" data-crop-fixture="embedded-section">
+        <h2>iframe and open shadow DOM</h2>
+        <div class="embedded-grid">
+          <iframe title="srcdoc fixture iframe" data-crop-fixture="same-document-iframe"></iframe>
+          <div id="open-shadow-host" class="shadow-host" data-crop-fixture="open-shadow-host"></div>
+        </div>
+      </section>
+
+      <section id="offscreen" class="section offscreen-wrap" data-crop-fixture="offscreen-section">
+        <div class="offscreen-large" data-crop-fixture="offscreen-large-element">
+          <h2>Large element continuing outside the visible viewport</h2>
+          <p>
+            This element intentionally extends past the right side of the
+            viewport. MVP capture should save only the visible viewport
+            intersection even if the selection outline shows the full element.
+          </p>
+        </div>
+      </section>
+
+      <section class="footer-space" data-crop-fixture="scroll-tail">
+        <h2>Scroll tail</h2>
+        <p>Extra vertical space for sticky header and scroll alignment checks.</p>
+      </section>
+    </main>
+
+    <script>
+      const iframe = document.querySelector('[data-crop-fixture="same-document-iframe"]');
+      iframe.srcdoc = `
+        <!doctype html>
+        <html lang="en">
+          <head>
+            <style>
+              body {
+                margin: 0;
+                font-family: system-ui, sans-serif;
+                color: #172033;
+                background: #fff8e6;
+              }
+              .iframe-card {
+                margin: 18px;
+                padding: 18px;
+                border: 2px solid #b85900;
+                border-radius: 10px;
+                background: #fff;
+              }
+            </style>
+          </head>
+          <body data-crop-fixture="iframe-body">
+            <article class="iframe-card" data-crop-fixture="iframe-card">
+              <h3>srcdoc iframe card</h3>
+              <p>MVP may treat iframe content as a boundary or fallback target.</p>
+              <button type="button" data-crop-fixture="iframe-button">iframe button</button>
+            </article>
+          </body>
+        </html>
+      `;
+
+      const host = document.getElementById("open-shadow-host");
+      const shadow = host.attachShadow({ mode: "open" });
+      shadow.innerHTML = `
+        <style>
+          :host {
+            display: block;
+          }
+          .shadow-panel {
+            min-height: 210px;
+            padding: 18px;
+            color: #14223d;
+            background: #eef4ff;
+            border: 2px solid #2f6fed;
+            border-radius: 10px;
+          }
+          button {
+            min-height: 38px;
+            padding: 0 12px;
+            color: white;
+            background: #2f6fed;
+            border: 0;
+            border-radius: 8px;
+          }
+        </style>
+        <article class="shadow-panel" data-crop-fixture="open-shadow-panel">
+          <h3>Open shadow DOM panel</h3>
+          <p>Open shadow content should be visible to composed path based logic.</p>
+          <button type="button" data-crop-fixture="open-shadow-button">shadow button</button>
+        </article>
+      `;
+    </script>
+  </body>
+</html>
