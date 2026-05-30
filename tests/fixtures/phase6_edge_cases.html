@@ -250,6 +250,52 @@
           #fff;
       }
 
+      .adjustment-stage {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 220px;
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .adjustment-target {
+        min-height: 190px;
+        padding: 22px;
+        color: #14223d;
+        background:
+          linear-gradient(135deg, rgba(47, 111, 237, 0.14), transparent 58%),
+          #eef4ff;
+        border: 2px solid #2f6fed;
+        border-radius: 10px;
+      }
+
+      .adjustment-target strong {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 19px;
+      }
+
+      .adjustment-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .adjustment-small,
+      .adjustment-edge {
+        min-height: 88px;
+        padding: 14px;
+        border-radius: 10px;
+      }
+
+      .adjustment-small {
+        background: #fff7ed;
+        border: 2px solid #d97706;
+      }
+
+      .adjustment-edge {
+        background: #f0fdf4;
+        border: 2px dashed #26844d;
+      }
+
       .edge-scroll-horizontal {
         position: relative;
         width: 1880px;
@@ -306,6 +352,7 @@
         <a href="#document">Document</a>
         <a href="#cards">Cards</a>
         <a href="#embed">iframe and shadow</a>
+        <a href="#adjustment">Adjust</a>
         <a href="#edge-scroll">Edge scroll</a>
         <a href="#offscreen">Large element</a>
       </nav>
@@ -420,6 +467,28 @@ function cropVisibleViewport(rect, viewport) {
         <div class="embedded-grid">
           <iframe title="srcdoc fixture iframe" data-crop-fixture="same-document-iframe"></iframe>
           <div id="open-shadow-host" class="shadow-host" data-crop-fixture="open-shadow-host"></div>
+        </div>
+      </section>
+
+      <section id="adjustment" class="section" data-crop-fixture="selected-adjustment-section">
+        <h2>Selected adjustment smoke area</h2>
+        <div class="adjustment-stage">
+          <article class="adjustment-target" data-crop-fixture="selected-adjustment-target">
+            <strong>Resize and move target</strong>
+            <p>
+              Click this panel, drag inside the selected outline to move it,
+              drag the corner or edge handles to resize it, then use Arrow,
+              Shift+Arrow, and Alt/Option+Arrow keyboard adjustment.
+            </p>
+          </article>
+          <div class="adjustment-stack">
+            <div class="adjustment-small" data-crop-fixture="selected-adjustment-small-target">
+              Small target for size badge hiding checks.
+            </div>
+            <div class="adjustment-edge" data-crop-fixture="selected-adjustment-edge-target">
+              Edge-adjacent target for action box clamp checks.
+            </div>
+          </div>
         </div>
       </section>
 

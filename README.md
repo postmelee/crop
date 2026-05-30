@@ -36,7 +36,7 @@ MVP 제외 범위:
 
 ## 개발 상태
 
-M010 Phase 5 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport capture/crop backend, Copy/Save 사용자 action 기반이 준비됐다.
+M020 #13 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport capture/crop backend, Copy/Save 사용자 action, selected region 조정 UX 기반이 준비됐다.
 
 - `manifest.json` source manifest
 - Vite 기반 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 산출
@@ -55,6 +55,9 @@ M010 Phase 5 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewp
 - drag selection 중 viewport edge 근처 pointer 유지 시 vertical/horizontal edge auto-scroll
 - edge auto-scroll 중 page-coordinate selected rectangle 갱신과 pointerup/Escape/Cancel cleanup
 - selected rectangle 기준 Copy/Save/Cancel buttons 표시
+- selected rectangle의 8방향 resize handle과 내부 drag move interaction
+- selected rectangle의 Arrow/Shift/Alt keyboard move/resize 조정
+- selected rectangle 내부 `width x height` size badge 표시
 - Copy/Save buttons에서 capture/crop backend 호출
 - background service worker의 `chrome.tabs.captureVisibleTab()` 기반 visible viewport PNG capture
 - background service worker의 `chrome.downloads.download()` 기반 PNG Save
@@ -71,17 +74,16 @@ M010 Phase 5 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewp
 
 아직 구현하지 않은 후속 범위:
 
-- #13 selection resize/move handles와 keyboard 조정
 - #14 iframe/nested context 내부 선택 고도화
 - #15 full page capture와 scroll stitching
-- Firefox식 selected-state size badge와 Copy/Save button parity
+- Firefox식 Copy/Save button parity 추가 고도화
 
 현재 제한:
 
 - 현재 버전은 `chrome.tabs.captureVisibleTab()` 기반 visible viewport 캡처만 저장한다.
 - 화면 밖으로 이어지는 요소를 선택할 수 있어도 실제 Copy/Save PNG는 화면에 보이는 viewport 교차 영역만 포함한다.
 - cross-origin iframe 내부, nested browsing context, closed shadow DOM 내부 선택은 MVP 범위 밖이다.
-- Firefox식 선택 후 resize handle, move handle, keyboard 조정, size badge는 후속 작업 범위다.
+- full page capture, iframe 내부 고도화, Firefox식 추가 parity는 후속 작업 범위다.
 
 ## 로컬 개발
 
@@ -122,6 +124,9 @@ npm run typecheck
 - 일반 DOM 요소에 마우스를 올리면 dashed hover highlight가 표시된다.
 - viewport 밖으로 이어지는 요소와 화면보다 큰 partially visible 요소는 page 좌표 기준으로 선택되어, 선택 후 window scroll 시 테두리가 같은 문서 영역을 따라간다.
 - hover highlight 상태에서 클릭하면 selected rectangle이 고정되고 Copy/Save/Cancel buttons가 선택 영역 근처에 표시된다.
+- selected rectangle에는 8방향 resize handle, 내부 move surface, `width x height` size badge가 표시된다.
+- selected rectangle 내부를 드래그하면 선택 영역이 이동하고, 모서리/변 handle을 드래그하면 선택 영역 크기가 조정된다.
+- selected 상태에서 Arrow는 1px 이동, Shift+Arrow는 10px 이동, Alt/Option+Arrow는 해당 edge 1px resize, Alt/Option+Shift+Arrow는 10px resize로 동작한다.
 - selected rectangle 밖을 클릭하면 선택이 해제되고 중앙 prompt와 mode toolbar가 다시 보이며, 같은 클릭으로 새 선택이 즉시 발생하지 않는다.
 - 마우스를 누른 채 40px 이상 드래그하면 임의 영역 selected rectangle이 생성되고 Copy/Save/Cancel buttons가 표시된다.
 - 드래그 중 pointer를 viewport 위/아래/좌/우 edge 근처에 유지하면 페이지가 자동 스크롤되고 선택 영역이 문서 좌표 기준으로 계속 확장된다.

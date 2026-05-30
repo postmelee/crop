@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   getBestRectForElement,
@@ -22,6 +25,18 @@ import {
   fixtureElement,
   FixtureDocument
 } from "../../firefox-derived/dom-fixtures";
+
+const testDir = dirname(fileURLToPath(import.meta.url));
+const phase6FixtureHtml = readFileSync(
+  resolve(testDir, "../../fixtures/phase6_edge_cases.html"),
+  "utf8"
+);
+const manifestJson = JSON.parse(
+  readFileSync(resolve(testDir, "../../../manifest.json"), "utf8")
+) as {
+  permissions?: string[];
+  host_permissions?: string[];
+};
 
 describe("Phase 6 overlay regression coverage", () => {
   it("clips a page selection that extends outside every viewport edge before source mapping", () => {
@@ -125,5 +140,22 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(result.element).toBe(asElement(button));
     expect(result.rect).toBeNull();
     expect(result.unsupportedReason).toBeUndefined();
+  });
+
+  it("keeps selected resize and keyboard adjustment smoke targets in the fixture", () => {
+    for (const fixtureName of [
+      "selected-adjustment-section",
+      "selected-adjustment-target",
+      "selected-adjustment-small-target",
+      "selected-adjustment-edge-target"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+  });
+
+  it("keeps MVP extension permissions free of debugger and all-url host access", () => {
+    expect(manifestJson.permissions ?? []).not.toContain("debugger");
+    expect(manifestJson.permissions ?? []).not.toContain("<all_urls>");
+    expect(manifestJson.host_permissions ?? []).not.toContain("<all_urls>");
   });
 });
