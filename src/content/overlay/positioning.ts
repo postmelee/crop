@@ -7,6 +7,8 @@ export interface HighlightPresentation {
   readonly height: string;
 }
 
+export type SelectionControlsPresentation = HighlightPresentation;
+
 export interface ViewportSize {
   readonly clientWidth: number;
   readonly clientHeight: number;
@@ -71,6 +73,24 @@ export function applyHighlightPresentation(element: HTMLElement, rect: ViewportR
   element.style.height = presentation.height;
 }
 
+export function getSelectionControlsPresentation(
+  rect: ViewportRect | null
+): SelectionControlsPresentation {
+  return getHighlightPresentation(rect);
+}
+
+export function applySelectionControlsPresentation(
+  element: HTMLElement,
+  rect: ViewportRect | null
+): void {
+  const presentation = getSelectionControlsPresentation(rect);
+
+  element.hidden = presentation.hidden;
+  element.style.transform = presentation.transform;
+  element.style.width = presentation.width;
+  element.style.height = presentation.height;
+}
+
 export function getActionButtonsPresentation(
   rect: ViewportRect | null,
   viewport: ViewportSize,
@@ -95,16 +115,35 @@ export function getActionButtonsPresentation(
     viewport.clientHeight - elementSize.height - ACTION_BUTTONS_EDGE_MARGIN
   );
   const y =
+    belowY >= ACTION_BUTTONS_EDGE_MARGIN &&
     belowY + elementSize.height + ACTION_BUTTONS_EDGE_MARGIN <= viewport.clientHeight
       ? belowY
-      : aboveY >= ACTION_BUTTONS_EDGE_MARGIN
+      : aboveY >= ACTION_BUTTONS_EDGE_MARGIN &&
+          aboveY + elementSize.height + ACTION_BUTTONS_EDGE_MARGIN <= viewport.clientHeight
         ? aboveY
-        : clamp(belowY, ACTION_BUTTONS_EDGE_MARGIN, maxY);
+        : getClampedActionButtonsY(rect, belowY, maxY, viewport);
 
   return {
     hidden: false,
     transform: `translate(${toCssPixel(x)}, ${toCssPixel(y)})`
   };
+}
+
+function getClampedActionButtonsY(
+  rect: ViewportRect,
+  belowY: number,
+  maxY: number,
+  viewport: ViewportSize
+): number {
+  if (rect.top >= viewport.clientHeight) {
+    return maxY;
+  }
+
+  if (rect.bottom <= 0) {
+    return ACTION_BUTTONS_EDGE_MARGIN;
+  }
+
+  return clamp(belowY, ACTION_BUTTONS_EDGE_MARGIN, maxY);
 }
 
 export function applyActionButtonsPresentation(

@@ -90,6 +90,141 @@
   box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.72);
 }
 
+.crop-selection-controls {
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+  will-change: transform, width, height;
+}
+
+.crop-selection-controls[hidden] {
+  display: none;
+}
+
+.crop-selection-move-surface {
+  position: absolute;
+  inset: 0;
+  cursor: move;
+  pointer-events: auto;
+}
+
+.crop-resize-handle {
+  position: absolute;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  cursor: default;
+  font: inherit;
+  padding: 0;
+  pointer-events: auto;
+}
+
+.crop-resize-handle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  box-sizing: border-box;
+  border: 1px solid rgba(17, 24, 39, 0.48);
+  background: #ffffff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+}
+
+.crop-resize-handle:focus-visible {
+  outline: 3px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
+.crop-resize-handle--north,
+.crop-resize-handle--south {
+  left: 10px;
+  right: 10px;
+  height: 18px;
+  cursor: ns-resize;
+}
+
+.crop-resize-handle--north {
+  top: -9px;
+}
+
+.crop-resize-handle--south {
+  bottom: -9px;
+}
+
+.crop-resize-handle--north::after,
+.crop-resize-handle--south::after {
+  width: min(32px, 80%);
+  height: 4px;
+  border-radius: 999px;
+}
+
+.crop-resize-handle--east,
+.crop-resize-handle--west {
+  top: 10px;
+  bottom: 10px;
+  width: 18px;
+  cursor: ew-resize;
+}
+
+.crop-resize-handle--east {
+  right: -9px;
+}
+
+.crop-resize-handle--west {
+  left: -9px;
+}
+
+.crop-resize-handle--east::after,
+.crop-resize-handle--west::after {
+  width: 4px;
+  height: min(32px, 80%);
+  border-radius: 999px;
+}
+
+.crop-resize-handle--north-east,
+.crop-resize-handle--north-west,
+.crop-resize-handle--south-east,
+.crop-resize-handle--south-west {
+  width: 20px;
+  height: 20px;
+}
+
+.crop-resize-handle--north-east::after,
+.crop-resize-handle--north-west::after,
+.crop-resize-handle--south-east::after,
+.crop-resize-handle--south-west::after {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.crop-resize-handle--north-east {
+  top: -10px;
+  right: -10px;
+  cursor: nesw-resize;
+}
+
+.crop-resize-handle--north-west {
+  top: -10px;
+  left: -10px;
+  cursor: nwse-resize;
+}
+
+.crop-resize-handle--south-east {
+  right: -10px;
+  bottom: -10px;
+  cursor: nwse-resize;
+}
+
+.crop-resize-handle--south-west {
+  bottom: -10px;
+  left: -10px;
+  cursor: nesw-resize;
+}
+
 .crop-prompt {
   position: fixed;
   inset: 0;
@@ -192,14 +327,17 @@
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  column-gap: 0;
+  row-gap: 4px;
   max-width: calc(100vw - 16px);
-  min-height: 40px;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(37, 42, 50, 0.98);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+  min-height: 42px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  background: rgba(41, 45, 52, 0.98);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.34),
+    0 2px 8px rgba(0, 0, 0, 0.28);
   pointer-events: auto;
   will-change: transform;
 }
@@ -208,12 +346,25 @@
   display: none;
 }
 
+.crop-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.crop-action-group--secondary {
+  margin-left: 4px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
 .crop-action {
-  min-width: 68px;
-  height: 32px;
+  min-width: 64px;
+  height: 34px;
   border: 0;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   cursor: pointer;
   font: inherit;
@@ -221,7 +372,7 @@
   font-weight: 650;
   line-height: 1;
   letter-spacing: 0;
-  padding: 0 12px;
+  padding: 0 13px;
   white-space: nowrap;
 }
 
@@ -241,19 +392,19 @@
 
 .crop-action--copy,
 .crop-action--save {
-  background: #2f7df6;
+  background: #0a84ff;
   color: #ffffff;
 }
 
 .crop-action--copy:hover,
 .crop-action--save:hover {
-  background: #246ee0;
+  background: #006fd6;
 }
 
 .crop-action-status {
   flex-basis: 100%;
   max-width: 230px;
-  padding: 1px 4px 3px;
+  padding: 1px 6px 2px;
   color: rgba(255, 255, 255, 0.82);
   font-size: 11px;
   font-weight: 600;

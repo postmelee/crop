@@ -12,6 +12,7 @@ import {
   applyActionButtonsPresentation,
   applyEyeOffsetPresentation,
   applyHighlightPresentation,
+  applySelectionControlsPresentation,
   applySelectionMaskPresentation,
   type ElementSize
 } from "./positioning";
@@ -278,6 +279,7 @@ export function mountCropOverlay(): void {
         y: event.clientY
       });
       const explicitResizeHandle = getSelectionResizeHandleFromEvent(event);
+      const isExplicitMove = isSelectionMoveEvent(event);
 
       if (getCropActionFromEvent(event)) {
         return;
@@ -292,6 +294,20 @@ export function mountCropOverlay(): void {
         overlayState = transitionOverlayState(overlayState, {
           type: "selectionResizeStart",
           handle: explicitResizeHandle,
+          point: pagePointer
+        });
+        renderOverlayState();
+        return;
+      }
+
+      if (isExplicitMove) {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressFollowingDocumentClick();
+        cancelPendingHoverUpdate();
+        stopEdgeScroll();
+        overlayState = transitionOverlayState(overlayState, {
+          type: "selectionMoveStart",
           point: pagePointer
         });
         renderOverlayState();
@@ -655,6 +671,10 @@ export function mountCropOverlay(): void {
         ? windowDimensions.clipRectToViewport(selectionRect)
         : null;
       applyHighlightPresentation(template.highlight, activeRect);
+      applySelectionControlsPresentation(
+        template.selectionControls.container,
+        isSelectionActionVisibleStatus(overlayState.status) ? visibleSelectionRect : null
+      );
       applySelectionMaskPresentation(template.selectionMask, visibleSelectionRect);
       template.highlight.classList.toggle(
         "crop-highlight--selected",
@@ -662,7 +682,7 @@ export function mountCropOverlay(): void {
       );
       updateActionButtons(
         template,
-        isSelectionActionVisibleStatus(overlayState.status) ? visibleSelectionRect : null
+        isSelectionActionVisibleStatus(overlayState.status) ? selectionRect : null
       );
     }
   };
@@ -1005,6 +1025,15 @@ function getSelectionResizeHandleFromEvent(event: Event): SelectionResizeHandle 
   }
 
   return null;
+}
+
+function isSelectionMoveEvent(event: Event): boolean {
+  return event.composedPath().some((eventTarget) => {
+    return (
+      eventTarget instanceof HTMLElement &&
+      eventTarget.dataset.cropSelectionMove === "true"
+    );
+  });
 }
 
 async function requestVisibleTabCapture(): Promise<CropCaptureVisibleTabResponse> {

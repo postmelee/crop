@@ -3,7 +3,8 @@ import { rectFromEdges } from "../../../src/firefox-derived/window-dimensions";
 import {
   getActionButtonsPresentation,
   getEyeOffsetPresentation,
-  getHighlightPresentation
+  getHighlightPresentation,
+  getSelectionControlsPresentation
 } from "../../../src/content/overlay/positioning";
 
 describe("getHighlightPresentation", () => {
@@ -73,6 +74,53 @@ describe("getActionButtonsPresentation", () => {
     ).toEqual({
       hidden: false,
       transform: "translate(572px, 148px)"
+    });
+  });
+
+  it("clamps action buttons to the lower viewport edge when the selected rect is below view", () => {
+    expect(
+      getActionButtonsPresentation(rectFromEdges(120, 660, 320, 720), viewport, actionsSize)
+    ).toEqual({
+      hidden: false,
+      transform: "translate(120px, 548px)"
+    });
+  });
+
+  it("clamps action buttons to the upper viewport edge when the selected rect is above view", () => {
+    expect(
+      getActionButtonsPresentation(rectFromEdges(120, -120, 320, -60), viewport, actionsSize)
+    ).toEqual({
+      hidden: false,
+      transform: "translate(120px, 8px)"
+    });
+  });
+
+  it("clamps action buttons when neither above nor below has enough room", () => {
+    expect(
+      getActionButtonsPresentation(rectFromEdges(120, 10, 320, 590), viewport, actionsSize)
+    ).toEqual({
+      hidden: false,
+      transform: "translate(120px, 548px)"
+    });
+  });
+});
+
+describe("getSelectionControlsPresentation", () => {
+  it("uses the same viewport projection contract as the selected highlight", () => {
+    expect(getSelectionControlsPresentation(rectFromEdges(10.125, 20.5, 110.125, 70.75))).toEqual({
+      hidden: false,
+      transform: "translate(10.13px, 20.5px)",
+      width: "100px",
+      height: "50.25px"
+    });
+  });
+
+  it("hides controls when the selected rect has no visible viewport intersection", () => {
+    expect(getSelectionControlsPresentation(null)).toEqual({
+      hidden: true,
+      transform: "",
+      width: "",
+      height: ""
     });
   });
 });

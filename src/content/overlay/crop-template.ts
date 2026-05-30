@@ -1,5 +1,9 @@
 import overlayStyles from "./crop-overlay.css?raw";
 import {
+  SELECTION_RESIZE_HANDLES,
+  type SelectionResizeHandle
+} from "./selection-transform";
+import {
   createScreenshotsFullPageIconSvg,
   createScreenshotsPreviewFaceSvg,
   createScreenshotsVisibleIconSvg
@@ -15,6 +19,7 @@ export const TOAST_ATTRIBUTE = "data-crop-toast-root";
 export interface CropOverlayTemplate {
   readonly panel: HTMLElement;
   readonly highlight: HTMLElement;
+  readonly selectionControls: CropSelectionControlsTemplate;
   readonly actions: HTMLElement;
   readonly actionStatus: HTMLElement;
   readonly prompt: HTMLElement;
@@ -40,6 +45,8 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   highlight.className = "crop-highlight";
   highlight.hidden = true;
   highlight.setAttribute("aria-hidden", "true");
+
+  const selectionControls = createSelectionControlsTemplate();
 
   const panel = document.createElement("div");
   panel.className = "crop-mode-toolbar";
@@ -89,6 +96,8 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   const copyButton = createActionButton("copy", "Copy");
   const saveButton = createActionButton("save", "Save");
   const cancelButton = createActionButton("cancel", "Cancel");
+  const primaryActionGroup = createActionGroup("primary");
+  const secondaryActionGroup = createActionGroup("secondary");
   const actionStatus = document.createElement("div");
   actionStatus.className = "crop-action-status";
   actionStatus.hidden = true;
@@ -98,11 +107,22 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   instructions.append(instructionMain, instructionSub);
   prompt.append(face, instructions, promptCancelButton);
   panel.append(visibleModeButton, fullPageModeButton);
-  actions.append(copyButton, saveButton, cancelButton, actionStatus);
-  shell.append(dim, frame, selectionMask.container, highlight, prompt, actions, panel);
+  primaryActionGroup.append(copyButton, saveButton);
+  secondaryActionGroup.append(cancelButton);
+  actions.append(primaryActionGroup, secondaryActionGroup, actionStatus);
+  shell.append(
+    dim,
+    frame,
+    selectionMask.container,
+    highlight,
+    selectionControls.container,
+    prompt,
+    actions,
+    panel
+  );
   shadowRoot.append(style, shell);
 
-  return { panel, highlight, actions, actionStatus, prompt, selectionMask };
+  return { panel, highlight, selectionControls, actions, actionStatus, prompt, selectionMask };
 }
 
 export interface CropSelectionMaskTemplate {
@@ -111,6 +131,12 @@ export interface CropSelectionMaskTemplate {
   readonly right: HTMLElement;
   readonly bottom: HTMLElement;
   readonly left: HTMLElement;
+}
+
+export interface CropSelectionControlsTemplate {
+  readonly container: HTMLElement;
+  readonly moveSurface: HTMLElement;
+  readonly handles: Readonly<Record<SelectionResizeHandle, HTMLButtonElement>>;
 }
 
 export interface CropToastTemplate {
@@ -220,6 +246,14 @@ function createActionButton(action: string, label: string): HTMLButtonElement {
   return button;
 }
 
+function createActionGroup(kind: "primary" | "secondary"): HTMLElement {
+  const group = document.createElement("div");
+
+  group.className = `crop-action-group crop-action-group--${kind}`;
+
+  return group;
+}
+
 function createSelectionMaskTemplate(): CropSelectionMaskTemplate {
   const container = document.createElement("div");
   container.className = "crop-selection-mask";
@@ -247,4 +281,60 @@ function createSelectionMaskPart(position: string): HTMLElement {
   part.className = `crop-selection-mask-part crop-selection-mask-part--${position}`;
 
   return part;
+}
+
+function createSelectionControlsTemplate(): CropSelectionControlsTemplate {
+  const container = document.createElement("div");
+  container.className = "crop-selection-controls";
+  container.hidden = true;
+
+  const moveSurface = document.createElement("div");
+  moveSurface.className = "crop-selection-move-surface";
+  moveSurface.setAttribute("data-crop-selection-move", "true");
+  moveSurface.setAttribute("aria-hidden", "true");
+
+  const handles = Object.fromEntries(
+    SELECTION_RESIZE_HANDLES.map((handle) => [handle, createResizeHandle(handle)])
+  ) as Record<SelectionResizeHandle, HTMLButtonElement>;
+
+  container.append(moveSurface, ...SELECTION_RESIZE_HANDLES.map((handle) => handles[handle]));
+
+  return {
+    container,
+    moveSurface,
+    handles
+  };
+}
+
+function createResizeHandle(handle: SelectionResizeHandle): HTMLButtonElement {
+  const button = document.createElement("button");
+
+  button.className = `crop-resize-handle crop-resize-handle--${handle}`;
+  button.type = "button";
+  button.setAttribute("data-crop-resize-handle", handle);
+  button.setAttribute("aria-label", `${getResizeHandleLabel(handle)} 크기 조절`);
+  button.title = `${getResizeHandleLabel(handle)} 크기 조절`;
+
+  return button;
+}
+
+function getResizeHandleLabel(handle: SelectionResizeHandle): string {
+  switch (handle) {
+    case "north":
+      return "위쪽";
+    case "south":
+      return "아래쪽";
+    case "east":
+      return "오른쪽";
+    case "west":
+      return "왼쪽";
+    case "north-east":
+      return "오른쪽 위";
+    case "north-west":
+      return "왼쪽 위";
+    case "south-east":
+      return "오른쪽 아래";
+    case "south-west":
+      return "왼쪽 아래";
+  }
 }
