@@ -357,6 +357,53 @@ describe("transitionOverlayState", () => {
     });
   });
 
+  it("moves the selected rect with a keyboard adjustment", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+
+    expect(
+      transitionOverlayState(selected, {
+        type: "selectionKeyboardAdjust",
+        adjustment: {
+          type: "move",
+          delta: { x: 10, y: -5 }
+        }
+      })
+    ).toEqual({
+      status: "selected",
+      hoverRect: null,
+      selectedRect: rectFromEdges(20, 15, 120, 75),
+      dragStart: null,
+      selectionAdjustment: null
+    });
+  });
+
+  it("resizes the selected rect with a keyboard adjustment", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+
+    expect(
+      transitionOverlayState(selected, {
+        type: "selectionKeyboardAdjust",
+        adjustment: {
+          type: "resize",
+          handle: "east",
+          delta: { x: 10, y: 0 }
+        }
+      })
+    ).toEqual({
+      status: "selected",
+      hoverRect: null,
+      selectedRect: rectFromEdges(10, 20, 120, 80),
+      dragStart: null,
+      selectionAdjustment: null
+    });
+  });
+
   it("ignores selected adjustment events when no selected rect is active", () => {
     const idle = createInitialOverlayState();
 
@@ -380,5 +427,14 @@ describe("transitionOverlayState", () => {
       })
     ).toBe(idle);
     expect(transitionOverlayState(idle, { type: "selectionAdjustEnd" })).toBe(idle);
+    expect(
+      transitionOverlayState(idle, {
+        type: "selectionKeyboardAdjust",
+        adjustment: {
+          type: "move",
+          delta: { x: 1, y: 0 }
+        }
+      })
+    ).toBe(idle);
   });
 });

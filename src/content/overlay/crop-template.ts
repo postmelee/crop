@@ -136,6 +136,7 @@ export interface CropSelectionMaskTemplate {
 export interface CropSelectionControlsTemplate {
   readonly container: HTMLElement;
   readonly moveSurface: HTMLElement;
+  readonly sizeBadge: HTMLElement;
   readonly handles: Readonly<Record<SelectionResizeHandle, HTMLButtonElement>>;
 }
 
@@ -293,15 +294,25 @@ function createSelectionControlsTemplate(): CropSelectionControlsTemplate {
   moveSurface.setAttribute("data-crop-selection-move", "true");
   moveSurface.setAttribute("aria-hidden", "true");
 
+  const sizeBadge = document.createElement("div");
+  sizeBadge.className = "crop-selection-size";
+  sizeBadge.hidden = true;
+  sizeBadge.setAttribute("aria-hidden", "true");
+
   const handles = Object.fromEntries(
     SELECTION_RESIZE_HANDLES.map((handle) => [handle, createResizeHandle(handle)])
   ) as Record<SelectionResizeHandle, HTMLButtonElement>;
 
-  container.append(moveSurface, ...SELECTION_RESIZE_HANDLES.map((handle) => handles[handle]));
+  container.append(
+    moveSurface,
+    sizeBadge,
+    ...SELECTION_RESIZE_HANDLES.map((handle) => handles[handle])
+  );
 
   return {
     container,
     moveSurface,
+    sizeBadge,
     handles
   };
 }

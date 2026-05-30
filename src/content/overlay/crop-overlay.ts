@@ -14,10 +14,12 @@ import {
   applyHighlightPresentation,
   applySelectionControlsPresentation,
   applySelectionMaskPresentation,
+  applySelectionSizePresentation,
   type ElementSize
 } from "./positioning";
 import { getEdgeScrollDelta, getEdgeScrollPagePoint } from "./edge-scroll";
 import {
+  getSelectionKeyboardAdjustment,
   getSelectionInteractionAtPoint,
   isSelectionResizeHandle,
   type SelectionResizeHandle
@@ -214,13 +216,37 @@ export function mountCropOverlay(): void {
   };
 
   const handleKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== "Escape") {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      requestClose();
+      return;
+    }
+
+    const keyboardAdjustment = getSelectionKeyboardAdjustment({
+      key: event.key,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey
+    });
+
+    if (
+      !keyboardAdjustment ||
+      overlayState.status !== "selected" ||
+      !overlayState.selectedRect ||
+      shouldIgnoreSelectionKeyboardTarget(event.target)
+    ) {
       return;
     }
 
     event.preventDefault();
     event.stopPropagation();
-    requestClose();
+    overlayState = transitionOverlayState(overlayState, {
+      type: "selectionKeyboardAdjust",
+      adjustment: keyboardAdjustment
+    });
+    renderOverlayState();
   };
 
   const handlePointerMove = (event: PointerEvent): void => {
@@ -675,6 +701,11 @@ export function mountCropOverlay(): void {
         template.selectionControls.container,
         isSelectionActionVisibleStatus(overlayState.status) ? visibleSelectionRect : null
       );
+      applySelectionSizePresentation(
+        template.selectionControls.sizeBadge,
+        isSelectionActionVisibleStatus(overlayState.status) ? overlayState.selectedRect : null,
+        visibleSelectionRect
+      );
       applySelectionMaskPresentation(template.selectionMask, visibleSelectionRect);
       template.highlight.classList.toggle(
         "crop-highlight--selected",
@@ -1034,6 +1065,26 @@ function isSelectionMoveEvent(event: Event): boolean {
       eventTarget.dataset.cropSelectionMove === "true"
     );
   });
+}
+
+function shouldIgnoreSelectionKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  ) {
+    return true;
+  }
+
+  return Boolean(target.closest("[data-crop-action]"));
 }
 
 async function requestVisibleTabCapture(): Promise<CropCaptureVisibleTabResponse> {

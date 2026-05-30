@@ -32,6 +32,14 @@ export interface SelectionInteractionOptions {
   readonly hitArea?: number;
 }
 
+export interface SelectionKeyboardInput {
+  readonly key: string;
+  readonly shiftKey?: boolean;
+  readonly altKey?: boolean;
+  readonly ctrlKey?: boolean;
+  readonly metaKey?: boolean;
+}
+
 export type SelectionInteraction =
   | {
       readonly type: "move";
@@ -39,6 +47,17 @@ export type SelectionInteraction =
   | {
       readonly type: "resize";
       readonly handle: SelectionResizeHandle;
+    };
+
+export type SelectionKeyboardAdjustment =
+  | {
+      readonly type: "move";
+      readonly delta: SelectionTransformDelta;
+    }
+  | {
+      readonly type: "resize";
+      readonly handle: SelectionResizeHandle;
+      readonly delta: SelectionTransformDelta;
     };
 
 export const DEFAULT_MIN_SELECTION_SIZE = 8;
@@ -167,6 +186,37 @@ export function getSelectionInteractionAtPoint(
   }
 
   return null;
+}
+
+export function getSelectionKeyboardAdjustment(
+  input: SelectionKeyboardInput
+): SelectionKeyboardAdjustment | null {
+  if (input.ctrlKey || input.metaKey) {
+    return null;
+  }
+
+  const step = input.shiftKey ? SELECTION_KEYBOARD_FAST_STEP : SELECTION_KEYBOARD_STEP;
+
+  switch (input.key) {
+    case "ArrowUp":
+      return input.altKey
+        ? { type: "resize", handle: "north", delta: { x: 0, y: -step } }
+        : { type: "move", delta: { x: 0, y: -step } };
+    case "ArrowDown":
+      return input.altKey
+        ? { type: "resize", handle: "south", delta: { x: 0, y: step } }
+        : { type: "move", delta: { x: 0, y: step } };
+    case "ArrowLeft":
+      return input.altKey
+        ? { type: "resize", handle: "west", delta: { x: -step, y: 0 } }
+        : { type: "move", delta: { x: -step, y: 0 } };
+    case "ArrowRight":
+      return input.altKey
+        ? { type: "resize", handle: "east", delta: { x: step, y: 0 } }
+        : { type: "move", delta: { x: step, y: 0 } };
+    default:
+      return null;
+  }
 }
 
 function movesNorth(handle: SelectionResizeHandle): boolean {

@@ -4,7 +4,8 @@ import {
   getActionButtonsPresentation,
   getEyeOffsetPresentation,
   getHighlightPresentation,
-  getSelectionControlsPresentation
+  getSelectionControlsPresentation,
+  getSelectionSizePresentation
 } from "../../../src/content/overlay/positioning";
 
 describe("getHighlightPresentation", () => {
@@ -121,6 +122,39 @@ describe("getSelectionControlsPresentation", () => {
       transform: "",
       width: "",
       height: ""
+    });
+  });
+});
+
+describe("getSelectionSizePresentation", () => {
+  it("shows rounded selected dimensions when the visible rect can fit the badge", () => {
+    expect(
+      getSelectionSizePresentation(
+        rectFromEdges(10.4, 20.2, 111, 81),
+        rectFromEdges(10, 20, 120, 90)
+      )
+    ).toEqual({
+      hidden: false,
+      text: "101 x 61"
+    });
+  });
+
+  it("hides the badge when there is no visible selected rect", () => {
+    expect(getSelectionSizePresentation(rectFromEdges(10, 20, 110, 80), null)).toEqual({
+      hidden: true,
+      text: ""
+    });
+  });
+
+  it("hides the badge when the visible selection is too small", () => {
+    expect(
+      getSelectionSizePresentation(
+        rectFromEdges(10, 20, 110, 80),
+        rectFromEdges(10, 20, 50, 40)
+      )
+    ).toEqual({
+      hidden: true,
+      text: ""
     });
   });
 });

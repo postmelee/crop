@@ -24,6 +24,11 @@ export interface ActionButtonsPresentation {
   readonly transform: string;
 }
 
+export interface SelectionSizePresentation {
+  readonly hidden: boolean;
+  readonly text: string;
+}
+
 export interface SelectionMaskElements {
   readonly container: HTMLElement;
   readonly top: HTMLElement;
@@ -45,6 +50,8 @@ export interface EyeOffsetPresentation {
 const ACTION_BUTTONS_EDGE_MARGIN = 8;
 const ACTION_BUTTONS_GAP = 8;
 const EYE_OFFSET_SCALE = 10;
+const SELECTION_SIZE_MIN_VISIBLE_WIDTH = 58;
+const SELECTION_SIZE_MIN_VISIBLE_HEIGHT = 26;
 
 export function getHighlightPresentation(rect: ViewportRect | null): HighlightPresentation {
   if (!rect) {
@@ -89,6 +96,39 @@ export function applySelectionControlsPresentation(
   element.style.transform = presentation.transform;
   element.style.width = presentation.width;
   element.style.height = presentation.height;
+}
+
+export function getSelectionSizePresentation(
+  selectedRect: ViewportRect | null,
+  visibleRect: ViewportRect | null
+): SelectionSizePresentation {
+  if (
+    !selectedRect ||
+    !visibleRect ||
+    visibleRect.width < SELECTION_SIZE_MIN_VISIBLE_WIDTH ||
+    visibleRect.height < SELECTION_SIZE_MIN_VISIBLE_HEIGHT
+  ) {
+    return {
+      hidden: true,
+      text: ""
+    };
+  }
+
+  return {
+    hidden: false,
+    text: `${Math.round(selectedRect.width)} x ${Math.round(selectedRect.height)}`
+  };
+}
+
+export function applySelectionSizePresentation(
+  element: HTMLElement,
+  selectedRect: ViewportRect | null,
+  visibleRect: ViewportRect | null
+): void {
+  const presentation = getSelectionSizePresentation(selectedRect, visibleRect);
+
+  element.hidden = presentation.hidden;
+  element.textContent = presentation.text;
 }
 
 export function getActionButtonsPresentation(

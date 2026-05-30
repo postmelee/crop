@@ -5,7 +5,10 @@ import {
 } from "../../firefox-derived/window-dimensions";
 import {
   moveSelectionRect,
+  moveSelectionRectByDelta,
   resizeSelectionRect,
+  resizeSelectionRectByDelta,
+  type SelectionKeyboardAdjustment,
   type SelectionResizeHandle
 } from "./selection-transform";
 
@@ -90,6 +93,10 @@ export type CropOverlayEvent =
     }
   | {
       readonly type: "selectionAdjustEnd";
+    }
+  | {
+      readonly type: "selectionKeyboardAdjust";
+      readonly adjustment: SelectionKeyboardAdjustment;
     }
   | {
       readonly type: "resetSelection";
@@ -278,6 +285,26 @@ export function transitionOverlayState(
         dragStart: null,
         selectionAdjustment: null
       };
+
+    case "selectionKeyboardAdjust": {
+      if (state.status !== "selected" || !state.selectedRect) {
+        return state;
+      }
+
+      const selectedRect =
+        event.adjustment.type === "move"
+          ? moveSelectionRectByDelta(state.selectedRect, event.adjustment.delta)
+          : resizeSelectionRectByDelta(
+              state.selectedRect,
+              event.adjustment.handle,
+              event.adjustment.delta
+            );
+
+      return {
+        ...state,
+        selectedRect
+      };
+    }
 
     case "resetSelection":
       return state.status === "selected" ? createInitialOverlayState() : state;

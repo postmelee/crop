@@ -6,6 +6,7 @@ import {
   SELECTION_KEYBOARD_FAST_STEP,
   SELECTION_KEYBOARD_STEP,
   getSelectionInteractionAtPoint,
+  getSelectionKeyboardAdjustment,
   isSelectionResizeHandle,
   moveSelectionRect,
   moveSelectionRectByDelta,
@@ -121,5 +122,44 @@ describe("selection transform helpers", () => {
       type: "resize",
       handle: "north"
     });
+  });
+
+  it("maps arrow keys to 1px move adjustments", () => {
+    expect(getSelectionKeyboardAdjustment({ key: "ArrowLeft" })).toEqual({
+      type: "move",
+      delta: { x: -1, y: 0 }
+    });
+    expect(getSelectionKeyboardAdjustment({ key: "ArrowDown" })).toEqual({
+      type: "move",
+      delta: { x: 0, y: 1 }
+    });
+  });
+
+  it("maps shift arrow keys to 10px move adjustments", () => {
+    expect(getSelectionKeyboardAdjustment({ key: "ArrowRight", shiftKey: true })).toEqual({
+      type: "move",
+      delta: { x: 10, y: 0 }
+    });
+  });
+
+  it("maps alt arrow keys to edge resize adjustments", () => {
+    expect(getSelectionKeyboardAdjustment({ key: "ArrowUp", altKey: true })).toEqual({
+      type: "resize",
+      handle: "north",
+      delta: { x: 0, y: -1 }
+    });
+    expect(
+      getSelectionKeyboardAdjustment({ key: "ArrowRight", altKey: true, shiftKey: true })
+    ).toEqual({
+      type: "resize",
+      handle: "east",
+      delta: { x: 10, y: 0 }
+    });
+  });
+
+  it("ignores non-arrow and browser shortcut key combinations", () => {
+    expect(getSelectionKeyboardAdjustment({ key: "Escape" })).toBeNull();
+    expect(getSelectionKeyboardAdjustment({ key: "ArrowLeft", metaKey: true })).toBeNull();
+    expect(getSelectionKeyboardAdjustment({ key: "ArrowLeft", ctrlKey: true })).toBeNull();
   });
 });
