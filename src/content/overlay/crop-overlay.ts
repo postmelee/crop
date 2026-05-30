@@ -15,6 +15,7 @@ import {
   applySelectionMaskPresentation,
   type ElementSize
 } from "./positioning";
+import { getEdgeScrollDelta, getEdgeScrollPagePoint } from "./edge-scroll";
 import {
   getBestRectForElement,
   getElementFromPoint
@@ -173,6 +174,8 @@ export function mountCropOverlay(): void {
   let pendingPointer: PointerPosition | null = null;
   let lastPointer: PointerPosition | null = null;
   let animationFrameId: number | null = null;
+  let edgeScrollFrameId: number | null = null;
+  let lastDragPointer: PointerPosition | null = null;
   let overlayState: CropOverlayState = createInitialOverlayState();
   let suppressNextDocumentClick = false;
   let suppressDocumentClickTimeoutId: number | null = null;
@@ -194,6 +197,7 @@ export function mountCropOverlay(): void {
     window.removeEventListener("resize", handleViewportChange, true);
     clearSuppressedDocumentClick();
     cancelPendingHoverUpdate();
+    stopEdgeScroll();
     host.remove();
   };
 
@@ -231,6 +235,7 @@ export function mountCropOverlay(): void {
         point: pagePointer
       });
       renderOverlayState();
+      updateEdgeScroll(pointer);
       return;
     }
 
@@ -276,6 +281,7 @@ export function mountCropOverlay(): void {
     event.preventDefault();
     event.stopPropagation();
     cancelPendingHoverUpdate();
+    stopEdgeScroll();
     overlayState = transitionOverlayState(overlayState, {
       type: "dragStart",
       point: toPagePoint({
@@ -293,6 +299,7 @@ export function mountCropOverlay(): void {
 
     event.preventDefault();
     event.stopPropagation();
+    stopEdgeScroll();
     overlayState = transitionOverlayState(overlayState, { type: "dragEnd" });
     cancelPendingHoverUpdate();
     renderOverlayState();
@@ -608,6 +615,78 @@ export function mountCropOverlay(): void {
 
     window.cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
+  };
+
+  const updateEdgeScroll = (pointer: PointerPosition): void => {
+    lastDragPointer = pointer;
+    const windowDimensions = readWindowDimensions();
+    const edgeScrollDelta = getEdgeScrollDelta(pointer, {
+      clientWidth: windowDimensions.clientWidth,
+      clientHeight: windowDimensions.clientHeight
+    });
+
+    if (!edgeScrollDelta.active) {
+      cancelEdgeScrollFrame();
+      return;
+    }
+
+    if (edgeScrollFrameId !== null) {
+      return;
+    }
+
+    edgeScrollFrameId = window.requestAnimationFrame(processEdgeScroll);
+  };
+
+  const processEdgeScroll = (): void => {
+    edgeScrollFrameId = null;
+
+    if (
+      overlayRemoved ||
+      !lastDragPointer ||
+      (overlayState.status !== "draggingReady" && overlayState.status !== "dragging")
+    ) {
+      return;
+    }
+
+    const beforeScroll = readWindowDimensions();
+    const edgeScrollDelta = getEdgeScrollDelta(lastDragPointer, {
+      clientWidth: beforeScroll.clientWidth,
+      clientHeight: beforeScroll.clientHeight
+    });
+
+    if (!edgeScrollDelta.active) {
+      return;
+    }
+
+    window.scrollBy(edgeScrollDelta.x, edgeScrollDelta.y);
+    const afterScroll = readWindowDimensions();
+    const didScroll =
+      beforeScroll.scrollX !== afterScroll.scrollX || beforeScroll.scrollY !== afterScroll.scrollY;
+
+    if (!didScroll) {
+      return;
+    }
+
+    overlayState = transitionOverlayState(overlayState, {
+      type: "dragMove",
+      point: getEdgeScrollPagePoint(lastDragPointer, afterScroll)
+    });
+    renderOverlayState();
+    edgeScrollFrameId = window.requestAnimationFrame(processEdgeScroll);
+  };
+
+  const stopEdgeScroll = (): void => {
+    lastDragPointer = null;
+    cancelEdgeScrollFrame();
+  };
+
+  const cancelEdgeScrollFrame = (): void => {
+    if (edgeScrollFrameId === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(edgeScrollFrameId);
+    edgeScrollFrameId = null;
   };
 
   const suppressFollowingDocumentClick = (): void => {

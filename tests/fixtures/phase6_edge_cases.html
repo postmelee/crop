@@ -242,6 +242,56 @@
         color: #31502c;
       }
 
+      .edge-scroll-fixture {
+        min-height: 1040px;
+        overflow: visible;
+        background:
+          linear-gradient(180deg, rgba(47, 111, 237, 0.08), rgba(47, 111, 237, 0.02)),
+          #fff;
+      }
+
+      .edge-scroll-horizontal {
+        position: relative;
+        width: 1880px;
+        min-height: 280px;
+        margin-top: 20px;
+        padding: 24px;
+        color: #17351f;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.88), transparent 52%),
+          repeating-linear-gradient(90deg, #d3f2dc 0 80px, #b7e4c6 80px 160px);
+        border: 3px dashed #26844d;
+        border-radius: 12px;
+      }
+
+      .edge-scroll-marker {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 172px;
+        min-height: 96px;
+        padding: 12px 18px;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.86);
+        border: 2px solid #26844d;
+        border-radius: 10px;
+      }
+
+      .edge-scroll-marker--right {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+      }
+
+      .edge-scroll-tail {
+        margin-top: 540px;
+        padding: 28px;
+        color: #17351f;
+        background: #edf8f0;
+        border: 2px solid #26844d;
+        border-radius: 12px;
+      }
+
       .footer-space {
         height: 420px;
         padding-top: 48px;
@@ -256,6 +306,7 @@
         <a href="#document">Document</a>
         <a href="#cards">Cards</a>
         <a href="#embed">iframe and shadow</a>
+        <a href="#edge-scroll">Edge scroll</a>
         <a href="#offscreen">Large element</a>
       </nav>
     </header>
@@ -369,6 +420,28 @@ function cropVisibleViewport(rect, viewport) {
         <div class="embedded-grid">
           <iframe title="srcdoc fixture iframe" data-crop-fixture="same-document-iframe"></iframe>
           <div id="open-shadow-host" class="shadow-host" data-crop-fixture="open-shadow-host"></div>
+        </div>
+      </section>
+
+      <section id="edge-scroll" class="section edge-scroll-fixture" data-crop-fixture="edge-scroll-section">
+        <h2>Edge auto-scroll smoke area</h2>
+        <p>
+          Start a drag selection from the left marker, keep the pointer near the
+          bottom or top viewport edge for vertical edge auto-scroll, then keep it
+          near the right or left viewport edge for horizontal edge auto-scroll.
+          Verify pointerup stops scrolling, and Escape or Cancel leaves no
+          scroll loop behind.
+        </p>
+        <div class="edge-scroll-horizontal" data-crop-fixture="edge-scroll-horizontal-target">
+          <span class="edge-scroll-marker" data-crop-fixture="edge-scroll-start-marker">
+            Drag start
+          </span>
+          <span class="edge-scroll-marker edge-scroll-marker--right" data-crop-fixture="edge-scroll-right-marker">
+            Right edge target
+          </span>
+        </div>
+        <div class="edge-scroll-tail" data-crop-fixture="edge-scroll-vertical-tail">
+          Bottom edge target for vertical auto-scroll smoke.
         </div>
       </section>
 

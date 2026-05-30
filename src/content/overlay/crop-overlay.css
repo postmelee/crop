@@ -44,6 +44,7 @@
   background: transparent;
 }
 
+:host([data-crop-state="draggingReady"]) .crop-frame,
 :host([data-crop-state="dragging"]) .crop-frame {
   display: none;
 }
