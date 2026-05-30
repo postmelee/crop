@@ -17,6 +17,11 @@ import {
 } from "./positioning";
 import { getEdgeScrollDelta, getEdgeScrollPagePoint } from "./edge-scroll";
 import {
+  getSelectionInteractionAtPoint,
+  isSelectionResizeHandle,
+  type SelectionResizeHandle
+} from "./selection-transform";
+import {
   getBestRectForElement,
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
@@ -239,6 +244,17 @@ export function mountCropOverlay(): void {
       return;
     }
 
+    if (isSelectionAdjusting(overlayState)) {
+      event.preventDefault();
+      event.stopPropagation();
+      overlayState = transitionOverlayState(overlayState, {
+        type: "selectionAdjustMove",
+        point: pagePointer
+      });
+      renderOverlayState();
+      return;
+    }
+
     if (overlayState.status === "selected") {
       return;
     }
@@ -252,29 +268,73 @@ export function mountCropOverlay(): void {
   };
 
   const handlePointerDown = (event: PointerEvent): void => {
-    if (isCropOverlayEvent(event, host) || event.button !== 0) {
+    if (event.button !== 0) {
       return;
     }
 
     if (overlayState.status === "selected") {
-      event.preventDefault();
-      event.stopPropagation();
-      suppressFollowingDocumentClick();
-
       const pagePointer = toPagePoint({
         x: event.clientX,
         y: event.clientY
       });
+      const explicitResizeHandle = getSelectionResizeHandleFromEvent(event);
 
-      if (
-        overlayState.selectedRect &&
-        !isPointInsidePageRect(pagePointer, overlayState.selectedRect)
-      ) {
+      if (getCropActionFromEvent(event)) {
+        return;
+      }
+
+      if (explicitResizeHandle) {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressFollowingDocumentClick();
+        cancelPendingHoverUpdate();
+        stopEdgeScroll();
+        overlayState = transitionOverlayState(overlayState, {
+          type: "selectionResizeStart",
+          handle: explicitResizeHandle,
+          point: pagePointer
+        });
+        renderOverlayState();
+        return;
+      }
+
+      if (isCropOverlayEvent(event, host)) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      suppressFollowingDocumentClick();
+
+      const selectionInteraction = overlayState.selectedRect
+        ? getSelectionInteractionAtPoint(overlayState.selectedRect, pagePointer)
+        : null;
+
+      if (!selectionInteraction) {
         overlayState = transitionOverlayState(overlayState, { type: "resetSelection" });
         cancelPendingHoverUpdate();
         renderOverlayState();
+        return;
       }
 
+      cancelPendingHoverUpdate();
+      stopEdgeScroll();
+      overlayState =
+        selectionInteraction.type === "resize"
+          ? transitionOverlayState(overlayState, {
+              type: "selectionResizeStart",
+              handle: selectionInteraction.handle,
+              point: pagePointer
+            })
+          : transitionOverlayState(overlayState, {
+              type: "selectionMoveStart",
+              point: pagePointer
+            });
+      renderOverlayState();
+      return;
+    }
+
+    if (isCropOverlayEvent(event, host)) {
       return;
     }
 
@@ -293,6 +353,15 @@ export function mountCropOverlay(): void {
   };
 
   const handlePointerUp = (event: PointerEvent): void => {
+    if (isSelectionAdjusting(overlayState)) {
+      event.preventDefault();
+      event.stopPropagation();
+      overlayState = transitionOverlayState(overlayState, { type: "selectionAdjustEnd" });
+      cancelPendingHoverUpdate();
+      renderOverlayState();
+      return;
+    }
+
     if (overlayState.status !== "draggingReady" && overlayState.status !== "dragging") {
       return;
     }
@@ -579,7 +648,7 @@ export function mountCropOverlay(): void {
         windowDimensions
       );
       const selectionRect =
-        overlayState.status === "selected" || overlayState.status === "dragging"
+        isSelectionVisibleStatus(overlayState.status)
           ? projectPageRectToViewport(overlayState.selectedRect, windowDimensions)
           : null;
       const visibleSelectionRect = selectionRect
@@ -589,9 +658,12 @@ export function mountCropOverlay(): void {
       applySelectionMaskPresentation(template.selectionMask, visibleSelectionRect);
       template.highlight.classList.toggle(
         "crop-highlight--selected",
-        overlayState.status === "selected" || overlayState.status === "dragging"
+        isSelectionVisibleStatus(overlayState.status)
       );
-      updateActionButtons(template, overlayState.status === "selected" ? visibleSelectionRect : null);
+      updateActionButtons(
+        template,
+        isSelectionActionVisibleStatus(overlayState.status) ? visibleSelectionRect : null
+      );
     }
   };
 
@@ -787,13 +859,20 @@ function projectPageRectToViewport(
   return rect ? pageRectToViewportRect(rect, windowDimensions) : null;
 }
 
-function isPointInsidePageRect(point: PointerPosition, rect: PageRect): boolean {
-  return (
-    point.x >= rect.left &&
-    point.x <= rect.right &&
-    point.y >= rect.top &&
-    point.y <= rect.bottom
-  );
+function isSelectionVisibleStatus(status: CropOverlayState["status"]): boolean {
+  return status === "selected" || status === "dragging" || isSelectionAdjustmentStatus(status);
+}
+
+function isSelectionActionVisibleStatus(status: CropOverlayState["status"]): boolean {
+  return status === "selected" || isSelectionAdjustmentStatus(status);
+}
+
+function isSelectionAdjusting(state: CropOverlayState): boolean {
+  return isSelectionAdjustmentStatus(state.status);
+}
+
+function isSelectionAdjustmentStatus(status: CropOverlayState["status"]): boolean {
+  return status === "moving" || status === "resizing";
 }
 
 function isCropOverlayEvent(event: Event, host: HTMLElement): boolean {
@@ -906,6 +985,22 @@ function getCropActionFromEvent(event: Event): CropAction | null {
 
     if (action === "copy" || action === "save" || action === "cancel") {
       return action;
+    }
+  }
+
+  return null;
+}
+
+function getSelectionResizeHandleFromEvent(event: Event): SelectionResizeHandle | null {
+  for (const eventTarget of event.composedPath()) {
+    if (!(eventTarget instanceof HTMLElement)) {
+      continue;
+    }
+
+    const handle = eventTarget.dataset.cropResizeHandle ?? null;
+
+    if (isSelectionResizeHandle(handle)) {
+      return handle;
     }
   }
 

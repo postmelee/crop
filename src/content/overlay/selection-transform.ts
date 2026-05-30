@@ -28,7 +28,21 @@ export interface SelectionTransformOptions {
   readonly minHeight?: number;
 }
 
+export interface SelectionInteractionOptions {
+  readonly hitArea?: number;
+}
+
+export type SelectionInteraction =
+  | {
+      readonly type: "move";
+    }
+  | {
+      readonly type: "resize";
+      readonly handle: SelectionResizeHandle;
+    };
+
 export const DEFAULT_MIN_SELECTION_SIZE = 8;
+export const SELECTION_RESIZE_HIT_AREA = 8;
 export const SELECTION_KEYBOARD_STEP = 1;
 export const SELECTION_KEYBOARD_FAST_STEP = 10;
 
@@ -105,6 +119,56 @@ export function resizeSelectionRectByDelta(
   return rectFromEdges(left, top, right, bottom);
 }
 
+export function getSelectionInteractionAtPoint(
+  rect: PageRect,
+  point: SelectionTransformPoint,
+  options: SelectionInteractionOptions = {}
+): SelectionInteraction | null {
+  const hitArea = getHitArea(options.hitArea);
+  const inExpandedHorizontalRange = point.x >= rect.left - hitArea && point.x <= rect.right + hitArea;
+  const inExpandedVerticalRange = point.y >= rect.top - hitArea && point.y <= rect.bottom + hitArea;
+
+  if (!inExpandedHorizontalRange || !inExpandedVerticalRange) {
+    return null;
+  }
+
+  const nearNorth = Math.abs(point.y - rect.top) <= hitArea;
+  const nearSouth = Math.abs(point.y - rect.bottom) <= hitArea;
+  const nearWest = Math.abs(point.x - rect.left) <= hitArea;
+  const nearEast = Math.abs(point.x - rect.right) <= hitArea;
+
+  if (nearNorth && nearWest) {
+    return { type: "resize", handle: "north-west" };
+  }
+  if (nearNorth && nearEast) {
+    return { type: "resize", handle: "north-east" };
+  }
+  if (nearSouth && nearWest) {
+    return { type: "resize", handle: "south-west" };
+  }
+  if (nearSouth && nearEast) {
+    return { type: "resize", handle: "south-east" };
+  }
+  if (nearNorth) {
+    return { type: "resize", handle: "north" };
+  }
+  if (nearSouth) {
+    return { type: "resize", handle: "south" };
+  }
+  if (nearWest) {
+    return { type: "resize", handle: "west" };
+  }
+  if (nearEast) {
+    return { type: "resize", handle: "east" };
+  }
+
+  if (isPointInsideRect(rect, point)) {
+    return { type: "move" };
+  }
+
+  return null;
+}
+
 function movesNorth(handle: SelectionResizeHandle): boolean {
   return handle === "north" || handle === "north-east" || handle === "north-west";
 }
@@ -125,4 +189,19 @@ function getMinimumSize(value: number | undefined): number {
   return value != null && Number.isFinite(value) && value > 0
     ? value
     : DEFAULT_MIN_SELECTION_SIZE;
+}
+
+function getHitArea(value: number | undefined): number {
+  return value != null && Number.isFinite(value) && value >= 0
+    ? value
+    : SELECTION_RESIZE_HIT_AREA;
+}
+
+function isPointInsideRect(rect: PageRect, point: SelectionTransformPoint): boolean {
+  return (
+    point.x >= rect.left &&
+    point.x <= rect.right &&
+    point.y >= rect.top &&
+    point.y <= rect.bottom
+  );
 }

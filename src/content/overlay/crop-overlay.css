@@ -32,7 +32,9 @@
 }
 
 :host([data-crop-state="dragging"]) .crop-dim,
-:host([data-crop-state="selected"]) .crop-dim {
+:host([data-crop-state="selected"]) .crop-dim,
+:host([data-crop-state="moving"]) .crop-dim,
+:host([data-crop-state="resizing"]) .crop-dim {
   display: none;
 }
 
@@ -102,7 +104,9 @@
   transform: translateY(0);
 }
 
-:host([data-crop-state="selected"]) .crop-prompt {
+:host([data-crop-state="selected"]) .crop-prompt,
+:host([data-crop-state="moving"]) .crop-prompt,
+:host([data-crop-state="resizing"]) .crop-prompt {
   display: none;
 }
 
@@ -112,7 +116,9 @@
 
 :host([data-crop-state="draggingReady"]) .crop-mode-toolbar,
 :host([data-crop-state="dragging"]) .crop-mode-toolbar,
-:host([data-crop-state="selected"]) .crop-mode-toolbar {
+:host([data-crop-state="selected"]) .crop-mode-toolbar,
+:host([data-crop-state="moving"]) .crop-mode-toolbar,
+:host([data-crop-state="resizing"]) .crop-mode-toolbar {
   display: none;
 }
 

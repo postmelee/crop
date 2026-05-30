@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { rectFromEdges } from "../../../src/firefox-derived/window-dimensions";
 import {
   DEFAULT_MIN_SELECTION_SIZE,
+  SELECTION_RESIZE_HIT_AREA,
   SELECTION_KEYBOARD_FAST_STEP,
   SELECTION_KEYBOARD_STEP,
+  getSelectionInteractionAtPoint,
   isSelectionResizeHandle,
   moveSelectionRect,
   moveSelectionRectByDelta,
@@ -24,6 +26,10 @@ describe("selection transform helpers", () => {
   it("keeps keyboard step constants explicit for later event wiring", () => {
     expect(SELECTION_KEYBOARD_STEP).toBe(1);
     expect(SELECTION_KEYBOARD_FAST_STEP).toBe(10);
+  });
+
+  it("keeps the pointer resize hit area explicit for overlay hit-testing", () => {
+    expect(SELECTION_RESIZE_HIT_AREA).toBe(8);
   });
 
   it("moves a selected page rect by pointer delta without resizing it", () => {
@@ -74,5 +80,46 @@ describe("selection transform helpers", () => {
         { minWidth: 24, minHeight: 32 }
       )
     ).toEqual(rectFromEdges(10, 20, 34, 52));
+  });
+
+  it("detects selected interior points as move interactions", () => {
+    expect(getSelectionInteractionAtPoint(rect, { x: 60, y: 50 })).toEqual({
+      type: "move"
+    });
+  });
+
+  it("gives corner resize handles precedence over move interactions", () => {
+    expect(getSelectionInteractionAtPoint(rect, { x: 12, y: 22 })).toEqual({
+      type: "resize",
+      handle: "north-west"
+    });
+    expect(getSelectionInteractionAtPoint(rect, { x: 108, y: 78 })).toEqual({
+      type: "resize",
+      handle: "south-east"
+    });
+  });
+
+  it("detects edge resize handles from points just outside the selected rect", () => {
+    expect(getSelectionInteractionAtPoint(rect, { x: 60, y: 15 })).toEqual({
+      type: "resize",
+      handle: "north"
+    });
+    expect(getSelectionInteractionAtPoint(rect, { x: 115, y: 50 })).toEqual({
+      type: "resize",
+      handle: "east"
+    });
+  });
+
+  it("returns null when the pointer is outside the resize hit area", () => {
+    expect(getSelectionInteractionAtPoint(rect, { x: 60, y: 10 })).toBeNull();
+    expect(getSelectionInteractionAtPoint(rect, { x: 120, y: 50 })).toBeNull();
+  });
+
+  it("accepts a custom resize hit area for small selection checks", () => {
+    expect(getSelectionInteractionAtPoint(rect, { x: 60, y: 15 }, { hitArea: 4 })).toBeNull();
+    expect(getSelectionInteractionAtPoint(rect, { x: 60, y: 17 }, { hitArea: 4 })).toEqual({
+      type: "resize",
+      handle: "north"
+    });
   });
 });
