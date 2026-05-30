@@ -4,6 +4,9 @@ import {
   type SelectionResizeHandle
 } from "./selection-transform";
 import {
+  createScreenshotsCancelIconSvg,
+  createScreenshotsCopyIconSvg,
+  createScreenshotsDownloadIconSvg,
   createScreenshotsFullPageIconSvg,
   createScreenshotsPreviewFaceSvg,
   createScreenshotsVisibleIconSvg
@@ -15,7 +18,6 @@ export const PANEL_ATTRIBUTE = "data-crop-panel";
 export const FLASH_CLASS = "crop-panel--flash";
 export const TOAST_ROOT_ID = "__crop_toast__";
 export const TOAST_ATTRIBUTE = "data-crop-toast-root";
-const SVG_NS = "http://www.w3.org/2000/svg";
 
 type CropActionName = "copy" | "save" | "cancel";
 
@@ -251,6 +253,9 @@ function createActionButton(
   button.setAttribute("data-crop-action", action);
   button.setAttribute("title", label);
   button.setAttribute("aria-label", label);
+  button.addEventListener("blur", () => {
+    delete button.dataset.cropFocusVisible;
+  });
 
   const icon = createActionIcon(action);
   const actionLabel = document.createElement("span");
@@ -267,37 +272,14 @@ function createActionButton(
 }
 
 function createActionIcon(action: CropActionName): SVGSVGElement {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.classList.add("crop-action-icon");
-  svg.setAttribute("viewBox", "0 0 16 16");
-  svg.setAttribute("aria-hidden", "true");
-  svg.setAttribute("focusable", "false");
-
   switch (action) {
     case "cancel":
-      appendSvgPath(svg, "M4 4l8 8M12 4l-8 8");
-      break;
+      return createScreenshotsCancelIconSvg(document);
     case "copy":
-      appendSvgPath(svg, "M6 3.5h6.5v8H6zM3.5 6v6.5H10");
-      break;
+      return createScreenshotsCopyIconSvg(document);
     case "save":
-      appendSvgPath(svg, "M8 2.5v7M5.25 6.75 8 9.5l2.75-2.75M3.5 12.5h9");
-      break;
+      return createScreenshotsDownloadIconSvg(document);
   }
-
-  return svg;
-}
-
-function appendSvgPath(svg: SVGSVGElement, d: string): void {
-  const path = document.createElementNS(SVG_NS, "path");
-
-  path.setAttribute("d", d);
-  path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "currentColor");
-  path.setAttribute("stroke-linecap", "round");
-  path.setAttribute("stroke-linejoin", "round");
-  path.setAttribute("stroke-width", "1.6");
-  svg.append(path);
 }
 
 function createActionGroup(kind: "primary" | "secondary"): HTMLElement {

@@ -189,6 +189,7 @@ export function mountCropOverlay(): void {
   let suppressDocumentClickTimeoutId: number | null = null;
   let pendingCapture = false;
   let overlayRemoved = false;
+  let previousRenderedStatus: CropOverlayState["status"] | null = null;
 
   const removeOverlay = (): void => {
     if (overlayRemoved) {
@@ -681,6 +682,8 @@ export function mountCropOverlay(): void {
   };
 
   const renderOverlayState = (): void => {
+    const previousStatus = previousRenderedStatus;
+    previousRenderedStatus = overlayState.status;
     host.setAttribute("data-crop-state", overlayState.status);
 
     if (template) {
@@ -715,6 +718,10 @@ export function mountCropOverlay(): void {
         template,
         isSelectionActionVisibleStatus(overlayState.status) ? selectionRect : null
       );
+
+      if (overlayState.status === "selected" && previousStatus !== "selected") {
+        focusFirefoxReferenceActionButton(template);
+      }
     }
   };
 
@@ -987,6 +994,21 @@ function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect |
     },
     actionsSize
   );
+}
+
+function focusFirefoxReferenceActionButton(template: CropOverlayTemplate): void {
+  for (const button of template.actions.querySelectorAll<HTMLButtonElement>(".crop-action")) {
+    delete button.dataset.cropFocusVisible;
+  }
+
+  const copyButton = template.actions.querySelector<HTMLButtonElement>('[data-crop-action="copy"]');
+
+  if (!copyButton || copyButton.disabled) {
+    return;
+  }
+
+  copyButton.dataset.cropFocusVisible = "true";
+  copyButton.focus({ preventScroll: true });
 }
 
 interface CompletionToastOptions {

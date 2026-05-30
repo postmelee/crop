@@ -23,6 +23,23 @@ const MENU_VISIBLE_SVG = `
 const MENU_FULLPAGE_SVG = `
 <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 46 46"><path id="bg" d="M7 42h32V5.1H7z" fill="context-stroke #00fdff"/><g id="frame" transform="translate(0 6)"><path d="M40 5c.5 0 1 .4 1 1v24c0 .5-.5 1-1 1H6c-.6 0-1-.5-1-1V6c0-.6.4-1 1-1h34zM7 29h32V7H7v22z" fill="context-fill"/><path id="Fill-4" fill="context-fill" d="M7 7h32V5H7z"/><path id="Fill-6" fill="context-fill" d="M7 31h32v-2H7z"/></g><path id="dash" d="M38 11h1V9h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm0 3h1v-2h-1v2zm-1 1h2v-1h-2v1zm-3 0h2v-1h-2v1zm-3 0h2v-1h-2v1zm-3 0h2v-1h-2v1zm-3 0h2v-1h-2v1zm-3 0h2v-1h-2v1zm-3 0h2v-1h-2v1zm-3 0h2v-1h-2v1zm-3 0h2v-1h-2v1zm-3 0h2v-1h-2v1zm-2-3H7v3h2v-1H8v-2zm-1-1h1v-2H7v2zm0-3h1v-2H7v2zm0-3h1v-2H7v2zm0-3h1v-2H7v2zm0-3h1v-2H7v2zm0-3h1v-2H7v2zm0-3h1v-2H7v2zm0-3h1v-2H7v2zm0-3h1v-2H7v2zm0-3h1V9H7v2zm2-6H7v3h1V6h1V5zm1 1h2V5h-2v1zm3 0h2V5h-2v1zm3 0h2V5h-2v1zm3 0h2V5h-2v1zm3 0h2V5h-2v1zm3 0h2V5h-2v1zm3 0h2V5h-2v1zm3 0h2V5h-2v1zm3 0h2V5h-2v1zm5-1h-2v1h1v2h1V5z" fill="context-fill" opacity="0.5"/></svg>`;
 
+const ACTION_CANCEL_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity">
+  <path d="m9.108 7.776 4.709-4.709a.626.626 0 0 0-.884-.885L8.244 6.871l-.488 0-4.689-4.688a.625.625 0 1 0-.884.885L6.87 7.754l0 .491-4.687 4.687a.626.626 0 0 0 .884.885L7.754 9.13l.491 0 4.687 4.687a.627.627 0 0 0 .885 0 .626.626 0 0 0 0-.885L9.108 8.223l0-.447z"/>
+</svg>`;
+
+const ACTION_COPY_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity">
+  <path d="M6.035 1.25c-1 0-1.812.812-1.812 1.813h1.5c0-.173.14-.313.312-.313h5.95c.172 0 .313.14.313.313v7.65c0 .172-.14.312-.313.312v1.5c1 0 1.813-.812 1.813-1.813v-7.65c0-1-.812-1.812-1.813-1.812h-5.95z"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M3.063 4.225c-1.001 0-1.813.812-1.813 1.813v7.65c0 1 .812 1.812 1.813 1.812h5.95c1 0 1.812-.812 1.812-1.812v-7.65c0-1.001-.812-1.813-1.813-1.813h-5.95zM2.75 6.038c0-.173.14-.313.313-.313h5.95c.172 0 .312.14.312.313v7.65c0 .172-.14.312-.313.312h-5.95a.313.313 0 0 1-.312-.312v-7.65z"/>
+</svg>`;
+
+const ACTION_DOWNLOAD_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity">
+  <path d="M8.25.625a.625.625 0 0 0-1.25 0l0 8.323-3.308-3.309a.626.626 0 0 0-.885.885L7.285 11l.681 0 4.477-4.476a.626.626 0 0 0-.885-.885L8.25 8.947l0-8.322z"/>
+  <path d="M12.25 15a2 2 0 0 0 2-2l0-1.375a.625.625 0 0 0-1.25 0l0 1.525-.6.6-9.55 0-.6-.6 0-1.525a.625.625 0 0 0-1.25 0L1 13a2 2 0 0 0 2 2l9.25 0z"/>
+</svg>`;
+
 export function createScreenshotsPreviewFaceSvg(doc: Document = document): SVGSVGElement {
   return createSvgElement(PREVIEW_FACE_SVG, "crop-screenshots-face-svg", doc);
 }
@@ -35,10 +52,32 @@ export function createScreenshotsFullPageIconSvg(doc: Document = document): SVGS
   return createIconSvgElement(MENU_FULLPAGE_SVG, "crop-screenshots-fullpage-icon", doc);
 }
 
+export function createScreenshotsCancelIconSvg(doc: Document = document): SVGSVGElement {
+  return createActionIconSvgElement(ACTION_CANCEL_SVG, "crop-screenshots-cancel-icon", doc);
+}
+
+export function createScreenshotsCopyIconSvg(doc: Document = document): SVGSVGElement {
+  return createActionIconSvgElement(ACTION_COPY_SVG, "crop-screenshots-copy-icon", doc);
+}
+
+export function createScreenshotsDownloadIconSvg(doc: Document = document): SVGSVGElement {
+  return createActionIconSvgElement(ACTION_DOWNLOAD_SVG, "crop-screenshots-download-icon", doc);
+}
+
+function createActionIconSvgElement(markup: string, className: string, doc: Document): SVGSVGElement {
+  const svg = createIconSvgElement(markup, className, doc);
+  svg.classList.add("crop-action-icon");
+
+  return svg;
+}
+
 function createIconSvgElement(markup: string, className: string, doc: Document): SVGSVGElement {
   const svg = createSvgElement(markup, className, doc);
 
-  for (const element of svg.querySelectorAll("[fill]")) {
+  for (const element of [
+    svg,
+    ...Array.from(svg.querySelectorAll<SVGElement>("[fill], [fill-opacity]"))
+  ]) {
     const fill = element.getAttribute("fill") ?? "";
 
     if (fill.startsWith("context-stroke")) {
@@ -47,6 +86,10 @@ function createIconSvgElement(markup: string, className: string, doc: Document):
       element.setAttribute("fill", "currentColor");
       element.setAttribute("fill-rule", "evenodd");
       element.setAttribute("clip-rule", "evenodd");
+    }
+
+    if (element.getAttribute("fill-opacity")?.startsWith("context-fill-opacity")) {
+      element.removeAttribute("fill-opacity");
     }
   }
 

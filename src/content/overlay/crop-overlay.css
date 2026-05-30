@@ -352,18 +352,34 @@
   column-gap: 0;
   row-gap: 4px;
   max-width: calc(100vw - 16px);
-  min-height: 42px;
   margin: 10px 0;
   padding: 4px;
   border: 0;
   border-radius: 4px;
-  background: rgba(41, 45, 52, 0.98);
+  background: #1c1b22;
+  color: #fbfbfe;
   cursor: auto;
   box-shadow:
     0 12px 32px rgba(0, 0, 0, 0.34),
     0 2px 8px rgba(0, 0, 0, 0.28);
   pointer-events: auto;
   will-change: transform;
+  --crop-firefox-button-background-color: color-mix(in srgb, currentColor 7%, transparent);
+  --crop-firefox-button-background-color-hover: color-mix(
+    in srgb,
+    currentColor 14%,
+    transparent
+  );
+  --crop-firefox-button-background-color-active: color-mix(
+    in srgb,
+    currentColor 21%,
+    transparent
+  );
+  --crop-firefox-primary-background-color: #5abad7;
+  --crop-firefox-primary-background-color-hover: #90d3e8;
+  --crop-firefox-primary-background-color-active: #c0e7f5;
+  --crop-firefox-primary-text-color: #15141a;
+  --crop-firefox-focus-outline-color: #5abad7;
 }
 
 .crop-actions[hidden] {
@@ -389,27 +405,35 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-width: 64px;
-  height: 34px;
+  min-width: 32px;
+  min-height: 32px;
   box-sizing: border-box;
   border: 1px solid transparent;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  border-radius: 8px;
+  background-color: var(--crop-firefox-button-background-color);
+  color: #fbfbfe;
   cursor: pointer;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0;
-  padding: 0 12px;
-  margin-inline: 4px;
+  padding: 4px 16px;
+  margin: 4px;
+  text-decoration: none;
   white-space: nowrap;
 }
 
 .crop-action:hover {
-  border-color: #5ad7f0;
-  background: rgba(255, 255, 255, 0.16);
+  border-color: transparent;
+  background-color: var(--crop-firefox-button-background-color-hover);
+  color: #fbfbfe;
+}
+
+.crop-action:hover:active {
+  border-color: transparent;
+  background-color: var(--crop-firefox-button-background-color-active);
+  color: #fbfbfe;
 }
 
 .crop-action:disabled {
@@ -417,28 +441,33 @@
   opacity: 0.72;
 }
 
-.crop-action:focus-visible {
-  border-color: #5ad7f0;
-  outline: 0;
-  box-shadow:
-    0 0 0 1px rgba(90, 215, 240, 0.85),
-    0 0 0 4px rgba(90, 215, 240, 0.22);
+.crop-action:focus-visible,
+.crop-action[data-crop-focus-visible="true"] {
+  outline: 2px solid var(--crop-firefox-focus-outline-color);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 .crop-action--cancel {
-  min-width: 36px;
-  width: 36px;
-  padding: 0;
+  min-width: 32px;
 }
 
 .crop-action--save {
-  background: #5ad7f0;
-  color: #09212a;
+  border-color: transparent;
+  background-color: var(--crop-firefox-primary-background-color);
+  color: var(--crop-firefox-primary-text-color);
 }
 
 .crop-action--save:hover {
   border-color: transparent;
-  background: #78e4f5;
+  background-color: var(--crop-firefox-primary-background-color-hover);
+  color: var(--crop-firefox-primary-text-color);
+}
+
+.crop-action--save:hover:active {
+  border-color: transparent;
+  background-color: var(--crop-firefox-primary-background-color-active);
+  color: var(--crop-firefox-primary-text-color);
 }
 
 .crop-action--save:focus-visible {
@@ -446,9 +475,11 @@
 }
 
 .crop-action-icon {
+  display: block;
   width: 16px;
   height: 16px;
   flex: 0 0 16px;
+  fill: currentColor;
   pointer-events: none;
 }
 
@@ -467,12 +498,12 @@
 }
 
 .crop-action--copy {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background-color: var(--crop-firefox-button-background-color);
+  color: #fbfbfe;
 }
 
 .crop-action--copy:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background-color: var(--crop-firefox-button-background-color-hover);
 }
 
 .crop-action-status {

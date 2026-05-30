@@ -39,6 +39,27 @@ menu icons for Chrome MV3 Shadow DOM rendering. Firefox product branding,
 privileged APIs, localization ids, telemetry, and full-page capture behavior
 are not part of this adaptation.
 
+Task #13 extends the same UI asset boundary for selected action buttons:
+
+- Upstream repository: https://github.com/mozilla-firefox/firefox
+- Upstream source paths:
+  `toolkit/themes/shared/icons/close.svg`,
+  `toolkit/themes/shared/icons/edit-copy.svg`,
+  `browser/themes/shared/downloads/downloads.svg`,
+  `browser/components/screenshots/overlay/overlay.css`,
+  `browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs`, and
+  `toolkit/themes/shared/in-content/common-shared.css`
+- Local derived file:
+  `src/firefox-derived/screenshots-ui-assets.ts`
+- Chrome-specific style adaptation:
+  `src/content/overlay/crop-overlay.css`
+
+The local action SVG factories adapt the Firefox close, copy, and download
+icons for Chrome Shadow DOM rendering. The overlay stylesheet references
+Firefox Screenshots and in-content button behavior for sizing, spacing, focus,
+and primary button states without moving Chrome runtime code into the
+Firefox-derived source boundary.
+
 The Mozilla Public License 2.0 text is available in `LICENSE-MPL-2.0` and at:
 
 https://mozilla.org/MPL/2.0/

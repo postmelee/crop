@@ -35,6 +35,10 @@ const overlayCss = readFileSync(
   resolve(testDir, "../../../src/content/overlay/crop-overlay.css"),
   "utf8"
 );
+const firefoxUiAssets = readFileSync(
+  resolve(testDir, "../../../src/firefox-derived/screenshots-ui-assets.ts"),
+  "utf8"
+);
 const manifestJson = JSON.parse(
   readFileSync(resolve(testDir, "../../../manifest.json"), "utf8")
 ) as {
@@ -162,6 +166,20 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toContain(':host([data-crop-state="draggingReady"])');
     expect(overlayCss).toContain(':host([data-crop-state="dragging"])');
     expect(overlayCss).toContain("cursor: grabbing;");
+  });
+
+  it("keeps Firefox-derived action button icons and focus-visible styling wired", () => {
+    expect(firefoxUiAssets).toContain("ACTION_CANCEL_SVG");
+    expect(firefoxUiAssets).toContain("ACTION_COPY_SVG");
+    expect(firefoxUiAssets).toContain("ACTION_DOWNLOAD_SVG");
+    expect(firefoxUiAssets).toContain("createScreenshotsCopyIconSvg");
+    expect(firefoxUiAssets).toContain("createScreenshotsDownloadIconSvg");
+    expect(overlayCss).toContain(
+      "--crop-firefox-button-background-color: color-mix(in srgb, currentColor 7%, transparent);"
+    );
+    expect(overlayCss).toContain("--crop-firefox-primary-background-color: #5abad7;");
+    expect(overlayCss).toContain('.crop-action[data-crop-focus-visible="true"]');
+    expect(overlayCss).toContain("outline: 2px solid var(--crop-firefox-focus-outline-color);");
   });
 
   it("keeps MVP extension permissions free of debugger and all-url host access", () => {

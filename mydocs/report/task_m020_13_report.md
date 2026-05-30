@@ -16,10 +16,12 @@ GitHub Issue: [#13](https://github.com/postmelee/crop/issues/13)
 |---|---|---|
 | `src/content/overlay/selection-transform.ts` | selected move/resize helper, pointer hit-test, keyboard adjustment helper 추가 | selected rectangle geometry |
 | `src/content/overlay/state-machine.ts` | selected move/resize 상태와 keyboard 조정 이벤트 추가 | overlay 상태 전이 |
-| `src/content/overlay/crop-overlay.ts` | selected pointer move/resize, keyboard 조정, action button target 예외, cursor layer용 interactive overlay 판정, size badge 렌더링 연결 | overlay runtime interaction |
-| `src/content/overlay/crop-template.ts` | selection controls, 8방향 resize handle, move surface, size badge DOM, cancel/copy/save icon action DOM 추가 | Shadow DOM template |
-| `src/content/overlay/crop-overlay.css` | Firefox식 crosshair cursor, resize handle, hover scale animation, centered size badge, action box spacing/shadow/cursor 스타일 추가 | overlay visual/UI |
+| `src/content/overlay/crop-overlay.ts` | selected pointer move/resize, keyboard 조정, action button target 예외, cursor layer용 interactive overlay 판정, size badge 렌더링 연결, selected 진입 시 Copy focus ring 설정 | overlay runtime interaction |
+| `src/content/overlay/crop-template.ts` | selection controls, 8방향 resize handle, move surface, size badge DOM, Firefox-derived cancel/copy/save icon action DOM 추가 | Shadow DOM template |
+| `src/content/overlay/crop-overlay.css` | Firefox식 crosshair cursor, resize handle, hover scale animation, centered size badge, action box spacing/shadow/cursor, Firefox in-content button token 기반 action button 스타일 추가 | overlay visual/UI |
 | `src/content/overlay/positioning.ts` | selection controls, size badge, Firefox식 action box viewport clamp/우하단 placement helper 보강 | viewport positioning |
+| `src/firefox-derived/screenshots-ui-assets.ts` | Firefox close/edit-copy/download SVG factory 추가, Chrome Shadow DOM용 fill normalization 보강 | MPL-derived UI assets |
+| `src/firefox-derived/README.md`, `NOTICE`, `THIRD_PARTY.md` | Task #13 action icon/source CSS reference attribution 추가 | Firefox-derived boundary 기록 |
 | `tests/content/overlay/selection-transform.test.ts` | move/resize helper, hit-test, keyboard mapping 테스트 추가 | geometry regression |
 | `tests/content/overlay/state-machine.test.ts` | selected adjustment 상태 전이와 keyboard 조정 테스트 추가 | state regression |
 | `tests/content/overlay/positioning.test.ts` | controls/action box/size badge placement 테스트 추가 | layout regression |
@@ -52,10 +54,10 @@ GitHub Issue: [#13](https://github.com/postmelee/crop/issues/13)
 | selected move | 없음 | selected 내부 move surface와 pointer move 연결 |
 | keyboard 조정 | 정책 후보만 있음 | Arrow 1px move, Shift+Arrow 10px move, Alt/Option+Arrow edge resize |
 | size badge | 후속 parity 후보 | selected 내부 `width x height` badge 구현 |
-| Firefox selected UI parity | 일부 후속 후보 | size badge 중앙 배치, 60px resize handle hit target, 16px circle handle, hover scale animation, 우하단 action box, cancel/copy/save icon buttons 반영 |
+| Firefox selected UI parity | 일부 후속 후보 | size badge 중앙 배치, 60px resize handle hit target, 16px circle handle, hover scale animation, 우하단 action box, 원본 close/copy/download icon, focus ring, primary/secondary button token 반영 |
 | Firefox overlay cursor parity | 브라우저 기본 cursor 노출 | overlay surface `crosshair`, drag selection 중 `grabbing`, toolbar/action 영역 `auto` 반영 |
 | Phase 6 selected adjustment fixture | 없음 | `selected-adjustment-*` marker 4개 추가 |
-| 전체 자동 테스트 | Task #12 완료 기준 12 files / 98 tests | 13 files / 135 tests |
+| 전체 자동 테스트 | Task #12 완료 기준 12 files / 98 tests | 13 files / 137 tests |
 | Stage 보고서 | 없음 | Stage 1~4 보고서 4개 |
 
 ## 검증 결과
@@ -66,7 +68,7 @@ GitHub Issue: [#13](https://github.com/postmelee/crop/issues/13)
 | selected highlight 내부를 드래그해 영역을 이동할 수 있다 | OK — CDP smoke에서 selection transform이 `(94, 477.39)`에서 `(124, 497.39)`로 이동했다. |
 | click selection 직후에도 Firefox처럼 같은 selected region을 drag로 수정할 수 있다 | OK — fixture target 클릭으로 selected 전환 후 동일 selected region에서 move/resize smoke를 통과했다. |
 | selected 영역 밖 클릭은 reset으로 유지되고 resize/move click sequence와 충돌하지 않는다 | OK — CDP smoke에서 outside click 후 state가 `idle`로 돌아왔다. |
-| 하단 action box가 Firefox 원본에 가까운 크기, 색, grouping, border radius, shadow, 위치 규칙을 가진다 | OK — 작업지시자 smoke 피드백 후 Firefox upstream `overlay.css`, `ScreenshotsOverlayChild.sys.mjs`를 확인해 cancel/copy/save icon buttons, 우하단 배치, 10px margin 규칙으로 보정했다. |
+| 하단 action box가 Firefox 원본에 가까운 크기, 색, grouping, border radius, shadow, 위치 규칙을 가진다 | OK — 작업지시자 smoke 피드백 후 Firefox upstream `overlay.css`, `ScreenshotsOverlayChild.sys.mjs`, `common-shared.css`를 확인해 cancel/copy/save icon buttons, `32px` min-height, `4px 16px` padding, `8px` button radius, `#5abad7` primary color, `2px` focus ring, 우하단 배치, 10px margin 규칙으로 보정했다. |
 | action box가 viewport 하단 또는 좌우 경계에서 잘리지 않고 접근 가능한 위치로 flip/clamp 된다 | OK — `positioning.test.ts`의 below/above flip, upper/lower viewport clamp, small viewport clamp 테스트가 통과했다. |
 | rectangle size badge가 Firefox처럼 선택 영역 중앙에 표시된다 | OK — Firefox `#selection-size-container` centering 규칙과 `Math.floor(width * zoom)` 산식을 반영했다. |
 | rectangle 조정 handle hover 시 커지는 animation이 있다 | OK — Firefox `.mover-target:hover .mover { transform: scale(1.05); }`와 동일한 125ms cubic-bezier transition을 반영했다. |
@@ -93,7 +95,7 @@ npm run build
 npm run typecheck
 npm run test
 rg "resize|move|keyboard|Copy|Save|Cancel|debugger|<all_urls>|#13" README.md mydocs src tests manifest.json
-rg "selection-size|crop-selection-size|crop-resize-handle|crop-action|ACTION_BUTTONS|Firefox|mover|crosshair|grabbing" src tests README.md mydocs/report/task_m020_13_report.md
+rg "selection-size|crop-selection-size|crop-resize-handle|crop-action|ACTION_BUTTONS|Firefox|mover|crosshair|grabbing|ACTION_COPY_SVG|data-crop-focus-visible|common-shared.css" src tests README.md NOTICE THIRD_PARTY.md mydocs/report/task_m020_13_report.md
 git diff --check
 git status --short
 ```
@@ -102,20 +104,22 @@ git status --short
 
 - OK: `npm run build` 통과. `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 빌드 완료.
 - OK: `npm run typecheck` 통과.
-- OK: `npm run test` 통과. 13개 test file, 135개 test가 모두 통과했다.
+- OK: `npm run test` 통과. 13개 test file, 137개 test가 모두 통과했다.
 - OK: `rg "resize|move|keyboard|Copy|Save|Cancel|debugger|<all_urls>|#13" ...`에서 README, 구현, 테스트, 계획/보고 문서의 관련 항목을 확인했다.
-- OK: Firefox UI parity grep에서 size badge 중앙 배치, handle hover scale, action button placement, crosshair/grabbing cursor, upstream 근거 기록을 확인했다.
+- OK: Firefox UI parity grep에서 size badge 중앙 배치, handle hover scale, action button placement, source action icon factory, focus-visible marker, crosshair/grabbing cursor, upstream 근거 기록을 확인했다.
 - OK: `git diff --check` 경고 없이 통과.
 - OK: Headless Chrome CDP smoke 통과. selected click, 8 handles, size badge, selected move, south-east resize, Shift+Arrow move, Alt/Option+Arrow resize, outside reset, Save pipeline overlay hide를 확인했다.
 - OK: 작업지시자 smoke 피드백 반영 후 Headless Chrome CDP UI parity smoke 통과. size badge center delta `0px`, action toolbar right delta `0px`, bottom gap `10px`, handle target `60px`, handle dot `16px`, hover transform `matrix(1.05, 0, 0, 1.05, 0, 0)`, action order `cancel/copy/save`를 확인했다.
 - OK: cursor parity CDP smoke 통과. host cursor `crosshair`, hover highlight 유지, drag 중 `grabbing`, drag selection 후 selected `70 x 60`, click selection 후 selected `1130 x 260`을 확인했다.
+- OK: action button parity CDP smoke 통과. action box `235 x 48`, container background `rgb(28, 27, 34)`, button order `cancel/copy/save`, button size `50/77/77 x 32`, button radius `8px`, icon size `16px`, Copy focus ring `2px #5abad7`, Save background `rgb(90, 186, 215)`, Copy hover background `currentColor 14%`, hover border transparent, button text `취소/복사/저장`을 확인했다.
+- OK: Browser plugin fixture load smoke 통과. `http://127.0.0.1:5173/tests/fixtures/phase6_edge_cases.html` title과 fixture DOM을 확인했다. 인앱 브라우저 로그에는 페이지 소스에 없는 `MutationObserver.observe` error 1건이 관찰되어 Browser 런타임/확장 계층 노이즈로 분류했고, 실제 overlay 검증은 CDP smoke로 수행했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
 - Stage 5 CDP smoke는 content script를 fixture page에 직접 주입하고 `chrome.runtime.sendMessage`를 stub 처리했다. 실제 Chrome toolbar action, 시스템 clipboard write, 실제 downloads 동작은 기존 #7/#8 smoke 경로를 유지하며 이번 task에서는 capture 전 overlay hide 경계만 재확인했다.
-- Pointer handle 체감 크기와 action box 시각 위치는 OS display scale, browser zoom, 페이지 density에 따라 미세 조정 여지가 있을 수 있으나, Firefox upstream의 60px hit target과 bottom-right placement 산식을 기준값으로 맞췄다.
+- Pointer handle 체감 크기와 action box 시각 위치는 OS display scale, browser zoom, 페이지 density에 따라 미세 조정 여지가 있을 수 있으나, Firefox upstream의 60px hit target, bottom-right placement 산식, in-content button token을 기준값으로 맞췄다.
 - Keyboard adjustment는 selected rectangle을 page 좌표 기준으로 이동하므로 selection이 viewport 밖으로 이동할 수 있다. 현재 controls/action box는 visible intersection과 clamp 정책으로 대응한다.
 
 ### 후속 작업 후보

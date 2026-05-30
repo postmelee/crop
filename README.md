@@ -59,7 +59,7 @@ M020 #13 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport 
 - selected rectangle의 8방향 resize handle과 내부 drag move interaction
 - selected rectangle의 Arrow/Shift/Alt keyboard move/resize 조정
 - selected rectangle 내부 `width x height` size badge 표시
-- Firefox식 selected action buttons 위치, 순서, icon/label styling
+- Firefox식 selected action buttons 위치, 순서, 원본 icon, focus ring, primary/secondary styling
 - Copy/Save buttons에서 capture/crop backend 호출
 - background service worker의 `chrome.tabs.captureVisibleTab()` 기반 visible viewport PNG capture
 - background service worker의 `chrome.downloads.download()` 기반 PNG Save
@@ -125,7 +125,7 @@ npm run typecheck
 - 중앙에는 영역 선택 안내 문구, Cancel button, pointer 위치에 따라 눈동자가 움직이는 preview face가 표시된다.
 - 일반 DOM 요소에 마우스를 올리면 dashed hover highlight가 표시된다.
 - viewport 밖으로 이어지는 요소와 화면보다 큰 partially visible 요소는 page 좌표 기준으로 선택되어, 선택 후 window scroll 시 테두리가 같은 문서 영역을 따라간다.
-- hover highlight 상태에서 클릭하면 selected rectangle이 고정되고 Firefox식 selected action buttons가 선택 영역 우하단 기준으로 표시된다.
+- hover highlight 상태에서 클릭하면 selected rectangle이 고정되고 Firefox식 selected action buttons가 선택 영역 우하단 기준으로 표시된다. 버튼은 Close, Copy, Save 순서와 원본 icon, focus ring, primary/secondary color 상태를 따른다.
 - selected rectangle에는 8방향 resize handle, 내부 move surface, 중앙 `width x height` size badge가 표시된다.
 - selected rectangle 내부를 드래그하면 선택 영역이 이동하고, 모서리/변 handle을 드래그하면 선택 영역 크기가 조정된다.
 - selected 상태에서 Arrow는 1px 이동, Shift+Arrow는 10px 이동, Alt/Option+Arrow는 해당 edge 1px resize, Alt/Option+Shift+Arrow는 10px resize로 동작한다.
