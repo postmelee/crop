@@ -48,7 +48,8 @@ export interface EyeOffsetPresentation {
 }
 
 const ACTION_BUTTONS_EDGE_MARGIN = 8;
-const ACTION_BUTTONS_GAP = 8;
+const ACTION_BUTTONS_VIEWPORT_BOTTOM_THRESHOLD = 70;
+const ACTION_BUTTONS_VIEWPORT_BOTTOM_OFFSET = 60;
 const EYE_OFFSET_SCALE = 10;
 const SELECTION_SIZE_MIN_VISIBLE_WIDTH = 58;
 const SELECTION_SIZE_MIN_VISIBLE_HEIGHT = 26;
@@ -116,7 +117,7 @@ export function getSelectionSizePresentation(
 
   return {
     hidden: false,
-    text: `${Math.round(selectedRect.width)} x ${Math.round(selectedRect.height)}`
+    text: `${Math.floor(selectedRect.width)} x ${Math.floor(selectedRect.height)}`
   };
 }
 
@@ -143,25 +144,10 @@ export function getActionButtonsPresentation(
     };
   }
 
-  const maxX = Math.max(
-    ACTION_BUTTONS_EDGE_MARGIN,
-    viewport.clientWidth - elementSize.width - ACTION_BUTTONS_EDGE_MARGIN
-  );
-  const x = clamp(rect.left, ACTION_BUTTONS_EDGE_MARGIN, maxX);
-  const belowY = rect.bottom + ACTION_BUTTONS_GAP;
-  const aboveY = rect.top - elementSize.height - ACTION_BUTTONS_GAP;
-  const maxY = Math.max(
-    ACTION_BUTTONS_EDGE_MARGIN,
-    viewport.clientHeight - elementSize.height - ACTION_BUTTONS_EDGE_MARGIN
-  );
-  const y =
-    belowY >= ACTION_BUTTONS_EDGE_MARGIN &&
-    belowY + elementSize.height + ACTION_BUTTONS_EDGE_MARGIN <= viewport.clientHeight
-      ? belowY
-      : aboveY >= ACTION_BUTTONS_EDGE_MARGIN &&
-          aboveY + elementSize.height + ACTION_BUTTONS_EDGE_MARGIN <= viewport.clientHeight
-        ? aboveY
-        : getClampedActionButtonsY(rect, belowY, maxY, viewport);
+  const rightEdge = Math.min(viewport.clientWidth, rect.right);
+  const maxX = Math.max(ACTION_BUTTONS_EDGE_MARGIN, rightEdge - elementSize.width);
+  const x = clamp(maxX, ACTION_BUTTONS_EDGE_MARGIN, getActionButtonsMaxX(viewport, elementSize));
+  const y = getActionButtonsY(rect, viewport, elementSize);
 
   return {
     hidden: false,
@@ -169,21 +155,35 @@ export function getActionButtonsPresentation(
   };
 }
 
-function getClampedActionButtonsY(
+function getActionButtonsMaxX(viewport: ViewportSize, elementSize: ElementSize): number {
+  return Math.max(
+    ACTION_BUTTONS_EDGE_MARGIN,
+    viewport.clientWidth - elementSize.width - ACTION_BUTTONS_EDGE_MARGIN
+  );
+}
+
+function getActionButtonsY(
   rect: ViewportRect,
-  belowY: number,
-  maxY: number,
-  viewport: ViewportSize
+  viewport: ViewportSize,
+  elementSize: ElementSize
 ): number {
-  if (rect.top >= viewport.clientHeight) {
-    return maxY;
+  const maxY = Math.max(
+    ACTION_BUTTONS_EDGE_MARGIN,
+    viewport.clientHeight - elementSize.height - ACTION_BUTTONS_EDGE_MARGIN
+  );
+  let y = rect.bottom;
+
+  if (viewport.clientHeight - rect.bottom < ACTION_BUTTONS_VIEWPORT_BOTTOM_THRESHOLD) {
+    if (rect.bottom < viewport.clientHeight) {
+      y = rect.bottom - ACTION_BUTTONS_VIEWPORT_BOTTOM_OFFSET;
+    } else if (viewport.clientHeight - rect.top < ACTION_BUTTONS_VIEWPORT_BOTTOM_THRESHOLD) {
+      y = rect.top - ACTION_BUTTONS_VIEWPORT_BOTTOM_OFFSET;
+    } else {
+      y = viewport.clientHeight - ACTION_BUTTONS_VIEWPORT_BOTTOM_OFFSET;
+    }
   }
 
-  if (rect.bottom <= 0) {
-    return ACTION_BUTTONS_EDGE_MARGIN;
-  }
-
-  return clamp(belowY, ACTION_BUTTONS_EDGE_MARGIN, maxY);
+  return clamp(y, ACTION_BUTTONS_EDGE_MARGIN, maxY);
 }
 
 export function applyActionButtonsPresentation(

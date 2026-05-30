@@ -56,25 +56,25 @@ describe("getActionButtonsPresentation", () => {
       getActionButtonsPresentation(rectFromEdges(120, 100, 320, 180), viewport, actionsSize)
     ).toEqual({
       hidden: false,
-      transform: "translate(120px, 188px)"
+      transform: "translate(100px, 180px)"
     });
   });
 
-  it("flips action buttons above a selected rect near the viewport bottom", () => {
+  it("moves action buttons into the selected rect near the viewport bottom", () => {
     expect(
       getActionButtonsPresentation(rectFromEdges(120, 540, 320, 580), viewport, actionsSize)
     ).toEqual({
       hidden: false,
-      transform: "translate(120px, 488px)"
+      transform: "translate(100px, 520px)"
     });
   });
 
-  it("clamps action buttons inside the viewport edge margin", () => {
+  it("right-aligns action buttons to the visible selected edge inside the viewport", () => {
     expect(
       getActionButtonsPresentation(rectFromEdges(760, 100, 790, 140), viewport, actionsSize)
     ).toEqual({
       hidden: false,
-      transform: "translate(572px, 148px)"
+      transform: "translate(570px, 140px)"
     });
   });
 
@@ -83,7 +83,7 @@ describe("getActionButtonsPresentation", () => {
       getActionButtonsPresentation(rectFromEdges(120, 660, 320, 720), viewport, actionsSize)
     ).toEqual({
       hidden: false,
-      transform: "translate(120px, 548px)"
+      transform: "translate(100px, 548px)"
     });
   });
 
@@ -92,7 +92,7 @@ describe("getActionButtonsPresentation", () => {
       getActionButtonsPresentation(rectFromEdges(120, -120, 320, -60), viewport, actionsSize)
     ).toEqual({
       hidden: false,
-      transform: "translate(120px, 8px)"
+      transform: "translate(100px, 8px)"
     });
   });
 
@@ -101,7 +101,7 @@ describe("getActionButtonsPresentation", () => {
       getActionButtonsPresentation(rectFromEdges(120, 10, 320, 590), viewport, actionsSize)
     ).toEqual({
       hidden: false,
-      transform: "translate(120px, 548px)"
+      transform: "translate(100px, 530px)"
     });
   });
 });
@@ -127,7 +127,7 @@ describe("getSelectionControlsPresentation", () => {
 });
 
 describe("getSelectionSizePresentation", () => {
-  it("shows rounded selected dimensions when the visible rect can fit the badge", () => {
+  it("shows Firefox-style floored selected dimensions when the visible rect can fit the badge", () => {
     expect(
       getSelectionSizePresentation(
         rectFromEdges(10.4, 20.2, 111, 81),
@@ -135,7 +135,7 @@ describe("getSelectionSizePresentation", () => {
       )
     ).toEqual({
       hidden: false,
-      text: "101 x 61"
+      text: "100 x 60"
     });
   });
 

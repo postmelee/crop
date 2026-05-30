@@ -15,6 +15,9 @@ export const PANEL_ATTRIBUTE = "data-crop-panel";
 export const FLASH_CLASS = "crop-panel--flash";
 export const TOAST_ROOT_ID = "__crop_toast__";
 export const TOAST_ATTRIBUTE = "data-crop-toast-root";
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+type CropActionName = "copy" | "save" | "cancel";
 
 export interface CropOverlayTemplate {
   readonly panel: HTMLElement;
@@ -93,9 +96,9 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   actions.setAttribute("role", "toolbar");
   actions.setAttribute("aria-label", "Crop actions");
 
-  const copyButton = createActionButton("copy", "Copy");
-  const saveButton = createActionButton("save", "Save");
-  const cancelButton = createActionButton("cancel", "Cancel");
+  const copyButton = createActionButton("copy", "복사");
+  const saveButton = createActionButton("save", "저장");
+  const cancelButton = createActionButton("cancel", "취소", true);
   const primaryActionGroup = createActionGroup("primary");
   const secondaryActionGroup = createActionGroup("secondary");
   const actionStatus = document.createElement("div");
@@ -107,9 +110,9 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   instructions.append(instructionMain, instructionSub);
   prompt.append(face, instructions, promptCancelButton);
   panel.append(visibleModeButton, fullPageModeButton);
-  primaryActionGroup.append(copyButton, saveButton);
   secondaryActionGroup.append(cancelButton);
-  actions.append(primaryActionGroup, secondaryActionGroup, actionStatus);
+  primaryActionGroup.append(copyButton, saveButton);
+  actions.append(secondaryActionGroup, primaryActionGroup, actionStatus);
   shell.append(
     dim,
     frame,
@@ -236,15 +239,65 @@ function createPromptFace(): HTMLElement {
   return face;
 }
 
-function createActionButton(action: string, label: string): HTMLButtonElement {
+function createActionButton(
+  action: CropActionName,
+  label: string,
+  iconOnly = false
+): HTMLButtonElement {
   const button = document.createElement("button");
 
   button.className = `crop-action crop-action--${action}`;
   button.type = "button";
-  button.textContent = label;
   button.setAttribute("data-crop-action", action);
+  button.setAttribute("title", label);
+  button.setAttribute("aria-label", label);
+
+  const icon = createActionIcon(action);
+  const actionLabel = document.createElement("span");
+  actionLabel.className = "crop-action-label";
+  actionLabel.textContent = label;
+
+  if (iconOnly) {
+    actionLabel.classList.add("crop-action-label--hidden");
+  }
+
+  button.append(icon, actionLabel);
 
   return button;
+}
+
+function createActionIcon(action: CropActionName): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.classList.add("crop-action-icon");
+  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+
+  switch (action) {
+    case "cancel":
+      appendSvgPath(svg, "M4 4l8 8M12 4l-8 8");
+      break;
+    case "copy":
+      appendSvgPath(svg, "M6 3.5h6.5v8H6zM3.5 6v6.5H10");
+      break;
+    case "save":
+      appendSvgPath(svg, "M8 2.5v7M5.25 6.75 8 9.5l2.75-2.75M3.5 12.5h9");
+      break;
+  }
+
+  return svg;
+}
+
+function appendSvgPath(svg: SVGSVGElement, d: string): void {
+  const path = document.createElementNS(SVG_NS, "path");
+
+  path.setAttribute("d", d);
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("stroke-width", "1.6");
+  svg.append(path);
 }
 
 function createActionGroup(kind: "primary" | "secondary"): HTMLElement {
