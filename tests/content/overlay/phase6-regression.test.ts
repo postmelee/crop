@@ -31,6 +31,10 @@ const phase6FixtureHtml = readFileSync(
   resolve(testDir, "../../fixtures/phase6_edge_cases.html"),
   "utf8"
 );
+const overlayCss = readFileSync(
+  resolve(testDir, "../../../src/content/overlay/crop-overlay.css"),
+  "utf8"
+);
 const manifestJson = JSON.parse(
   readFileSync(resolve(testDir, "../../../manifest.json"), "utf8")
 ) as {
@@ -151,6 +155,13 @@ describe("Phase 6 overlay regression coverage", () => {
     ]) {
       expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
     }
+  });
+
+  it("keeps the Firefox-style crosshair cursor contract on the overlay surface", () => {
+    expect(overlayCss).toContain("cursor: crosshair;");
+    expect(overlayCss).toContain(':host([data-crop-state="draggingReady"])');
+    expect(overlayCss).toContain(':host([data-crop-state="dragging"])');
+    expect(overlayCss).toContain("cursor: grabbing;");
   });
 
   it("keeps MVP extension permissions free of debugger and all-url host access", () => {

@@ -3,7 +3,8 @@
   position: fixed;
   inset: 0;
   z-index: 2147483647;
-  pointer-events: none;
+  cursor: crosshair;
+  pointer-events: auto;
   color-scheme: light;
   font-family:
     Inter,
@@ -17,9 +18,15 @@
     sans-serif;
 }
 
+:host([data-crop-state="draggingReady"]),
+:host([data-crop-state="dragging"]) {
+  cursor: grabbing;
+}
+
 .crop-shell {
   position: fixed;
   inset: 0;
+  cursor: inherit;
   pointer-events: none;
   --crop-eye-x: 0px;
   --crop-eye-y: 0px;
@@ -351,6 +358,7 @@
   border: 0;
   border-radius: 4px;
   background: rgba(41, 45, 52, 0.98);
+  cursor: auto;
   box-shadow:
     0 12px 32px rgba(0, 0, 0, 0.34),
     0 2px 8px rgba(0, 0, 0, 0.28);
@@ -494,6 +502,7 @@
   padding: 9px;
   border-radius: 7px;
   background: rgba(38, 43, 51, 0.98);
+  cursor: auto;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
   pointer-events: auto;
   transform-origin: top right;

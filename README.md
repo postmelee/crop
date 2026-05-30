@@ -46,6 +46,7 @@ M020 #13 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport 
 - Firefox식 top-right mode toolbar와 중앙 preview prompt
 - Firefox-derived preview face SVG와 visible/full page menu icon
 - pointer 위치를 따라 움직이는 preview face 눈동자
+- Firefox식 overlay crosshair cursor와 drag 중 grabbing cursor
 - Firefox 원본에 가까운 prompt 중앙 배치와 compact mode toolbar 보정
 - Firefox-derived helper 기반 DOM 요소 hover highlight
 - page-coordinate 기반 hover/click/drag selection과 window scroll-follow highlight
@@ -119,6 +120,7 @@ npm run typecheck
 기대 결과:
 
 - 현재 탭에 dark dim overlay, dashed viewport boundary, 오른쪽 위 mode toolbar가 표시된다.
+- overlay 위의 기본 커서는 Firefox처럼 crosshair로 표시되고, drag selection 중에는 grabbing으로 표시된다.
 - mode toolbar에는 `보이는 영역 선택`과 `전체 페이지 선택`이 보인다. `전체 페이지 선택`은 MVP 범위 밖이므로 현재 비활성 placeholder다.
 - 중앙에는 영역 선택 안내 문구, Cancel button, pointer 위치에 따라 눈동자가 움직이는 preview face가 표시된다.
 - 일반 DOM 요소에 마우스를 올리면 dashed hover highlight가 표시된다.

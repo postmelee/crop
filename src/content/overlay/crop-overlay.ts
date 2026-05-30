@@ -927,7 +927,27 @@ function isSelectionAdjustmentStatus(status: CropOverlayState["status"]): boolea
 }
 
 function isCropOverlayEvent(event: Event, host: HTMLElement): boolean {
-  return event.composedPath().includes(host);
+  return event.composedPath().some((eventTarget) => {
+    if (!(eventTarget instanceof HTMLElement) || eventTarget === host) {
+      return false;
+    }
+
+    if (
+      eventTarget.dataset.cropAction ||
+      eventTarget.dataset.cropMode ||
+      eventTarget.dataset.cropResizeHandle ||
+      eventTarget.dataset.cropSelectionMove ||
+      eventTarget.hasAttribute(PANEL_ATTRIBUTE)
+    ) {
+      return true;
+    }
+
+    return (
+      eventTarget.classList.contains("crop-actions") ||
+      eventTarget.classList.contains("crop-action-group") ||
+      eventTarget.classList.contains("crop-action-status")
+    );
+  });
 }
 
 function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
