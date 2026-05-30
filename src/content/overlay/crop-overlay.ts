@@ -15,7 +15,7 @@ import {
   applySelectionMaskPresentation,
   type ElementSize
 } from "./positioning";
-import { getEdgeScrollDelta } from "./edge-scroll";
+import { getEdgeScrollDelta, getEdgeScrollPagePoint } from "./edge-scroll";
 import {
   getBestRectForElement,
   getElementFromPoint
@@ -669,10 +669,7 @@ export function mountCropOverlay(): void {
 
     overlayState = transitionOverlayState(overlayState, {
       type: "dragMove",
-      point: {
-        x: lastDragPointer.x + afterScroll.scrollX,
-        y: lastDragPointer.y + afterScroll.scrollY
-      }
+      point: getEdgeScrollPagePoint(lastDragPointer, afterScroll)
     });
     renderOverlayState();
     edgeScrollFrameId = window.requestAnimationFrame(processEdgeScroll);

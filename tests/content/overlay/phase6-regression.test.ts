@@ -4,6 +4,10 @@ import {
   getElementFromPoint
 } from "../../../src/firefox-derived/overlay-helpers";
 import {
+  getEdgeScrollDelta,
+  getEdgeScrollPagePoint
+} from "../../../src/content/overlay/edge-scroll";
+import {
   rectFromEdges as firefoxRectFromEdges,
   WindowDimensions
 } from "../../../src/firefox-derived/window-dimensions";
@@ -64,6 +68,30 @@ describe("Phase 6 overlay regression coverage", () => {
         }
       })
     ).toEqual(sharedRectFromEdges(184, 72, 1167, 500));
+  });
+
+  it("uses the last pointer and latest scroll position for edge auto-scroll drag updates", () => {
+    const lastPointer = {
+      x: 760,
+      y: 590
+    };
+    const scrollDelta = getEdgeScrollDelta(lastPointer, {
+      clientWidth: 800,
+      clientHeight: 600
+    });
+
+    expect(scrollDelta.active).toBe(true);
+    expect(scrollDelta.x).toBeGreaterThan(0);
+    expect(scrollDelta.y).toBeGreaterThan(0);
+    expect(
+      getEdgeScrollPagePoint(lastPointer, {
+        scrollX: 120,
+        scrollY: 440
+      })
+    ).toEqual({
+      x: 880,
+      y: 1030
+    });
   });
 
   it("uses the browser visual rect for transformed elements", () => {

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   EDGE_SCROLL_MAX_STEP,
-  getEdgeScrollDelta
+  getEdgeScrollDelta,
+  getEdgeScrollPagePoint
 } from "../../../src/content/overlay/edge-scroll";
 
 describe("getEdgeScrollDelta", () => {
@@ -52,6 +53,19 @@ describe("getEdgeScrollDelta", () => {
       x: -21,
       y: 21,
       active: true
+    });
+  });
+
+  it("stays inactive exactly on the edge threshold boundary", () => {
+    expect(getEdgeScrollDelta({ x: 80, y: 300 }, viewport)).toEqual({
+      x: 0,
+      y: 0,
+      active: false
+    });
+    expect(getEdgeScrollDelta({ x: 720, y: 520 }, viewport)).toEqual({
+      x: 0,
+      y: 0,
+      active: false
     });
   });
 
@@ -121,6 +135,26 @@ describe("getEdgeScrollDelta", () => {
       x: 0,
       y: 0,
       active: false
+    });
+  });
+});
+
+describe("getEdgeScrollPagePoint", () => {
+  it("recomputes a drag point from the last client pointer and latest scroll position", () => {
+    expect(
+      getEdgeScrollPagePoint(
+        {
+          x: 120,
+          y: 580
+        },
+        {
+          scrollX: 300,
+          scrollY: 900
+        }
+      )
+    ).toEqual({
+      x: 420,
+      y: 1480
     });
   });
 });

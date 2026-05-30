@@ -8,6 +8,11 @@ export interface EdgeScrollViewport {
   readonly clientHeight: number;
 }
 
+export interface EdgeScrollPosition {
+  readonly scrollX: number;
+  readonly scrollY: number;
+}
+
 export interface EdgeScrollOptions {
   readonly threshold?: number;
   readonly maxStep?: number;
@@ -58,6 +63,16 @@ export function getEdgeScrollDelta(
     x,
     y,
     active: x !== 0 || y !== 0
+  };
+}
+
+export function getEdgeScrollPagePoint(
+  pointer: EdgeScrollPoint,
+  scroll: EdgeScrollPosition
+): EdgeScrollPoint {
+  return {
+    x: pointer.x + scroll.scrollX,
+    y: pointer.y + scroll.scrollY
   };
 }
 

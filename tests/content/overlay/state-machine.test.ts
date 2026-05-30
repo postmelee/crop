@@ -161,6 +161,25 @@ describe("transitionOverlayState", () => {
     });
   });
 
+  it("keeps rect normalization when the drag endpoint advances after scrolling", () => {
+    const draggingReady = transitionOverlayState(createInitialOverlayState(), {
+      type: "dragStart",
+      point: { x: 340, y: 920 }
+    });
+
+    expect(
+      transitionOverlayState(draggingReady, {
+        type: "dragMove",
+        point: { x: 420, y: 1480 }
+      })
+    ).toEqual({
+      status: "dragging",
+      hoverRect: null,
+      selectedRect: rectFromEdges(340, 920, 420, 1480),
+      dragStart: { x: 340, y: 920 }
+    });
+  });
+
   it("selects the dragged region on pointer up", () => {
     const draggingReady = transitionOverlayState(createInitialOverlayState(), {
       type: "dragStart",
