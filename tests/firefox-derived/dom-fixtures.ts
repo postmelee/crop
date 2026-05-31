@@ -7,6 +7,9 @@ import {
 export class FixtureElement {
   readonly nodeType = 1;
   readonly tagName: string;
+  clientLeft = 0;
+  clientTop = 0;
+  contentWindow: { readonly document: FixtureDocument } | null = null;
   parentElement: FixtureElement | null = null;
   parentNode: FixtureElement | null = null;
   childNodes: FixtureElement[] = [];
@@ -15,6 +18,8 @@ export class FixtureElement {
   shadowRoot: FixtureShadowRoot | null = null;
   #rect: ViewportRect;
   readonly #attributes = new Map<string, string>();
+  #contentDocument: FixtureDocument | null = null;
+  #contentDocumentAccessError: Error | null = null;
 
   constructor(tagName: string, rect: RectLike, attributes: Record<string, string> = {}) {
     this.tagName = tagName.toUpperCase();
@@ -44,6 +49,34 @@ export class FixtureElement {
     return this.shadowRoot;
   }
 
+  setClientOffset(clientLeft: number, clientTop: number): this {
+    this.clientLeft = clientLeft;
+    this.clientTop = clientTop;
+    return this;
+  }
+
+  setFrameContentDocument(document: FixtureDocument | null): this {
+    this.#contentDocument = document;
+    this.#contentDocumentAccessError = null;
+    this.contentWindow = document ? { document } : null;
+    return this;
+  }
+
+  setInaccessibleFrameContent(error = new Error("Blocked iframe contentDocument")): this {
+    this.#contentDocument = null;
+    this.#contentDocumentAccessError = error;
+    this.contentWindow = null;
+    return this;
+  }
+
+  get contentDocument(): FixtureDocument | null {
+    if (this.#contentDocumentAccessError) {
+      throw this.#contentDocumentAccessError;
+    }
+
+    return this.#contentDocument;
+  }
+
   getBoundingClientRect(): DOMRect {
     return this.#rect as DOMRect;
   }
@@ -54,19 +87,24 @@ export class FixtureElement {
 }
 
 export class FixtureShadowRoot {
+  lastElementFromPoint: { readonly x: number; readonly y: number } | null = null;
+
   constructor(private readonly element: FixtureElement | null) {}
 
-  elementFromPoint(): Element | null {
+  elementFromPoint(x: number, y: number): Element | null {
+    this.lastElementFromPoint = { x, y };
     return asElement(this.element);
   }
 }
 
 export class FixtureDocument {
   readonly ELEMENT_NODE = 1;
+  lastElementFromPoint: { readonly x: number; readonly y: number } | null = null;
 
   constructor(private readonly element: FixtureElement | null) {}
 
-  elementFromPoint(): Element | null {
+  elementFromPoint(x: number, y: number): Element | null {
+    this.lastElementFromPoint = { x, y };
     return asElement(this.element);
   }
 }

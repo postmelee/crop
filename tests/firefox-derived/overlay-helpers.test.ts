@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  getAccessibleIframeDocument,
   getBestRectForElement,
   getElementFromPoint,
   getVisibleRectForElement,
+  projectIframeViewportRectToParentViewport,
+  projectPointIntoIframeViewport,
   resetDetectThresholds,
   setMaxDetectHeight,
   setMaxDetectWidth
@@ -56,6 +59,52 @@ describe("getElementFromPoint", () => {
     expect(result.element).toBe(asElement(iframe));
     expect(result.rect).toBeNull();
     expect(result.unsupportedReason).toBe("iframe");
+  });
+});
+
+describe("iframe coordinate contract", () => {
+  it("returns a same-origin fixture iframe document when it is accessible", () => {
+    const target = fixtureElement("article", rectFromEdges(20, 20, 180, 120));
+    const iframeDocument = new FixtureDocument(target);
+    const iframe = fixtureElement("iframe", rectFromEdges(100, 50, 500, 350))
+      .setFrameContentDocument(iframeDocument);
+
+    expect(getAccessibleIframeDocument(asElement(iframe)!)).toBe(asDocument(iframeDocument));
+  });
+
+  it("treats inaccessible iframe content as a normal unsupported boundary", () => {
+    const iframe = fixtureElement("iframe", rectFromEdges(100, 50, 500, 350))
+      .setInaccessibleFrameContent();
+
+    expect(getAccessibleIframeDocument(asElement(iframe)!)).toBeNull();
+  });
+
+  it("does not expose a document for non-iframe elements", () => {
+    const target = fixtureElement("div", rectFromEdges(100, 50, 500, 350));
+
+    expect(getAccessibleIframeDocument(asElement(target)!)).toBeNull();
+  });
+
+  it("projects parent viewport pointers into iframe viewport coordinates", () => {
+    const iframe = fixtureElement("iframe", rectFromEdges(100, 50, 500, 350))
+      .setClientOffset(4, 6);
+
+    expect(projectPointIntoIframeViewport(asElement(iframe)!, 154, 96)).toEqual({
+      x: 50,
+      y: 40
+    });
+  });
+
+  it("projects iframe viewport rects into parent viewport coordinates", () => {
+    const iframe = fixtureElement("iframe", rectFromEdges(100, 50, 500, 350))
+      .setClientOffset(4, 6);
+
+    expect(
+      projectIframeViewportRectToParentViewport(
+        asElement(iframe)!,
+        rectFromEdges(20, 25, 120, 90)
+      )
+    ).toEqual(rectFromEdges(124, 81, 224, 146));
   });
 });
 

@@ -46,6 +46,11 @@ export interface HitTestResult {
   readonly unsupportedReason?: "iframe";
 }
 
+export interface IframeViewportPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 interface ElementPointRoot {
   elementFromPoint(x: number, y: number): Element | null;
 }
@@ -190,6 +195,55 @@ export function getVisibleRectForElement(
   return windowDimensions.clipRectToViewport(rect);
 }
 
+export function getAccessibleIframeDocument(element: Element): Document | null {
+  if (!isIframeElement(element)) {
+    return null;
+  }
+
+  try {
+    return (element as HTMLIFrameElement).contentDocument ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function projectPointIntoIframeViewport(
+  iframe: Element,
+  parentViewportX: number,
+  parentViewportY: number
+): IframeViewportPoint | null {
+  const frameRect = getBoundingClientRect(iframe);
+  if (!frameRect) {
+    return null;
+  }
+
+  const origin = getIframeViewportOrigin(iframe, frameRect);
+  return {
+    x: parentViewportX - origin.x,
+    y: parentViewportY - origin.y
+  };
+}
+
+export function projectIframeViewportRectToParentViewport(
+  iframe: Element,
+  iframeViewportRect: RectLike
+): ViewportRect | null {
+  const frameRect = getBoundingClientRect(iframe);
+  if (!frameRect) {
+    return null;
+  }
+
+  const origin = getIframeViewportOrigin(iframe, frameRect);
+  const rect = normalizeRect(iframeViewportRect);
+
+  return rectFromEdges(
+    origin.x + rect.left,
+    origin.y + rect.top,
+    origin.x + rect.right,
+    origin.y + rect.bottom
+  );
+}
+
 function getDeepestOpenShadowElementFromPoint(
   initialElement: Element,
   x: number,
@@ -307,6 +361,21 @@ function getBoundingClientRect(element: Element): ViewportRect | null {
 
   const rect = element.getBoundingClientRect();
   return normalizeRect(rect);
+}
+
+function getIframeViewportOrigin(iframe: Element, frameRect: ViewportRect): IframeViewportPoint {
+  return {
+    x: frameRect.left + readElementClientOffset(iframe, "clientLeft"),
+    y: frameRect.top + readElementClientOffset(iframe, "clientTop")
+  };
+}
+
+function readElementClientOffset(
+  element: Element,
+  property: "clientLeft" | "clientTop"
+): number {
+  const value = (element as HTMLElement)[property];
+  return Number.isFinite(value) ? value : 0;
 }
 
 function unionRects(first: ViewportRect, second: ViewportRect): ViewportRect {
