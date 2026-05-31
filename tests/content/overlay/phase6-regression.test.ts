@@ -215,6 +215,12 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toMatch(/\.crop-actions \{[\s\S]*?z-index: var\(--crop-layer-highest\);/);
   });
 
+  it("uses iframe hit-test rects as parent viewport rects before page conversion", () => {
+    expect(overlayRuntime).toContain("viewportRectToPageRect");
+    expect(overlayRuntime).toContain("if (hit.rect) {");
+    expect(overlayRuntime).toContain("return viewportRectToPageRect(hit.rect, windowDimensions);");
+  });
+
   it("keeps the copy completion notification Firefox-like and omits it for save", () => {
     expect(overlayRuntime).toContain('message: "스크린샷이 복사되었습니다!"');
     expect(overlayRuntime).toContain('status: "copied"');

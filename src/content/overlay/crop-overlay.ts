@@ -33,6 +33,7 @@ import {
   intersectRects,
   pageRectToViewportRect,
   readWindowDimensions,
+  viewportRectToPageRect,
   type PageRect,
   type ViewportRect,
   type WindowDimensions
@@ -914,6 +915,10 @@ function resolveHoverRect(
 
   if (!hit.element || isCropOverlayElement(hit.element, host)) {
     return null;
+  }
+
+  if (hit.rect) {
+    return viewportRectToPageRect(hit.rect, windowDimensions);
   }
 
   return getBestRectForElement(hit.element, {
