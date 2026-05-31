@@ -285,6 +285,22 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toContain("outline: 2px solid var(--crop-firefox-focus-outline-color);");
   });
 
+  it("wires full page mode to the shared Copy/Save action pipeline", () => {
+    expect(overlayTemplate).toContain('label: "전체 페이지 선택"');
+    expect(overlayTemplate).toContain('mode: "full-page"');
+    expect(overlayTemplate).not.toContain('mode: "full-page",\n    disabled: true');
+    expect(overlayRuntime).toContain('type CaptureMode = "visible" | "full-page";');
+    expect(overlayRuntime).toContain("getCropModeFromEvent");
+    expect(overlayRuntime).toContain("selectFullPageMode");
+    expect(overlayRuntime).toContain("captureFullPageTiles");
+    expect(overlayRuntime).toContain("stitchCapturedTiles");
+    expect(overlayRuntime).toContain("captureFullPageRegion");
+    expect(overlayRuntime).toContain("setCaptureScrollBehaviorDisabled");
+    expect(overlayRuntime).toContain("host.dataset.cropCaptureMode = result.mode;");
+    expect(overlayRuntime).toContain("host.dataset.cropCaptureTileCount");
+    expect(overlayRuntime).toContain('selectedCaptureMode !== "full-page"');
+  });
+
   it("keeps MVP extension permissions free of debugger and all-url host access", () => {
     expect(manifestJson.permissions ?? []).not.toContain("debugger");
     expect(manifestJson.permissions ?? []).not.toContain("<all_urls>");

@@ -67,8 +67,7 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   });
   const fullPageModeButton = createModeButton({
     label: "전체 페이지 선택",
-    mode: "full-page",
-    disabled: true
+    mode: "full-page"
   });
 
   const prompt = document.createElement("div");

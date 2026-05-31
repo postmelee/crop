@@ -30,6 +30,11 @@ import {
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
 import {
+  captureFullPageTiles,
+  getFullPageBounds,
+  readFullPageMetrics
+} from "./full-page-capture";
+import {
   intersectRects,
   pageRectToViewportRect,
   readWindowDimensions,
@@ -50,6 +55,7 @@ import {
 import { cropPngDataUrl } from "../../shared/crop-image";
 import { createPngFilename } from "../../shared/filename";
 import { clipPageRectToViewport, type CropRect, type ViewportMetrics } from "../../shared/rect";
+import { stitchCapturedTiles } from "../../shared/stitch-image";
 
 interface PointerPosition {
   readonly x: number;
@@ -58,6 +64,7 @@ interface PointerPosition {
 
 type CropAction = "copy" | "save" | "cancel";
 type CaptureAction = Exclude<CropAction, "cancel">;
+type CaptureMode = "visible" | "full-page";
 
 const CROP_CAPTURE_VISIBLE_TAB_MESSAGE = "crop.captureVisibleTab";
 const CROP_DOWNLOAD_PNG_MESSAGE = "crop.downloadPng";
@@ -105,11 +112,13 @@ interface CropContentChromeApi {
 
 interface CropCapturePipelineResult {
   readonly action: CaptureAction;
+  readonly mode: CaptureMode;
   readonly dataUrl: string;
-  readonly viewportRect: CropRect;
-  readonly sourceRect: CropRect;
+  readonly viewportRect?: CropRect;
+  readonly sourceRect?: CropRect;
   readonly outputWidth: number;
   readonly outputHeight: number;
+  readonly tileCount?: number;
 }
 
 interface CropCaptureHost extends HTMLElement {
@@ -194,6 +203,10 @@ export function mountCropOverlay(): void {
   let pendingCapture = false;
   let overlayRemoved = false;
   let previousRenderedStatus: CropOverlayState["status"] | null = null;
+  let selectedCaptureMode: CaptureMode = "visible";
+  let previousCaptureVisibility: string | null = null;
+  let captureOverlayHiddenDepth = 0;
+  let previousDocumentScrollBehavior: string | null = null;
 
   const readOverlayWindowDimensions = (): WindowDimensions => {
     const previousMeasuringState = host.dataset.cropMeasuring;
@@ -377,6 +390,7 @@ export function mountCropOverlay(): void {
 
       if (!selectionInteraction) {
         overlayState = transitionOverlayState(overlayState, { type: "resetSelection" });
+        selectedCaptureMode = "visible";
         cancelPendingHoverUpdate();
         renderOverlayState();
         return;
@@ -407,6 +421,7 @@ export function mountCropOverlay(): void {
     event.stopPropagation();
     cancelPendingHoverUpdate();
     stopEdgeScroll();
+    selectedCaptureMode = "visible";
     overlayState = transitionOverlayState(overlayState, {
       type: "dragStart",
       point: toPagePoint(
@@ -494,6 +509,24 @@ export function mountCropOverlay(): void {
       return;
     }
 
+    const mode = getCropModeFromEvent(event);
+
+    if (mode) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (mode === "full-page") {
+        selectFullPageMode();
+      } else {
+        selectedCaptureMode = "visible";
+        overlayState = transitionOverlayState(overlayState, { type: "resetSelection" });
+        cancelPendingHoverUpdate();
+        renderOverlayState();
+      }
+
+      return;
+    }
+
     if (isCropOverlayEvent(event, host)) {
       return;
     }
@@ -529,7 +562,20 @@ export function mountCropOverlay(): void {
           readOverlayWindowDimensions()
         )
     });
+    selectedCaptureMode = "visible";
     cancelPendingHoverUpdate();
+    renderOverlayState();
+  };
+
+  const selectFullPageMode = (): void => {
+    const fullPageBounds = getFullPageBounds(readFullPageMetrics());
+    selectedCaptureMode = "full-page";
+    overlayState = transitionOverlayState(overlayState, {
+      type: "select",
+      rect: fullPageBounds
+    });
+    cancelPendingHoverUpdate();
+    stopEdgeScroll();
     renderOverlayState();
   };
 
@@ -566,12 +612,11 @@ export function mountCropOverlay(): void {
     action: CaptureAction,
     selectedRect: PageRect
   ): Promise<void> => {
-    const previousVisibility = host.style.visibility;
-    host.style.visibility = "hidden";
-
     try {
-      await waitForNextPaint();
-      const result = await captureSelectedRegion(action, selectedRect);
+      const result =
+        selectedCaptureMode === "full-page"
+          ? await captureFullPageRegion(action)
+          : await captureSelectedRegion(action, selectedRect);
 
       if (overlayRemoved) {
         return;
@@ -596,10 +641,6 @@ export function mountCropOverlay(): void {
       host.dataset.cropDownloadFilename = filename;
       removeOverlay();
     } catch (error) {
-      if (!overlayRemoved) {
-        host.style.visibility = previousVisibility;
-      }
-
       throw error;
     }
   };
@@ -608,8 +649,14 @@ export function mountCropOverlay(): void {
     captureHost.__cropLastCaptureResult = result;
     host.dataset.cropCaptureStatus = "ok";
     host.dataset.cropCaptureAction = result.action;
+    host.dataset.cropCaptureMode = result.mode;
     host.dataset.cropCaptureWidth = String(result.outputWidth);
     host.dataset.cropCaptureHeight = String(result.outputHeight);
+    if (result.tileCount != null) {
+      host.dataset.cropCaptureTileCount = String(result.tileCount);
+    } else {
+      delete host.dataset.cropCaptureTileCount;
+    }
     delete host.dataset.cropCaptureError;
     delete host.dataset.cropClipboardStatus;
     delete host.dataset.cropDownloadStatus;
@@ -637,36 +684,139 @@ export function mountCropOverlay(): void {
     action: CaptureAction,
     selectedRect: PageRect
   ): Promise<CropCapturePipelineResult> => {
-    const viewport = getViewportMetrics();
-    const viewportRect = clipPageRectToViewport(selectedRect, viewport);
+    const cropResult = await captureWithOverlayHidden(async () => {
+      const viewport = getViewportMetrics();
+      const viewportRect = clipPageRectToViewport(selectedRect, viewport);
 
-    if (!viewportRect) {
-      throw new Error("Selected area is outside the visible viewport.");
-    }
-
-    const captureResponse = await requestVisibleTabCapture();
-
-    if (!captureResponse.ok) {
-      throw new Error(captureResponse.error);
-    }
-
-    const cropResult = await cropPngDataUrl({
-      dataUrl: captureResponse.dataUrl,
-      viewportCropRect: viewportRect,
-      viewportCssSize: {
-        clientWidth: viewport.clientWidth,
-        clientHeight: viewport.clientHeight
+      if (!viewportRect) {
+        throw new Error("Selected area is outside the visible viewport.");
       }
+
+      await waitForNextPaint();
+      const captureResponse = await requestVisibleTabCapture();
+
+      if (!captureResponse.ok) {
+        throw new Error(captureResponse.error);
+      }
+
+      return {
+        viewportRect,
+        cropResult: await cropPngDataUrl({
+          dataUrl: captureResponse.dataUrl,
+          viewportCropRect: viewportRect,
+          viewportCssSize: {
+            clientWidth: viewport.clientWidth,
+            clientHeight: viewport.clientHeight
+          }
+        })
+      };
     });
 
     return {
       action,
-      dataUrl: cropResult.dataUrl,
-      viewportRect,
-      sourceRect: cropResult.sourceRect,
-      outputWidth: cropResult.outputWidth,
-      outputHeight: cropResult.outputHeight
+      mode: "visible",
+      dataUrl: cropResult.cropResult.dataUrl,
+      viewportRect: cropResult.viewportRect,
+      sourceRect: cropResult.cropResult.sourceRect,
+      outputWidth: cropResult.cropResult.outputWidth,
+      outputHeight: cropResult.cropResult.outputHeight
     };
+  };
+
+  const captureFullPageRegion = async (
+    action: CaptureAction
+  ): Promise<CropCapturePipelineResult> => {
+    const stitchResult = await captureWithOverlayHidden(async () => {
+      const captureResult = await captureFullPageTiles({
+        captureVisibleTab: async () => {
+          const response = await requestVisibleTabCapture();
+
+          if (!response.ok) {
+            throw new Error(response.error);
+          }
+
+          return response.dataUrl;
+        },
+        setOverlayHidden: setCaptureOverlayHidden,
+        setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled
+      });
+
+      return stitchCapturedTiles({
+        outputCssSize: captureResult.plan.outputCssSize,
+        tiles: captureResult.tiles.map((tile) => ({
+          dataUrl: tile.dataUrl,
+          viewportCropRect: tile.viewportCropRect,
+          destinationCssRect: tile.destinationCssRect,
+          viewportCssSize: captureResult.plan.viewportCssSize
+        }))
+      });
+    });
+
+    return {
+      action,
+      mode: "full-page",
+      dataUrl: stitchResult.dataUrl,
+      outputWidth: stitchResult.outputWidth,
+      outputHeight: stitchResult.outputHeight,
+      tileCount: stitchResult.drawnTiles
+    };
+  };
+
+  const captureWithOverlayHidden = async <Result>(
+    capture: () => Promise<Result>
+  ): Promise<Result> => {
+    setCaptureOverlayHidden(true);
+
+    try {
+      return await capture();
+    } finally {
+      setCaptureOverlayHidden(false);
+    }
+  };
+
+  const setCaptureOverlayHidden = (hidden: boolean): void => {
+    if (hidden) {
+      if (captureOverlayHiddenDepth === 0) {
+        previousCaptureVisibility = host.style.visibility;
+        host.style.visibility = "hidden";
+      }
+
+      captureOverlayHiddenDepth += 1;
+      return;
+    }
+
+    if (captureOverlayHiddenDepth === 0) {
+      return;
+    }
+
+    captureOverlayHiddenDepth -= 1;
+
+    if (captureOverlayHiddenDepth > 0) {
+      return;
+    }
+
+    host.style.visibility = previousCaptureVisibility ?? "";
+    previousCaptureVisibility = null;
+  };
+
+  const setCaptureScrollBehaviorDisabled = (disabled: boolean): void => {
+    const documentElement = document.documentElement;
+
+    if (disabled) {
+      if (previousDocumentScrollBehavior === null) {
+        previousDocumentScrollBehavior = documentElement.style.scrollBehavior;
+      }
+
+      documentElement.style.scrollBehavior = "auto";
+      return;
+    }
+
+    if (previousDocumentScrollBehavior === null) {
+      return;
+    }
+
+    documentElement.style.scrollBehavior = previousDocumentScrollBehavior;
+    previousDocumentScrollBehavior = null;
   };
 
   const setCapturePending = (isPending: boolean): void => {
@@ -713,10 +863,12 @@ export function mountCropOverlay(): void {
     const previousStatus = previousRenderedStatus;
     previousRenderedStatus = overlayState.status;
     host.setAttribute("data-crop-state", overlayState.status);
+    host.dataset.cropCaptureMode = selectedCaptureMode;
 
     if (template) {
       const windowDimensions = readOverlayWindowDimensions();
       applyDocumentOverlayPresentation(host, windowDimensions);
+      updateModeButtons(template, selectedCaptureMode);
 
       const activePageRect = overlayState.selectedRect ?? overlayState.hoverRect;
       const selectionPageRect = isSelectionVisibleStatus(overlayState.status)
@@ -738,11 +890,15 @@ export function mountCropOverlay(): void {
       applyHighlightPresentation(template.highlight, activePageRect);
       applySelectionControlsPresentation(
         template.selectionControls.container,
-        isSelectionActionVisibleStatus(overlayState.status) ? selectionPageRect : null
+        isSelectionActionVisibleStatus(overlayState.status) && selectedCaptureMode !== "full-page"
+          ? selectionPageRect
+          : null
       );
       applySelectionSizePresentation(
         template.selectionControls.sizeBadge,
-        isSelectionActionVisibleStatus(overlayState.status) ? overlayState.selectedRect : null,
+        isSelectionActionVisibleStatus(overlayState.status) && selectedCaptureMode !== "full-page"
+          ? overlayState.selectedRect
+          : null,
         visibleSelectionPageRect
       );
       applySelectionMaskPresentation(template.selectionMask, selectionPageRect, {
@@ -1048,6 +1204,15 @@ function updateActionButtons(
   );
 }
 
+function updateModeButtons(template: CropOverlayTemplate, selectedMode: CaptureMode): void {
+  for (const button of template.panel.querySelectorAll<HTMLButtonElement>("[data-crop-mode]")) {
+    button.setAttribute(
+      "aria-pressed",
+      button.dataset.cropMode === selectedMode ? "true" : "false"
+    );
+  }
+}
+
 function focusFirefoxReferenceActionButton(template: CropOverlayTemplate): void {
   for (const button of template.actions.querySelectorAll<HTMLButtonElement>(".crop-action")) {
     delete button.dataset.cropFocusVisible;
@@ -1129,6 +1294,22 @@ function getCropActionFromEvent(event: Event): CropAction | null {
 
     if (action === "copy" || action === "save" || action === "cancel") {
       return action;
+    }
+  }
+
+  return null;
+}
+
+function getCropModeFromEvent(event: Event): CaptureMode | null {
+  for (const eventTarget of event.composedPath()) {
+    if (!(eventTarget instanceof HTMLElement)) {
+      continue;
+    }
+
+    const mode = eventTarget.dataset.cropMode;
+
+    if (mode === "visible" || mode === "full-page") {
+      return mode;
     }
   }
 
