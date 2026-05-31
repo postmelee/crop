@@ -78,7 +78,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 
 1. `npm run build` 후 Chrome `chrome://extensions`에서 `dist/`를 reload한다.
 2. Fixture를 로컬 파일 또는 정적 서버로 연다.
-3. 확장 아이콘 또는 `Command+Shift+P`로 crop overlay를 실행한다.
+3. 확장 아이콘 또는 `Command+Shift+S`로 crop overlay를 실행한다.
 4. 각 `data-crop-fixture` target을 hover, click selection, 박스 외 클릭 복귀, Cancel로 확인한다.
 5. 대표 target에서 `Copy` 후 이미지 paste를 확인한다.
 6. 대표 target에서 `Save` 후 PNG 다운로드를 확인한다.

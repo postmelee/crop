@@ -10,21 +10,32 @@ import {
 } from "./crop-template";
 import {
   applyActionButtonsPresentation,
+  applyDocumentOverlayPresentation,
   applyEyeOffsetPresentation,
   applyHighlightPresentation,
+  applySelectionControlsPresentation,
   applySelectionMaskPresentation,
+  applySelectionSizePresentation,
   type ElementSize
 } from "./positioning";
 import { getEdgeScrollDelta, getEdgeScrollPagePoint } from "./edge-scroll";
+import {
+  getSelectionKeyboardAdjustment,
+  getSelectionInteractionAtPoint,
+  isSelectionResizeHandle,
+  type SelectionResizeHandle
+} from "./selection-transform";
 import {
   getBestRectForElement,
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
 import {
+  intersectRects,
   pageRectToViewportRect,
   readWindowDimensions,
   type PageRect,
-  type ViewportRect
+  type ViewportRect,
+  type WindowDimensions
 } from "../../firefox-derived/window-dimensions";
 import {
   createInitialOverlayState,
@@ -181,6 +192,22 @@ export function mountCropOverlay(): void {
   let suppressDocumentClickTimeoutId: number | null = null;
   let pendingCapture = false;
   let overlayRemoved = false;
+  let previousRenderedStatus: CropOverlayState["status"] | null = null;
+
+  const readOverlayWindowDimensions = (): WindowDimensions => {
+    const previousMeasuringState = host.dataset.cropMeasuring;
+    host.dataset.cropMeasuring = "true";
+
+    try {
+      return readWindowDimensions();
+    } finally {
+      if (previousMeasuringState === undefined) {
+        delete host.dataset.cropMeasuring;
+      } else {
+        host.dataset.cropMeasuring = previousMeasuringState;
+      }
+    }
+  };
 
   const removeOverlay = (): void => {
     if (overlayRemoved) {
@@ -208,13 +235,37 @@ export function mountCropOverlay(): void {
   };
 
   const handleKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== "Escape") {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      requestClose();
+      return;
+    }
+
+    const keyboardAdjustment = getSelectionKeyboardAdjustment({
+      key: event.key,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey
+    });
+
+    if (
+      !keyboardAdjustment ||
+      overlayState.status !== "selected" ||
+      !overlayState.selectedRect ||
+      shouldIgnoreSelectionKeyboardTarget(event.target)
+    ) {
       return;
     }
 
     event.preventDefault();
     event.stopPropagation();
-    requestClose();
+    overlayState = transitionOverlayState(overlayState, {
+      type: "selectionKeyboardAdjust",
+      adjustment: keyboardAdjustment
+    });
+    renderOverlayState();
   };
 
   const handlePointerMove = (event: PointerEvent): void => {
@@ -223,7 +274,7 @@ export function mountCropOverlay(): void {
       y: event.clientY
     };
     lastPointer = pointer;
-    const pagePointer = toPagePoint(pointer);
+    const pagePointer = toPagePoint(pointer, readOverlayWindowDimensions());
 
     updatePromptEyes(pointer);
 
@@ -236,6 +287,17 @@ export function mountCropOverlay(): void {
       });
       renderOverlayState();
       updateEdgeScroll(pointer);
+      return;
+    }
+
+    if (isSelectionAdjusting(overlayState)) {
+      event.preventDefault();
+      event.stopPropagation();
+      overlayState = transitionOverlayState(overlayState, {
+        type: "selectionAdjustMove",
+        point: pagePointer
+      });
+      renderOverlayState();
       return;
     }
 
@@ -252,29 +314,91 @@ export function mountCropOverlay(): void {
   };
 
   const handlePointerDown = (event: PointerEvent): void => {
-    if (isCropOverlayEvent(event, host) || event.button !== 0) {
+    if (event.button !== 0) {
       return;
     }
 
     if (overlayState.status === "selected") {
+      const pagePointer = toPagePoint(
+        {
+          x: event.clientX,
+          y: event.clientY
+        },
+        readOverlayWindowDimensions()
+      );
+      const explicitResizeHandle = getSelectionResizeHandleFromEvent(event);
+      const isExplicitMove = isSelectionMoveEvent(event);
+
+      if (getCropActionFromEvent(event)) {
+        return;
+      }
+
+      if (explicitResizeHandle) {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressFollowingDocumentClick();
+        cancelPendingHoverUpdate();
+        stopEdgeScroll();
+        overlayState = transitionOverlayState(overlayState, {
+          type: "selectionResizeStart",
+          handle: explicitResizeHandle,
+          point: pagePointer
+        });
+        renderOverlayState();
+        return;
+      }
+
+      if (isExplicitMove) {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressFollowingDocumentClick();
+        cancelPendingHoverUpdate();
+        stopEdgeScroll();
+        overlayState = transitionOverlayState(overlayState, {
+          type: "selectionMoveStart",
+          point: pagePointer
+        });
+        renderOverlayState();
+        return;
+      }
+
+      if (isCropOverlayEvent(event, host)) {
+        return;
+      }
+
       event.preventDefault();
       event.stopPropagation();
       suppressFollowingDocumentClick();
 
-      const pagePointer = toPagePoint({
-        x: event.clientX,
-        y: event.clientY
-      });
+      const selectionInteraction = overlayState.selectedRect
+        ? getSelectionInteractionAtPoint(overlayState.selectedRect, pagePointer)
+        : null;
 
-      if (
-        overlayState.selectedRect &&
-        !isPointInsidePageRect(pagePointer, overlayState.selectedRect)
-      ) {
+      if (!selectionInteraction) {
         overlayState = transitionOverlayState(overlayState, { type: "resetSelection" });
         cancelPendingHoverUpdate();
         renderOverlayState();
+        return;
       }
 
+      cancelPendingHoverUpdate();
+      stopEdgeScroll();
+      overlayState =
+        selectionInteraction.type === "resize"
+          ? transitionOverlayState(overlayState, {
+              type: "selectionResizeStart",
+              handle: selectionInteraction.handle,
+              point: pagePointer
+            })
+          : transitionOverlayState(overlayState, {
+              type: "selectionMoveStart",
+              point: pagePointer
+            });
+      renderOverlayState();
+      return;
+    }
+
+    if (isCropOverlayEvent(event, host)) {
       return;
     }
 
@@ -284,15 +408,27 @@ export function mountCropOverlay(): void {
     stopEdgeScroll();
     overlayState = transitionOverlayState(overlayState, {
       type: "dragStart",
-      point: toPagePoint({
-        x: event.clientX,
-        y: event.clientY
-      })
+      point: toPagePoint(
+        {
+          x: event.clientX,
+          y: event.clientY
+        },
+        readOverlayWindowDimensions()
+      )
     });
     renderOverlayState();
   };
 
   const handlePointerUp = (event: PointerEvent): void => {
+    if (isSelectionAdjusting(overlayState)) {
+      event.preventDefault();
+      event.stopPropagation();
+      overlayState = transitionOverlayState(overlayState, { type: "selectionAdjustEnd" });
+      cancelPendingHoverUpdate();
+      renderOverlayState();
+      return;
+    }
+
     if (overlayState.status !== "draggingReady" && overlayState.status !== "dragging") {
       return;
     }
@@ -326,7 +462,7 @@ export function mountCropOverlay(): void {
     pendingPointer = null;
     overlayState = transitionOverlayState(overlayState, {
       type: "hover",
-      rect: resolveHoverRect(pointer, host)
+      rect: resolveHoverRect(pointer, host, readOverlayWindowDimensions())
     });
     renderOverlayState();
   };
@@ -381,7 +517,16 @@ export function mountCropOverlay(): void {
 
     overlayState = transitionOverlayState(overlayState, {
       type: "select",
-      rect: overlayState.hoverRect ?? resolveHoverRect({ x: event.clientX, y: event.clientY }, host)
+      rect:
+        overlayState.hoverRect ??
+        resolveHoverRect(
+          {
+            x: event.clientX,
+            y: event.clientY
+          },
+          host,
+          readOverlayWindowDimensions()
+        )
     });
     cancelPendingHoverUpdate();
     renderOverlayState();
@@ -438,7 +583,7 @@ export function mountCropOverlay(): void {
         host.dataset.cropClipboardStatus = "ok";
         showCompletionToast({
           result,
-          message: "복사 완료",
+          message: "스크린샷이 복사되었습니다!",
           status: "copied"
         });
         removeOverlay();
@@ -448,12 +593,6 @@ export function mountCropOverlay(): void {
       const filename = await requestPngDownload(result.dataUrl, document.title);
       host.dataset.cropDownloadStatus = "ok";
       host.dataset.cropDownloadFilename = filename;
-      showCompletionToast({
-        result,
-        message: "저장 완료",
-        status: "saved",
-        filename
-      });
       removeOverlay();
     } catch (error) {
       if (!overlayRemoved) {
@@ -570,28 +709,64 @@ export function mountCropOverlay(): void {
   };
 
   const renderOverlayState = (): void => {
+    const previousStatus = previousRenderedStatus;
+    previousRenderedStatus = overlayState.status;
     host.setAttribute("data-crop-state", overlayState.status);
 
     if (template) {
-      const windowDimensions = readWindowDimensions();
-      const activeRect = projectPageRectToViewport(
-        overlayState.selectedRect ?? overlayState.hoverRect,
-        windowDimensions
-      );
-      const selectionRect =
-        overlayState.status === "selected" || overlayState.status === "dragging"
-          ? projectPageRectToViewport(overlayState.selectedRect, windowDimensions)
-          : null;
-      const visibleSelectionRect = selectionRect
-        ? windowDimensions.clipRectToViewport(selectionRect)
+      const windowDimensions = readOverlayWindowDimensions();
+      applyDocumentOverlayPresentation(host, windowDimensions);
+
+      const activePageRect = overlayState.selectedRect ?? overlayState.hoverRect;
+      const selectionPageRect = isSelectionVisibleStatus(overlayState.status)
+        ? overlayState.selectedRect
         : null;
-      applyHighlightPresentation(template.highlight, activeRect);
-      applySelectionMaskPresentation(template.selectionMask, visibleSelectionRect);
+      const visibleSelectionPageRect = selectionPageRect
+        ? intersectRects(selectionPageRect, windowDimensions.pageViewportRect)
+        : null;
+      const selectionViewportRect = selectionPageRect
+        ? projectPageRectToViewport(selectionPageRect, windowDimensions)
+        : null;
+      const selectionMaskNullRectMode =
+        isSelectionVisibleStatus(overlayState.status) &&
+        selectionPageRect &&
+        !visibleSelectionPageRect
+          ? "solid"
+          : "hidden";
+      template.selectionMask.container.hidden = !activePageRect;
+      applyHighlightPresentation(template.highlight, activePageRect);
+      applySelectionControlsPresentation(
+        template.selectionControls.container,
+        isSelectionActionVisibleStatus(overlayState.status) ? selectionPageRect : null
+      );
+      applySelectionSizePresentation(
+        template.selectionControls.sizeBadge,
+        isSelectionActionVisibleStatus(overlayState.status) ? overlayState.selectedRect : null,
+        visibleSelectionPageRect
+      );
+      applySelectionMaskPresentation(template.selectionMask, selectionPageRect, {
+        nullRectMode: selectionMaskNullRectMode,
+        containerSize: {
+          width: windowDimensions.scrollWidth,
+          height: windowDimensions.scrollHeight
+        }
+      });
       template.highlight.classList.toggle(
         "crop-highlight--selected",
-        overlayState.status === "selected" || overlayState.status === "dragging"
+        isSelectionVisibleStatus(overlayState.status)
       );
-      updateActionButtons(template, overlayState.status === "selected" ? visibleSelectionRect : null);
+      updateActionButtons(
+        template,
+        isSelectionActionVisibleStatus(overlayState.status) ? selectionViewportRect : null,
+        {
+          clientWidth: windowDimensions.clientWidth,
+          clientHeight: windowDimensions.clientHeight
+        }
+      );
+
+      if (overlayState.status === "selected" && previousStatus !== "selected") {
+        focusFirefoxReferenceActionButton(template);
+      }
     }
   };
 
@@ -619,7 +794,7 @@ export function mountCropOverlay(): void {
 
   const updateEdgeScroll = (pointer: PointerPosition): void => {
     lastDragPointer = pointer;
-    const windowDimensions = readWindowDimensions();
+    const windowDimensions = readOverlayWindowDimensions();
     const edgeScrollDelta = getEdgeScrollDelta(pointer, {
       clientWidth: windowDimensions.clientWidth,
       clientHeight: windowDimensions.clientHeight
@@ -648,7 +823,7 @@ export function mountCropOverlay(): void {
       return;
     }
 
-    const beforeScroll = readWindowDimensions();
+    const beforeScroll = readOverlayWindowDimensions();
     const edgeScrollDelta = getEdgeScrollDelta(lastDragPointer, {
       clientWidth: beforeScroll.clientWidth,
       clientHeight: beforeScroll.clientHeight
@@ -659,7 +834,7 @@ export function mountCropOverlay(): void {
     }
 
     window.scrollBy(edgeScrollDelta.x, edgeScrollDelta.y);
-    const afterScroll = readWindowDimensions();
+    const afterScroll = readOverlayWindowDimensions();
     const didScroll =
       beforeScroll.scrollX !== afterScroll.scrollX || beforeScroll.scrollY !== afterScroll.scrollY;
 
@@ -711,7 +886,7 @@ export function mountCropOverlay(): void {
       return;
     }
 
-    const windowDimensions = readWindowDimensions();
+    const windowDimensions = readOverlayWindowDimensions();
     applyEyeOffsetPresentation(template.prompt, pointer, {
       clientWidth: windowDimensions.clientWidth,
       clientHeight: windowDimensions.clientHeight
@@ -732,7 +907,8 @@ export function mountCropOverlay(): void {
 
 function resolveHoverRect(
   pointer: PointerPosition,
-  host: HTMLElement
+  host: HTMLElement,
+  windowDimensions = readWindowDimensions()
 ): PageRect | null {
   const hit = getPageElementFromPoint(pointer, host);
 
@@ -740,7 +916,6 @@ function resolveHoverRect(
     return null;
   }
 
-  const windowDimensions = readWindowDimensions();
   return getBestRectForElement(hit.element, {
     windowDimensions,
     coordinateSpace: "page",
@@ -772,8 +947,10 @@ function getPageElementFromPoint(pointer: PointerPosition, host: HTMLElement) {
   }
 }
 
-function toPagePoint(pointer: PointerPosition): PointerPosition {
-  const windowDimensions = readWindowDimensions();
+function toPagePoint(
+  pointer: PointerPosition,
+  windowDimensions = readWindowDimensions()
+): PointerPosition {
   return {
     x: pointer.x + windowDimensions.scrollX,
     y: pointer.y + windowDimensions.scrollY
@@ -787,17 +964,44 @@ function projectPageRectToViewport(
   return rect ? pageRectToViewportRect(rect, windowDimensions) : null;
 }
 
-function isPointInsidePageRect(point: PointerPosition, rect: PageRect): boolean {
-  return (
-    point.x >= rect.left &&
-    point.x <= rect.right &&
-    point.y >= rect.top &&
-    point.y <= rect.bottom
-  );
+function isSelectionVisibleStatus(status: CropOverlayState["status"]): boolean {
+  return status === "selected" || status === "dragging" || isSelectionAdjustmentStatus(status);
+}
+
+function isSelectionActionVisibleStatus(status: CropOverlayState["status"]): boolean {
+  return status === "selected" || isSelectionAdjustmentStatus(status);
+}
+
+function isSelectionAdjusting(state: CropOverlayState): boolean {
+  return isSelectionAdjustmentStatus(state.status);
+}
+
+function isSelectionAdjustmentStatus(status: CropOverlayState["status"]): boolean {
+  return status === "moving" || status === "resizing";
 }
 
 function isCropOverlayEvent(event: Event, host: HTMLElement): boolean {
-  return event.composedPath().includes(host);
+  return event.composedPath().some((eventTarget) => {
+    if (!(eventTarget instanceof HTMLElement) || eventTarget === host) {
+      return false;
+    }
+
+    if (
+      eventTarget.dataset.cropAction ||
+      eventTarget.dataset.cropMode ||
+      eventTarget.dataset.cropResizeHandle ||
+      eventTarget.dataset.cropSelectionMove ||
+      eventTarget.hasAttribute(PANEL_ATTRIBUTE)
+    ) {
+      return true;
+    }
+
+    return (
+      eventTarget.classList.contains("crop-actions") ||
+      eventTarget.classList.contains("crop-action-group") ||
+      eventTarget.classList.contains("crop-action-status")
+    );
+  });
 }
 
 function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
@@ -809,7 +1013,11 @@ function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
   return element === host || element.closest(`[${ROOT_ATTRIBUTE}="true"]`) === host;
 }
 
-function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect | null): void {
+function updateActionButtons(
+  template: CropOverlayTemplate,
+  rect: ViewportRect | null,
+  viewport: { readonly clientWidth: number; readonly clientHeight: number }
+): void {
   if (!rect) {
     applyActionButtonsPresentation(
       template.actions,
@@ -821,7 +1029,6 @@ function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect |
   }
 
   template.actions.hidden = false;
-  const windowDimensions = readWindowDimensions();
   const actionsRect = template.actions.getBoundingClientRect();
   const actionsSize = {
     width: actionsRect.width || FALLBACK_ACTIONS_SIZE.width,
@@ -831,19 +1038,30 @@ function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect |
   applyActionButtonsPresentation(
     template.actions,
     rect,
-    {
-      clientWidth: windowDimensions.clientWidth,
-      clientHeight: windowDimensions.clientHeight
-    },
+    viewport,
     actionsSize
   );
+}
+
+function focusFirefoxReferenceActionButton(template: CropOverlayTemplate): void {
+  for (const button of template.actions.querySelectorAll<HTMLButtonElement>(".crop-action")) {
+    delete button.dataset.cropFocusVisible;
+  }
+
+  const copyButton = template.actions.querySelector<HTMLButtonElement>('[data-crop-action="copy"]');
+
+  if (!copyButton || copyButton.disabled) {
+    return;
+  }
+
+  copyButton.dataset.cropFocusVisible = "true";
+  copyButton.focus({ preventScroll: true });
 }
 
 interface CompletionToastOptions {
   readonly result: CropCapturePipelineResult;
   readonly message: string;
-  readonly status: "copied" | "saved";
-  readonly filename?: string;
+  readonly status: "copied";
 }
 
 function showCompletionToast(options: CompletionToastOptions): void {
@@ -854,10 +1072,6 @@ function showCompletionToast(options: CompletionToastOptions): void {
   toast.host.dataset.cropToastAction = options.result.action;
   toast.host.dataset.cropToastWidth = String(options.result.outputWidth);
   toast.host.dataset.cropToastHeight = String(options.result.outputHeight);
-
-  if (options.filename) {
-    toast.host.dataset.cropToastFilename = options.filename;
-  }
 
   let dismissTimeoutId: number | null = null;
 
@@ -870,8 +1084,12 @@ function showCompletionToast(options: CompletionToastOptions): void {
     toast.host.remove();
   };
 
-  toast.closeButton.addEventListener("click", removeToast);
   document.documentElement.append(toast.host);
+  window.requestAnimationFrame(() => {
+    toast.host.shadowRoot
+      ?.getElementById("confirmation-hint-checkmark-animation-container")
+      ?.setAttribute("animate", "true");
+  });
   dismissTimeoutId = window.setTimeout(removeToast, TOAST_AUTO_DISMISS_MS);
 }
 
@@ -910,6 +1128,51 @@ function getCropActionFromEvent(event: Event): CropAction | null {
   }
 
   return null;
+}
+
+function getSelectionResizeHandleFromEvent(event: Event): SelectionResizeHandle | null {
+  for (const eventTarget of event.composedPath()) {
+    if (!(eventTarget instanceof HTMLElement)) {
+      continue;
+    }
+
+    const handle = eventTarget.dataset.cropResizeHandle ?? null;
+
+    if (isSelectionResizeHandle(handle)) {
+      return handle;
+    }
+  }
+
+  return null;
+}
+
+function isSelectionMoveEvent(event: Event): boolean {
+  return event.composedPath().some((eventTarget) => {
+    return (
+      eventTarget instanceof HTMLElement &&
+      eventTarget.dataset.cropSelectionMove === "true"
+    );
+  });
+}
+
+function shouldIgnoreSelectionKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  ) {
+    return true;
+  }
+
+  return Boolean(target.closest("[data-crop-action]"));
 }
 
 async function requestVisibleTabCapture(): Promise<CropCaptureVisibleTabResponse> {

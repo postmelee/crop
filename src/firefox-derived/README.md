@@ -22,7 +22,7 @@ the MPL-covered boundary stays visible to contributors and build tooling.
 | `overlay-helpers.ts` | Element hit-test, `getBestRectForElement`, small/large element and heading/article heuristics | Chrome MV3-safe helper functions for Phase 3 overlay UI |
 | `region.ts` | `Region` geometry class | Visible viewport-only region math |
 | `window-dimensions.ts` | `WindowDimensions` class | Explicit viewport dimensions for Chrome content scripts |
-| `screenshots-ui-assets.ts` | Preview face SVG and visible/full page menu SVGs | Chrome Shadow DOM-safe factory helpers for Firefox Screenshots-derived UI assets |
+| `screenshots-ui-assets.ts` | Preview face SVG, visible/full page menu SVGs, and selected action SVGs | Chrome Shadow DOM-safe factory helpers for Firefox Screenshots-derived UI assets |
 
 ## Excluded Upstream Sources
 
@@ -37,6 +37,10 @@ The following Firefox Screenshots files are not imported in Task #4:
 Firefox's privileged iframe lookup path. This project does not port Firefox
 actors, XPCOM, `ChromeUtils`, `Services`, `mozInnerScreenX/Y`, or privileged
 closed shadow root access.
+
+`overlay/overlay.css` and `toolkit/themes/shared/in-content/common-shared.css`
+are used as visual references for the Chrome-specific overlay stylesheet. Any
+copied SVG source stays in `screenshots-ui-assets.ts`.
 
 ## License
 

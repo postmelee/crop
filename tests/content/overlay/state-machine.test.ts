@@ -14,7 +14,8 @@ describe("transitionOverlayState", () => {
       status: "idle",
       hoverRect: null,
       selectedRect: null,
-      dragStart: null
+      dragStart: null,
+      selectionAdjustment: null
     });
   });
 
@@ -23,7 +24,8 @@ describe("transitionOverlayState", () => {
       status: "hovering",
       hoverRect: rect,
       selectedRect: null,
-      dragStart: null
+      dragStart: null,
+      selectionAdjustment: null
     });
   });
 
@@ -48,7 +50,8 @@ describe("transitionOverlayState", () => {
       status: "selected",
       hoverRect: null,
       selectedRect: rect,
-      dragStart: null
+      dragStart: null,
+      selectionAdjustment: null
     });
   });
 
@@ -86,7 +89,8 @@ describe("transitionOverlayState", () => {
       status: "closing",
       hoverRect: null,
       selectedRect: null,
-      dragStart: null
+      dragStart: null,
+      selectionAdjustment: null
     });
   });
 
@@ -105,7 +109,8 @@ describe("transitionOverlayState", () => {
       status: "draggingReady",
       hoverRect: rect,
       selectedRect: null,
-      dragStart: { x: 10, y: 20 }
+      dragStart: { x: 10, y: 20 },
+      selectionAdjustment: null
     });
   });
 
@@ -138,7 +143,8 @@ describe("transitionOverlayState", () => {
       status: "dragging",
       hoverRect: null,
       selectedRect: rectFromEdges(10, 20, 90, 120),
-      dragStart: { x: 10, y: 20 }
+      dragStart: { x: 10, y: 20 },
+      selectionAdjustment: null
     });
   });
 
@@ -157,7 +163,8 @@ describe("transitionOverlayState", () => {
       status: "dragging",
       hoverRect: null,
       selectedRect: rectFromEdges(40, 50, 120, 140),
-      dragStart: { x: 120, y: 140 }
+      dragStart: { x: 120, y: 140 },
+      selectionAdjustment: null
     });
   });
 
@@ -176,7 +183,8 @@ describe("transitionOverlayState", () => {
       status: "dragging",
       hoverRect: null,
       selectedRect: rectFromEdges(340, 920, 420, 1480),
-      dragStart: { x: 340, y: 920 }
+      dragStart: { x: 340, y: 920 },
+      selectionAdjustment: null
     });
   });
 
@@ -194,7 +202,8 @@ describe("transitionOverlayState", () => {
       status: "selected",
       hoverRect: null,
       selectedRect: rectFromEdges(10, 20, 90, 120),
-      dragStart: null
+      dragStart: null,
+      selectionAdjustment: null
     });
   });
 
@@ -212,7 +221,220 @@ describe("transitionOverlayState", () => {
       status: "selected",
       hoverRect: null,
       selectedRect: rect,
-      dragStart: null
+      dragStart: null,
+      selectionAdjustment: null
     });
+  });
+
+  it("starts a selected move adjustment with the current selected rect as the baseline", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+
+    expect(
+      transitionOverlayState(selected, {
+        type: "selectionMoveStart",
+        point: { x: 30, y: 40 }
+      })
+    ).toEqual({
+      status: "moving",
+      hoverRect: null,
+      selectedRect: rect,
+      dragStart: null,
+      selectionAdjustment: {
+        mode: "move",
+        startRect: rect,
+        startPoint: { x: 30, y: 40 }
+      }
+    });
+  });
+
+  it("moves the selected rect from the adjustment baseline", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+    const moving = transitionOverlayState(selected, {
+      type: "selectionMoveStart",
+      point: { x: 30, y: 40 }
+    });
+
+    expect(
+      transitionOverlayState(moving, {
+        type: "selectionAdjustMove",
+        point: { x: 55, y: 18 }
+      })
+    ).toEqual({
+      status: "moving",
+      hoverRect: null,
+      selectedRect: rectFromEdges(35, -2, 135, 58),
+      dragStart: null,
+      selectionAdjustment: {
+        mode: "move",
+        startRect: rect,
+        startPoint: { x: 30, y: 40 }
+      }
+    });
+  });
+
+  it("starts a selected resize adjustment with the active handle", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+
+    expect(
+      transitionOverlayState(selected, {
+        type: "selectionResizeStart",
+        handle: "south-east",
+        point: { x: 110, y: 80 }
+      })
+    ).toEqual({
+      status: "resizing",
+      hoverRect: null,
+      selectedRect: rect,
+      dragStart: null,
+      selectionAdjustment: {
+        mode: "resize",
+        handle: "south-east",
+        startRect: rect,
+        startPoint: { x: 110, y: 80 }
+      }
+    });
+  });
+
+  it("resizes the selected rect from the adjustment baseline", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+    const resizing = transitionOverlayState(selected, {
+      type: "selectionResizeStart",
+      handle: "north-west",
+      point: { x: 10, y: 20 }
+    });
+
+    expect(
+      transitionOverlayState(resizing, {
+        type: "selectionAdjustMove",
+        point: { x: 24, y: 34 }
+      })
+    ).toEqual({
+      status: "resizing",
+      hoverRect: null,
+      selectedRect: rectFromEdges(24, 34, 110, 80),
+      dragStart: null,
+      selectionAdjustment: {
+        mode: "resize",
+        handle: "north-west",
+        startRect: rect,
+        startPoint: { x: 10, y: 20 }
+      }
+    });
+  });
+
+  it("returns to selected when a move or resize adjustment ends", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+    const moving = transitionOverlayState(selected, {
+      type: "selectionMoveStart",
+      point: { x: 30, y: 40 }
+    });
+    const adjusted = transitionOverlayState(moving, {
+      type: "selectionAdjustMove",
+      point: { x: 40, y: 50 }
+    });
+
+    expect(transitionOverlayState(adjusted, { type: "selectionAdjustEnd" })).toEqual({
+      status: "selected",
+      hoverRect: null,
+      selectedRect: rectFromEdges(20, 30, 120, 90),
+      dragStart: null,
+      selectionAdjustment: null
+    });
+  });
+
+  it("moves the selected rect with a keyboard adjustment", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+
+    expect(
+      transitionOverlayState(selected, {
+        type: "selectionKeyboardAdjust",
+        adjustment: {
+          type: "move",
+          delta: { x: 10, y: -5 }
+        }
+      })
+    ).toEqual({
+      status: "selected",
+      hoverRect: null,
+      selectedRect: rectFromEdges(20, 15, 120, 75),
+      dragStart: null,
+      selectionAdjustment: null
+    });
+  });
+
+  it("resizes the selected rect with a keyboard adjustment", () => {
+    const selected = transitionOverlayState(createInitialOverlayState(), {
+      type: "select",
+      rect
+    });
+
+    expect(
+      transitionOverlayState(selected, {
+        type: "selectionKeyboardAdjust",
+        adjustment: {
+          type: "resize",
+          handle: "east",
+          delta: { x: 10, y: 0 }
+        }
+      })
+    ).toEqual({
+      status: "selected",
+      hoverRect: null,
+      selectedRect: rectFromEdges(10, 20, 120, 80),
+      dragStart: null,
+      selectionAdjustment: null
+    });
+  });
+
+  it("ignores selected adjustment events when no selected rect is active", () => {
+    const idle = createInitialOverlayState();
+
+    expect(
+      transitionOverlayState(idle, {
+        type: "selectionMoveStart",
+        point: { x: 30, y: 40 }
+      })
+    ).toBe(idle);
+    expect(
+      transitionOverlayState(idle, {
+        type: "selectionResizeStart",
+        handle: "north",
+        point: { x: 30, y: 40 }
+      })
+    ).toBe(idle);
+    expect(
+      transitionOverlayState(idle, {
+        type: "selectionAdjustMove",
+        point: { x: 30, y: 40 }
+      })
+    ).toBe(idle);
+    expect(transitionOverlayState(idle, { type: "selectionAdjustEnd" })).toBe(idle);
+    expect(
+      transitionOverlayState(idle, {
+        type: "selectionKeyboardAdjust",
+        adjustment: {
+          type: "move",
+          delta: { x: 1, y: 0 }
+        }
+      })
+    ).toBe(idle);
   });
 });

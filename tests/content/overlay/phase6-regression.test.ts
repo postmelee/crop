@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   getBestRectForElement,
@@ -22,6 +25,34 @@ import {
   fixtureElement,
   FixtureDocument
 } from "../../firefox-derived/dom-fixtures";
+
+const testDir = dirname(fileURLToPath(import.meta.url));
+const phase6FixtureHtml = readFileSync(
+  resolve(testDir, "../../fixtures/phase6_edge_cases.html"),
+  "utf8"
+);
+const overlayCss = readFileSync(
+  resolve(testDir, "../../../src/content/overlay/crop-overlay.css"),
+  "utf8"
+);
+const overlayTemplate = readFileSync(
+  resolve(testDir, "../../../src/content/overlay/crop-template.ts"),
+  "utf8"
+);
+const overlayRuntime = readFileSync(
+  resolve(testDir, "../../../src/content/overlay/crop-overlay.ts"),
+  "utf8"
+);
+const firefoxUiAssets = readFileSync(
+  resolve(testDir, "../../../src/firefox-derived/screenshots-ui-assets.ts"),
+  "utf8"
+);
+const manifestJson = JSON.parse(
+  readFileSync(resolve(testDir, "../../../manifest.json"), "utf8")
+) as {
+  permissions?: string[];
+  host_permissions?: string[];
+};
 
 describe("Phase 6 overlay regression coverage", () => {
   it("clips a page selection that extends outside every viewport edge before source mapping", () => {
@@ -125,5 +156,117 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(result.element).toBe(asElement(button));
     expect(result.rect).toBeNull();
     expect(result.unsupportedReason).toBeUndefined();
+  });
+
+  it("keeps selected resize and keyboard adjustment smoke targets in the fixture", () => {
+    for (const fixtureName of [
+      "selected-adjustment-section",
+      "selected-adjustment-target",
+      "selected-adjustment-small-target",
+      "selected-adjustment-edge-target"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+  });
+
+  it("keeps the Firefox-style crosshair cursor contract on the overlay surface", () => {
+    expect(overlayCss).toContain("cursor: crosshair;");
+    expect(overlayCss).toContain(':host([data-crop-state="draggingReady"])');
+    expect(overlayCss).toContain(':host([data-crop-state="dragging"])');
+    expect(overlayCss).toContain("cursor: grabbing;");
+  });
+
+  it("keeps the viewport frame hidden during selected adjustment states", () => {
+    const frameHideRule = /:host\(\[data-crop-state="draggingReady"\]\) \.crop-frame,[\s\S]*?:host\(\[data-crop-state="resizing"\]\) \.crop-frame \{\s*display: none;\s*\}/;
+
+    for (const state of ["draggingReady", "dragging", "selected", "moving", "resizing"]) {
+      expect(overlayCss).toContain(`:host([data-crop-state="${state}"]) .crop-frame`);
+    }
+
+    expect(overlayCss).toMatch(frameHideRule);
+  });
+
+  it("keeps selection mask and highlight in a Firefox-style shared container", () => {
+    expect(overlayTemplate).toContain('container.className = "crop-selection-container";');
+    expect(overlayTemplate).toContain(
+      "selectionMask.container.append(highlight, selectionControls.container);"
+    );
+    expect(overlayCss).toContain(".crop-selection-container");
+    expect(overlayCss).toContain("overflow: clip;");
+    expect(overlayCss).toContain(".crop-highlight");
+    expect(overlayCss).toContain("position: absolute;");
+    expect(overlayCss).toContain(".crop-dim {\n  position: fixed;");
+    expect(overlayRuntime).toContain("applyDocumentOverlayPresentation(host, windowDimensions);");
+    expect(overlayRuntime).toContain('host.dataset.cropMeasuring = "true";');
+    expect(overlayCss).toContain(':host([data-crop-measuring="true"])');
+    expect(overlayRuntime).toContain("const activePageRect");
+    expect(overlayRuntime).toContain("const selectionPageRect");
+    expect(overlayCss).not.toContain("will-change: transform, width, height;");
+    expect(overlayRuntime).toContain('nullRectMode: selectionMaskNullRectMode');
+    expect(overlayRuntime).toContain("containerSize: {");
+    expect(overlayRuntime).toContain('? "solid"');
+  });
+
+  it("keeps action buttons above the selection move layer when they overlap", () => {
+    expect(overlayCss).toContain("--crop-layer-highest: 4;");
+    expect(overlayCss).toMatch(
+      /\.crop-selection-controls \{[\s\S]*?z-index: var\(--crop-layer-high\);[\s\S]*?\}/
+    );
+    expect(overlayCss).toMatch(/\.crop-actions \{[\s\S]*?z-index: var\(--crop-layer-highest\);/);
+  });
+
+  it("keeps the copy completion notification Firefox-like and omits it for save", () => {
+    expect(overlayRuntime).toContain('message: "스크린샷이 복사되었습니다!"');
+    expect(overlayRuntime).toContain('status: "copied"');
+    expect(overlayRuntime).toContain("requestAnimationFrame");
+    expect(overlayRuntime).toContain('setAttribute("animate", "true")');
+    expect(overlayRuntime).not.toContain('"저장 완료"');
+    expect(overlayRuntime).not.toContain('status: "saved"');
+    expect(overlayTemplate).toContain('toast.id = "confirmation-hint";');
+    expect(overlayTemplate).toContain(
+      'checkmarkContainer.id = "confirmation-hint-checkmark-animation-container";'
+    );
+    expect(overlayTemplate).toContain('checkmark.id = "confirmation-hint-checkmark-image";');
+    expect(overlayTemplate).toContain('messageContainer.id = "confirmation-hint-message-container";');
+    expect(overlayTemplate).toContain('description.id = "confirmation-hint-message";');
+    expect(overlayTemplate).not.toContain("crop-toast-close");
+    expect(overlayCss).toContain(':host([data-crop-toast-root="true"])');
+    expect(overlayCss).toContain(".crop-confirmation-hint");
+    expect(overlayCss).toContain("padding: 6px 10px;");
+    expect(overlayCss).toContain("border: 1px solid #0060df;");
+    expect(overlayCss).toContain("background: #0060df;");
+    expect(overlayCss).toContain("font-size: 12px;");
+    expect(overlayCss).toContain("font-weight: 400;");
+    expect(overlayCss).toContain("line-height: 18px;");
+    expect(overlayCss).toContain("width: 14px;");
+    expect(overlayCss).toContain("height: 14px;");
+    expect(overlayCss).toContain("margin-inline: 7px 0;");
+    expect(overlayCss).toContain("steps(18)");
+    expect(overlayCss).toContain("300ms");
+    expect(overlayCss).toContain("60ms");
+    expect(overlayCss).toContain("transform: scale(0.8);");
+    expect(overlayCss).toContain("pointer-events: none;");
+    expect(overlayCss).not.toContain(".crop-toast-title");
+    expect(overlayCss).not.toContain(".crop-toast-close");
+  });
+
+  it("keeps Firefox-derived action button icons and focus-visible styling wired", () => {
+    expect(firefoxUiAssets).toContain("ACTION_CANCEL_SVG");
+    expect(firefoxUiAssets).toContain("ACTION_COPY_SVG");
+    expect(firefoxUiAssets).toContain("ACTION_DOWNLOAD_SVG");
+    expect(firefoxUiAssets).toContain("createScreenshotsCopyIconSvg");
+    expect(firefoxUiAssets).toContain("createScreenshotsDownloadIconSvg");
+    expect(overlayCss).toContain(
+      "--crop-firefox-button-background-color: color-mix(in srgb, currentColor 7%, transparent);"
+    );
+    expect(overlayCss).toContain("--crop-firefox-primary-background-color: #5abad7;");
+    expect(overlayCss).toContain('.crop-action[data-crop-focus-visible="true"]');
+    expect(overlayCss).toContain("outline: 2px solid var(--crop-firefox-focus-outline-color);");
+  });
+
+  it("keeps MVP extension permissions free of debugger and all-url host access", () => {
+    expect(manifestJson.permissions ?? []).not.toContain("debugger");
+    expect(manifestJson.permissions ?? []).not.toContain("<all_urls>");
+    expect(manifestJson.host_permissions ?? []).not.toContain("<all_urls>");
   });
 });

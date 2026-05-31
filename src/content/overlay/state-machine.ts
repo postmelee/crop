@@ -3,6 +3,14 @@ import {
   rectFromEdges,
   type PageRect
 } from "../../firefox-derived/window-dimensions";
+import {
+  moveSelectionRect,
+  moveSelectionRectByDelta,
+  resizeSelectionRect,
+  resizeSelectionRectByDelta,
+  type SelectionKeyboardAdjustment,
+  type SelectionResizeHandle
+} from "./selection-transform";
 
 export type CropOverlayStatus =
   | "idle"
@@ -10,6 +18,8 @@ export type CropOverlayStatus =
   | "draggingReady"
   | "dragging"
   | "selected"
+  | "moving"
+  | "resizing"
   | "closing";
 
 export interface CropOverlayPoint {
@@ -22,14 +32,29 @@ export interface CropOverlayState {
   readonly hoverRect: PageRect | null;
   readonly selectedRect: PageRect | null;
   readonly dragStart: CropOverlayPoint | null;
+  readonly selectionAdjustment: CropSelectionAdjustment | null;
 }
+
+export type CropSelectionAdjustment =
+  | {
+      readonly mode: "move";
+      readonly startRect: PageRect;
+      readonly startPoint: CropOverlayPoint;
+    }
+  | {
+      readonly mode: "resize";
+      readonly handle: SelectionResizeHandle;
+      readonly startRect: PageRect;
+      readonly startPoint: CropOverlayPoint;
+    };
 
 export function createInitialOverlayState(): CropOverlayState {
   return {
     status: "idle",
     hoverRect: null,
     selectedRect: null,
-    dragStart: null
+    dragStart: null,
+    selectionAdjustment: null
   };
 }
 
@@ -52,6 +77,26 @@ export type CropOverlayEvent =
     }
   | {
       readonly type: "dragEnd";
+    }
+  | {
+      readonly type: "selectionMoveStart";
+      readonly point: CropOverlayPoint;
+    }
+  | {
+      readonly type: "selectionResizeStart";
+      readonly handle: SelectionResizeHandle;
+      readonly point: CropOverlayPoint;
+    }
+  | {
+      readonly type: "selectionAdjustMove";
+      readonly point: CropOverlayPoint;
+    }
+  | {
+      readonly type: "selectionAdjustEnd";
+    }
+  | {
+      readonly type: "selectionKeyboardAdjust";
+      readonly adjustment: SelectionKeyboardAdjustment;
     }
   | {
       readonly type: "resetSelection";
@@ -81,7 +126,8 @@ export function transitionOverlayState(
             status: "hovering",
             hoverRect: event.rect,
             selectedRect: null,
-            dragStart: null
+            dragStart: null,
+            selectionAdjustment: null
           }
         : createInitialOverlayState();
 
@@ -93,7 +139,8 @@ export function transitionOverlayState(
             status: "selected",
             hoverRect: null,
             selectedRect,
-            dragStart: null
+            dragStart: null,
+            selectionAdjustment: null
           }
         : state;
     }
@@ -103,7 +150,8 @@ export function transitionOverlayState(
         status: "draggingReady",
         hoverRect: state.hoverRect,
         selectedRect: null,
-        dragStart: event.point
+        dragStart: event.point,
+        selectionAdjustment: null
       };
 
     case "dragMove": {
@@ -129,7 +177,8 @@ export function transitionOverlayState(
         status: "dragging",
         hoverRect: null,
         selectedRect,
-        dragStart: state.dragStart
+        dragStart: state.dragStart,
+        selectionAdjustment: null
       };
     }
 
@@ -139,7 +188,8 @@ export function transitionOverlayState(
           status: "selected",
           hoverRect: null,
           selectedRect: state.selectedRect,
-          dragStart: null
+          dragStart: null,
+          selectionAdjustment: null
         };
       }
 
@@ -149,12 +199,112 @@ export function transitionOverlayState(
               status: "selected",
               hoverRect: null,
               selectedRect: state.hoverRect,
-              dragStart: null
+              dragStart: null,
+              selectionAdjustment: null
             }
           : createInitialOverlayState();
       }
 
       return state;
+
+    case "selectionMoveStart":
+      if (state.status !== "selected" || !state.selectedRect) {
+        return state;
+      }
+
+      return {
+        status: "moving",
+        hoverRect: null,
+        selectedRect: state.selectedRect,
+        dragStart: null,
+        selectionAdjustment: {
+          mode: "move",
+          startRect: state.selectedRect,
+          startPoint: event.point
+        }
+      };
+
+    case "selectionResizeStart":
+      if (state.status !== "selected" || !state.selectedRect) {
+        return state;
+      }
+
+      return {
+        status: "resizing",
+        hoverRect: null,
+        selectedRect: state.selectedRect,
+        dragStart: null,
+        selectionAdjustment: {
+          mode: "resize",
+          handle: event.handle,
+          startRect: state.selectedRect,
+          startPoint: event.point
+        }
+      };
+
+    case "selectionAdjustMove": {
+      if (
+        (state.status !== "moving" && state.status !== "resizing") ||
+        !state.selectionAdjustment
+      ) {
+        return state;
+      }
+
+      const selectedRect =
+        state.selectionAdjustment.mode === "move"
+          ? moveSelectionRect(
+              state.selectionAdjustment.startRect,
+              state.selectionAdjustment.startPoint,
+              event.point
+            )
+          : resizeSelectionRect(
+              state.selectionAdjustment.startRect,
+              state.selectionAdjustment.handle,
+              state.selectionAdjustment.startPoint,
+              event.point
+            );
+
+      return {
+        ...state,
+        selectedRect
+      };
+    }
+
+    case "selectionAdjustEnd":
+      if (
+        (state.status !== "moving" && state.status !== "resizing") ||
+        !state.selectedRect
+      ) {
+        return state;
+      }
+
+      return {
+        status: "selected",
+        hoverRect: null,
+        selectedRect: state.selectedRect,
+        dragStart: null,
+        selectionAdjustment: null
+      };
+
+    case "selectionKeyboardAdjust": {
+      if (state.status !== "selected" || !state.selectedRect) {
+        return state;
+      }
+
+      const selectedRect =
+        event.adjustment.type === "move"
+          ? moveSelectionRectByDelta(state.selectedRect, event.adjustment.delta)
+          : resizeSelectionRectByDelta(
+              state.selectedRect,
+              event.adjustment.handle,
+              event.adjustment.delta
+            );
+
+      return {
+        ...state,
+        selectedRect
+      };
+    }
 
     case "resetSelection":
       return state.status === "selected" ? createInitialOverlayState() : state;
@@ -164,7 +314,8 @@ export function transitionOverlayState(
         status: "closing",
         hoverRect: null,
         selectedRect: null,
-        dragStart: null
+        dragStart: null,
+        selectionAdjustment: null
       };
   }
 }

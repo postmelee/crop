@@ -1,5 +1,12 @@
 import overlayStyles from "./crop-overlay.css?raw";
 import {
+  SELECTION_RESIZE_HANDLES,
+  type SelectionResizeHandle
+} from "./selection-transform";
+import {
+  createScreenshotsCancelIconSvg,
+  createScreenshotsCopyIconSvg,
+  createScreenshotsDownloadIconSvg,
   createScreenshotsFullPageIconSvg,
   createScreenshotsPreviewFaceSvg,
   createScreenshotsVisibleIconSvg
@@ -12,9 +19,12 @@ export const FLASH_CLASS = "crop-panel--flash";
 export const TOAST_ROOT_ID = "__crop_toast__";
 export const TOAST_ATTRIBUTE = "data-crop-toast-root";
 
+type CropActionName = "copy" | "save" | "cancel";
+
 export interface CropOverlayTemplate {
   readonly panel: HTMLElement;
   readonly highlight: HTMLElement;
+  readonly selectionControls: CropSelectionControlsTemplate;
   readonly actions: HTMLElement;
   readonly actionStatus: HTMLElement;
   readonly prompt: HTMLElement;
@@ -40,6 +50,9 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   highlight.className = "crop-highlight";
   highlight.hidden = true;
   highlight.setAttribute("aria-hidden", "true");
+
+  const selectionControls = createSelectionControlsTemplate();
+  selectionMask.container.append(highlight, selectionControls.container);
 
   const panel = document.createElement("div");
   panel.className = "crop-mode-toolbar";
@@ -86,9 +99,11 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   actions.setAttribute("role", "toolbar");
   actions.setAttribute("aria-label", "Crop actions");
 
-  const copyButton = createActionButton("copy", "Copy");
-  const saveButton = createActionButton("save", "Save");
-  const cancelButton = createActionButton("cancel", "Cancel");
+  const copyButton = createActionButton("copy", "복사");
+  const saveButton = createActionButton("save", "저장");
+  const cancelButton = createActionButton("cancel", "취소", true);
+  const primaryActionGroup = createActionGroup("primary");
+  const secondaryActionGroup = createActionGroup("secondary");
   const actionStatus = document.createElement("div");
   actionStatus.className = "crop-action-status";
   actionStatus.hidden = true;
@@ -98,11 +113,20 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   instructions.append(instructionMain, instructionSub);
   prompt.append(face, instructions, promptCancelButton);
   panel.append(visibleModeButton, fullPageModeButton);
-  actions.append(copyButton, saveButton, cancelButton, actionStatus);
-  shell.append(dim, frame, selectionMask.container, highlight, prompt, actions, panel);
+  secondaryActionGroup.append(cancelButton);
+  primaryActionGroup.append(copyButton, saveButton);
+  actions.append(secondaryActionGroup, primaryActionGroup, actionStatus);
+  shell.append(
+    dim,
+    frame,
+    selectionMask.container,
+    prompt,
+    actions,
+    panel
+  );
   shadowRoot.append(style, shell);
 
-  return { panel, highlight, actions, actionStatus, prompt, selectionMask };
+  return { panel, highlight, selectionControls, actions, actionStatus, prompt, selectionMask };
 }
 
 export interface CropSelectionMaskTemplate {
@@ -113,9 +137,15 @@ export interface CropSelectionMaskTemplate {
   readonly left: HTMLElement;
 }
 
+export interface CropSelectionControlsTemplate {
+  readonly container: HTMLElement;
+  readonly moveSurface: HTMLElement;
+  readonly sizeBadge: HTMLElement;
+  readonly handles: Readonly<Record<SelectionResizeHandle, HTMLButtonElement>>;
+}
+
 export interface CropToastTemplate {
   readonly host: HTMLElement;
-  readonly closeButton: HTMLButtonElement;
 }
 
 export function createCropToastTemplate(message: string): CropToastTemplate {
@@ -128,38 +158,48 @@ export function createCropToastTemplate(message: string): CropToastTemplate {
   style.textContent = overlayStyles;
 
   const toast = document.createElement("div");
-  toast.className = "crop-toast";
+  toast.id = "confirmation-hint";
+  toast.className = "crop-confirmation-hint";
   toast.setAttribute("role", "status");
   toast.setAttribute("aria-live", "polite");
 
-  const indicator = document.createElement("span");
-  indicator.className = "crop-toast-indicator";
-  indicator.setAttribute("aria-hidden", "true");
+  const checkmarkContainer = document.createElement("span");
+  checkmarkContainer.id = "confirmation-hint-checkmark-animation-container";
+  checkmarkContainer.className = "crop-confirmation-checkmark-container";
+  checkmarkContainer.setAttribute("aria-hidden", "true");
 
-  const text = document.createElement("div");
-  text.className = "crop-toast-text";
+  const checkmark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  checkmark.id = "confirmation-hint-checkmark-image";
+  checkmark.classList.add("crop-confirmation-checkmark");
+  checkmark.setAttribute("viewBox", "0 0 14 14");
+  checkmark.setAttribute("width", "14");
+  checkmark.setAttribute("height", "14");
 
-  const title = document.createElement("strong");
-  title.className = "crop-toast-title";
-  title.textContent = "crop";
+  const checkmarkPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  checkmarkPath.setAttribute("d", "M2.1 7.1L5.2 10.2L11.9 3.4");
+  checkmarkPath.setAttribute("fill", "none");
+  checkmarkPath.setAttribute("stroke", "currentColor");
+  checkmarkPath.setAttribute("stroke-width", "2");
+  checkmarkPath.setAttribute("stroke-linecap", "round");
+  checkmarkPath.setAttribute("stroke-linejoin", "round");
+  checkmark.append(checkmarkPath);
+  checkmarkContainer.append(checkmark);
+
+  const messageContainer = document.createElement("span");
+  messageContainer.id = "confirmation-hint-message-container";
+  messageContainer.className = "crop-confirmation-message-container";
 
   const description = document.createElement("span");
-  description.className = "crop-toast-message";
+  description.id = "confirmation-hint-message";
+  description.className = "crop-confirmation-message";
   description.textContent = message;
 
-  const closeButton = document.createElement("button");
-  closeButton.className = "crop-toast-close";
-  closeButton.type = "button";
-  closeButton.setAttribute("aria-label", "알림 닫기");
-  closeButton.textContent = "×";
-
-  text.append(title, description);
-  toast.append(indicator, text, closeButton);
+  messageContainer.append(description);
+  toast.append(checkmarkContainer, messageContainer);
   shadowRoot.append(style, toast);
 
   return {
-    host,
-    closeButton
+    host
   };
 }
 
@@ -209,20 +249,58 @@ function createPromptFace(): HTMLElement {
   return face;
 }
 
-function createActionButton(action: string, label: string): HTMLButtonElement {
+function createActionButton(
+  action: CropActionName,
+  label: string,
+  iconOnly = false
+): HTMLButtonElement {
   const button = document.createElement("button");
 
   button.className = `crop-action crop-action--${action}`;
   button.type = "button";
-  button.textContent = label;
   button.setAttribute("data-crop-action", action);
+  button.setAttribute("title", label);
+  button.setAttribute("aria-label", label);
+  button.addEventListener("blur", () => {
+    delete button.dataset.cropFocusVisible;
+  });
+
+  const icon = createActionIcon(action);
+  const actionLabel = document.createElement("span");
+  actionLabel.className = "crop-action-label";
+  actionLabel.textContent = label;
+
+  if (iconOnly) {
+    actionLabel.classList.add("crop-action-label--hidden");
+  }
+
+  button.append(icon, actionLabel);
 
   return button;
 }
 
+function createActionIcon(action: CropActionName): SVGSVGElement {
+  switch (action) {
+    case "cancel":
+      return createScreenshotsCancelIconSvg(document);
+    case "copy":
+      return createScreenshotsCopyIconSvg(document);
+    case "save":
+      return createScreenshotsDownloadIconSvg(document);
+  }
+}
+
+function createActionGroup(kind: "primary" | "secondary"): HTMLElement {
+  const group = document.createElement("div");
+
+  group.className = `crop-action-group crop-action-group--${kind}`;
+
+  return group;
+}
+
 function createSelectionMaskTemplate(): CropSelectionMaskTemplate {
   const container = document.createElement("div");
-  container.className = "crop-selection-mask";
+  container.className = "crop-selection-container";
   container.hidden = true;
   container.setAttribute("aria-hidden", "true");
 
@@ -247,4 +325,70 @@ function createSelectionMaskPart(position: string): HTMLElement {
   part.className = `crop-selection-mask-part crop-selection-mask-part--${position}`;
 
   return part;
+}
+
+function createSelectionControlsTemplate(): CropSelectionControlsTemplate {
+  const container = document.createElement("div");
+  container.className = "crop-selection-controls";
+  container.hidden = true;
+
+  const moveSurface = document.createElement("div");
+  moveSurface.className = "crop-selection-move-surface";
+  moveSurface.setAttribute("data-crop-selection-move", "true");
+  moveSurface.setAttribute("aria-hidden", "true");
+
+  const sizeBadge = document.createElement("div");
+  sizeBadge.className = "crop-selection-size";
+  sizeBadge.hidden = true;
+  sizeBadge.setAttribute("aria-hidden", "true");
+
+  const handles = Object.fromEntries(
+    SELECTION_RESIZE_HANDLES.map((handle) => [handle, createResizeHandle(handle)])
+  ) as Record<SelectionResizeHandle, HTMLButtonElement>;
+
+  container.append(
+    moveSurface,
+    sizeBadge,
+    ...SELECTION_RESIZE_HANDLES.map((handle) => handles[handle])
+  );
+
+  return {
+    container,
+    moveSurface,
+    sizeBadge,
+    handles
+  };
+}
+
+function createResizeHandle(handle: SelectionResizeHandle): HTMLButtonElement {
+  const button = document.createElement("button");
+
+  button.className = `crop-resize-handle crop-resize-handle--${handle}`;
+  button.type = "button";
+  button.setAttribute("data-crop-resize-handle", handle);
+  button.setAttribute("aria-label", `${getResizeHandleLabel(handle)} 크기 조절`);
+  button.title = `${getResizeHandleLabel(handle)} 크기 조절`;
+
+  return button;
+}
+
+function getResizeHandleLabel(handle: SelectionResizeHandle): string {
+  switch (handle) {
+    case "north":
+      return "위쪽";
+    case "south":
+      return "아래쪽";
+    case "east":
+      return "오른쪽";
+    case "west":
+      return "왼쪽";
+    case "north-east":
+      return "오른쪽 위";
+    case "north-west":
+      return "왼쪽 위";
+    case "south-east":
+      return "오른쪽 아래";
+    case "south-west":
+      return "왼쪽 아래";
+  }
 }

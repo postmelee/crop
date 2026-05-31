@@ -27,7 +27,8 @@ Local adaptation targets:
 | `src/firefox-derived/overlay-helpers.ts` | `browser/components/screenshots/overlayHelpers.mjs` | Element hit-test, `getBestRectForElement`, heading/article heuristics | Converted to TypeScript and restricted to normal DOM/open shadow DOM. Firefox actor messaging, closed shadow access, cross-origin iframe traversal, and `mozInnerScreenX/Y` handling are removed. |
 | `src/firefox-derived/region.ts` | `browser/components/screenshots/overlayHelpers.mjs` | `Region` geometry model | Converted to TypeScript and limited to visible viewport geometry needed by Chrome MV3 MVP. Full-page and scroll stitching behavior are excluded. |
 | `src/firefox-derived/window-dimensions.ts` | `browser/components/screenshots/overlayHelpers.mjs` | `WindowDimensions` viewport model | Converted to TypeScript and represented as explicit viewport inputs. Firefox-specific scroll min/max and privileged window data are omitted unless needed for visible viewport helper tests. |
-| `src/firefox-derived/screenshots-ui-assets.ts` | `browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs`; `browser/components/screenshots/content/menu-visible.svg`; `browser/components/screenshots/content/menu-fullpage.svg` | Preview face SVG and visible/full page menu icons | Extracted SVG markup into TypeScript factory helpers for Chrome Shadow DOM. Firefox `context-fill/context-stroke` values are normalized to Chrome-compatible `currentColor` and CSS variable fills. |
+| `src/firefox-derived/screenshots-ui-assets.ts` | `browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs`; `browser/components/screenshots/content/menu-visible.svg`; `browser/components/screenshots/content/menu-fullpage.svg`; `toolkit/themes/shared/icons/close.svg`; `toolkit/themes/shared/icons/edit-copy.svg`; `browser/themes/shared/downloads/downloads.svg` | Preview face SVG, visible/full page menu icons, and selected action icons | Extracted SVG markup into TypeScript factory helpers for Chrome Shadow DOM. Firefox `context-fill/context-stroke` values are normalized to Chrome-compatible `currentColor` and CSS variable fills. |
+| `src/content/overlay/crop-overlay.css` | `browser/components/screenshots/overlay/overlay.css`; `toolkit/themes/shared/in-content/common-shared.css`; Firefox design tokens | Selected action button spacing, focus outline, secondary/primary button colors, icon sizing, and action box container behavior | Chrome-specific stylesheet mirrors Firefox Screenshots selected action button behavior while keeping copied SVG assets under `src/firefox-derived/`. |
 
 Context-only upstream references, not imported in Task #4:
 
@@ -37,6 +38,9 @@ Context-only upstream references, not imported in Task #4:
   - Task #4 does not port `JSWindowActorChild`, `ScreenshotsHelper`, or
     `mozInnerScreenX/Y`.
 - `browser/components/screenshots/overlay/overlay.css`
+- `toolkit/themes/shared/in-content/common-shared.css`
+  - Documents the shared button, primary button, hover/active, and
+    focus-visible rules used as visual reference for Task #13 action buttons.
 - `browser/components/screenshots/screenshots-buttons.js`
 - `browser/components/screenshots/screenshots-buttons.css`
   - Reserved for later UI work if a separate approved task imports UI

@@ -2,10 +2,13 @@ import type { ViewportRect } from "../../firefox-derived/window-dimensions";
 
 export interface HighlightPresentation {
   readonly hidden: boolean;
-  readonly transform: string;
+  readonly left: string;
+  readonly top: string;
   readonly width: string;
   readonly height: string;
 }
+
+export type SelectionControlsPresentation = HighlightPresentation;
 
 export interface ViewportSize {
   readonly clientWidth: number;
@@ -22,12 +25,36 @@ export interface ActionButtonsPresentation {
   readonly transform: string;
 }
 
+export interface SelectionSizePresentation {
+  readonly hidden: boolean;
+  readonly text: string;
+}
+
 export interface SelectionMaskElements {
   readonly container: HTMLElement;
   readonly top: HTMLElement;
   readonly right: HTMLElement;
   readonly bottom: HTMLElement;
   readonly left: HTMLElement;
+}
+
+export interface SelectionMaskPresentationOptions {
+  readonly nullRectMode?: "hidden" | "solid";
+  readonly containerSize?: ElementSize;
+}
+
+export interface DocumentOverlayMetrics {
+  readonly scrollMinX: number;
+  readonly scrollMinY: number;
+  readonly scrollWidth: number;
+  readonly scrollHeight: number;
+}
+
+export interface DocumentOverlayPresentation {
+  readonly left: string;
+  readonly top: string;
+  readonly width: string;
+  readonly height: string;
 }
 
 export interface Point {
@@ -41,14 +68,49 @@ export interface EyeOffsetPresentation {
 }
 
 const ACTION_BUTTONS_EDGE_MARGIN = 8;
-const ACTION_BUTTONS_GAP = 8;
+const ACTION_BUTTONS_VIEWPORT_BOTTOM_THRESHOLD = 70;
+const ACTION_BUTTONS_VIEWPORT_BOTTOM_OFFSET = 60;
 const EYE_OFFSET_SCALE = 10;
+const SELECTION_SIZE_MIN_VISIBLE_WIDTH = 58;
+const SELECTION_SIZE_MIN_VISIBLE_HEIGHT = 26;
+
+export function getDocumentOverlayPresentation(
+  metrics: DocumentOverlayMetrics
+): DocumentOverlayPresentation {
+  return {
+    left: toCssPixel(metrics.scrollMinX),
+    top: toCssPixel(metrics.scrollMinY),
+    width: toCssPixel(metrics.scrollWidth),
+    height: toCssPixel(metrics.scrollHeight)
+  };
+}
+
+export function applyDocumentOverlayPresentation(
+  element: HTMLElement,
+  metrics: DocumentOverlayMetrics
+): void {
+  const presentation = getDocumentOverlayPresentation(metrics);
+
+  if (element.style.left !== presentation.left) {
+    element.style.left = presentation.left;
+  }
+  if (element.style.top !== presentation.top) {
+    element.style.top = presentation.top;
+  }
+  if (element.style.width !== presentation.width) {
+    element.style.width = presentation.width;
+  }
+  if (element.style.height !== presentation.height) {
+    element.style.height = presentation.height;
+  }
+}
 
 export function getHighlightPresentation(rect: ViewportRect | null): HighlightPresentation {
   if (!rect) {
     return {
       hidden: true,
-      transform: "",
+      left: "",
+      top: "",
       width: "",
       height: ""
     };
@@ -56,7 +118,8 @@ export function getHighlightPresentation(rect: ViewportRect | null): HighlightPr
 
   return {
     hidden: false,
-    transform: `translate(${toCssPixel(rect.left)}, ${toCssPixel(rect.top)})`,
+    left: toCssPixel(rect.left),
+    top: toCssPixel(rect.top),
     width: toCssPixel(rect.width),
     height: toCssPixel(rect.height)
   };
@@ -66,9 +129,64 @@ export function applyHighlightPresentation(element: HTMLElement, rect: ViewportR
   const presentation = getHighlightPresentation(rect);
 
   element.hidden = presentation.hidden;
-  element.style.transform = presentation.transform;
+  element.style.left = presentation.left;
+  element.style.top = presentation.top;
   element.style.width = presentation.width;
   element.style.height = presentation.height;
+  element.style.transform = "";
+}
+
+export function getSelectionControlsPresentation(
+  rect: ViewportRect | null
+): SelectionControlsPresentation {
+  return getHighlightPresentation(rect);
+}
+
+export function applySelectionControlsPresentation(
+  element: HTMLElement,
+  rect: ViewportRect | null
+): void {
+  const presentation = getSelectionControlsPresentation(rect);
+
+  element.hidden = presentation.hidden;
+  element.style.left = presentation.left;
+  element.style.top = presentation.top;
+  element.style.width = presentation.width;
+  element.style.height = presentation.height;
+  element.style.transform = "";
+}
+
+export function getSelectionSizePresentation(
+  selectedRect: ViewportRect | null,
+  visibleRect: ViewportRect | null
+): SelectionSizePresentation {
+  if (
+    !selectedRect ||
+    !visibleRect ||
+    visibleRect.width < SELECTION_SIZE_MIN_VISIBLE_WIDTH ||
+    visibleRect.height < SELECTION_SIZE_MIN_VISIBLE_HEIGHT
+  ) {
+    return {
+      hidden: true,
+      text: ""
+    };
+  }
+
+  return {
+    hidden: false,
+    text: `${Math.floor(selectedRect.width)} x ${Math.floor(selectedRect.height)}`
+  };
+}
+
+export function applySelectionSizePresentation(
+  element: HTMLElement,
+  selectedRect: ViewportRect | null,
+  visibleRect: ViewportRect | null
+): void {
+  const presentation = getSelectionSizePresentation(selectedRect, visibleRect);
+
+  element.hidden = presentation.hidden;
+  element.textContent = presentation.text;
 }
 
 export function getActionButtonsPresentation(
@@ -83,28 +201,46 @@ export function getActionButtonsPresentation(
     };
   }
 
-  const maxX = Math.max(
-    ACTION_BUTTONS_EDGE_MARGIN,
-    viewport.clientWidth - elementSize.width - ACTION_BUTTONS_EDGE_MARGIN
-  );
-  const x = clamp(rect.left, ACTION_BUTTONS_EDGE_MARGIN, maxX);
-  const belowY = rect.bottom + ACTION_BUTTONS_GAP;
-  const aboveY = rect.top - elementSize.height - ACTION_BUTTONS_GAP;
-  const maxY = Math.max(
-    ACTION_BUTTONS_EDGE_MARGIN,
-    viewport.clientHeight - elementSize.height - ACTION_BUTTONS_EDGE_MARGIN
-  );
-  const y =
-    belowY + elementSize.height + ACTION_BUTTONS_EDGE_MARGIN <= viewport.clientHeight
-      ? belowY
-      : aboveY >= ACTION_BUTTONS_EDGE_MARGIN
-        ? aboveY
-        : clamp(belowY, ACTION_BUTTONS_EDGE_MARGIN, maxY);
+  const rightEdge = Math.min(viewport.clientWidth, rect.right);
+  const maxX = Math.max(ACTION_BUTTONS_EDGE_MARGIN, rightEdge - elementSize.width);
+  const x = clamp(maxX, ACTION_BUTTONS_EDGE_MARGIN, getActionButtonsMaxX(viewport, elementSize));
+  const y = getActionButtonsY(rect, viewport, elementSize);
 
   return {
     hidden: false,
     transform: `translate(${toCssPixel(x)}, ${toCssPixel(y)})`
   };
+}
+
+function getActionButtonsMaxX(viewport: ViewportSize, elementSize: ElementSize): number {
+  return Math.max(
+    ACTION_BUTTONS_EDGE_MARGIN,
+    viewport.clientWidth - elementSize.width - ACTION_BUTTONS_EDGE_MARGIN
+  );
+}
+
+function getActionButtonsY(
+  rect: ViewportRect,
+  viewport: ViewportSize,
+  elementSize: ElementSize
+): number {
+  const maxY = Math.max(
+    ACTION_BUTTONS_EDGE_MARGIN,
+    viewport.clientHeight - elementSize.height - ACTION_BUTTONS_EDGE_MARGIN
+  );
+  let y = rect.bottom;
+
+  if (viewport.clientHeight - rect.bottom < ACTION_BUTTONS_VIEWPORT_BOTTOM_THRESHOLD) {
+    if (rect.bottom < viewport.clientHeight) {
+      y = rect.bottom - ACTION_BUTTONS_VIEWPORT_BOTTOM_OFFSET;
+    } else if (viewport.clientHeight - rect.top < ACTION_BUTTONS_VIEWPORT_BOTTOM_THRESHOLD) {
+      y = rect.top - ACTION_BUTTONS_VIEWPORT_BOTTOM_OFFSET;
+    } else {
+      y = viewport.clientHeight - ACTION_BUTTONS_VIEWPORT_BOTTOM_OFFSET;
+    }
+  }
+
+  return clamp(y, ACTION_BUTTONS_EDGE_MARGIN, maxY);
 }
 
 export function applyActionButtonsPresentation(
@@ -121,31 +257,61 @@ export function applyActionButtonsPresentation(
 
 export function applySelectionMaskPresentation(
   elements: SelectionMaskElements,
-  rect: ViewportRect | null
+  rect: ViewportRect | null,
+  options: SelectionMaskPresentationOptions = {}
 ): void {
-  elements.container.hidden = !rect;
+  const parts = [elements.top, elements.right, elements.bottom, elements.left];
 
   if (!rect) {
-    for (const part of [elements.top, elements.right, elements.bottom, elements.left]) {
+    if (options.nullRectMode === "solid") {
+      const containerSize = options.containerSize;
+      elements.top.hidden = false;
+      elements.top.style.left = "0";
+      elements.top.style.top = "0";
+      elements.top.style.width = containerSize ? toCssPixel(containerSize.width) : "100%";
+      elements.top.style.height = containerSize ? toCssPixel(containerSize.height) : "100%";
+
+      for (const part of [elements.right, elements.bottom, elements.left]) {
+        part.hidden = true;
+        part.removeAttribute("style");
+      }
+      return;
+    }
+
+    for (const part of parts) {
+      part.hidden = true;
       part.removeAttribute("style");
     }
     return;
   }
 
+  for (const part of parts) {
+    part.hidden = false;
+  }
+
+  const containerSize = options.containerSize;
+  const rightMaskWidth = containerSize
+    ? toCssPixel(Math.max(0, containerSize.width - rect.right))
+    : `calc(100% - ${toCssPixel(rect.right)})`;
+  const bottomMaskHeight = containerSize
+    ? toCssPixel(Math.max(0, containerSize.height - rect.bottom))
+    : `calc(100% - ${toCssPixel(rect.bottom)})`;
+  const fullMaskWidth = containerSize ? toCssPixel(containerSize.width) : "100%";
+
   elements.top.style.left = "0";
   elements.top.style.top = "0";
-  elements.top.style.width = "100vw";
+  elements.top.style.width = fullMaskWidth;
   elements.top.style.height = toCssPixel(rect.top);
 
   elements.right.style.left = toCssPixel(rect.right);
   elements.right.style.top = toCssPixel(rect.top);
-  elements.right.style.width = `calc(100vw - ${toCssPixel(rect.right)})`;
+  elements.right.style.width = rightMaskWidth;
   elements.right.style.height = toCssPixel(rect.height);
 
   elements.bottom.style.left = "0";
   elements.bottom.style.top = toCssPixel(rect.bottom);
-  elements.bottom.style.width = "100vw";
-  elements.bottom.style.height = `calc(100vh - ${toCssPixel(rect.bottom)})`;
+  elements.bottom.style.width = fullMaskWidth;
+  elements.bottom.style.height = bottomMaskHeight;
 
   elements.left.style.left = "0";
   elements.left.style.top = toCssPixel(rect.top);
