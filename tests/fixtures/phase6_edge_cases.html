@@ -447,7 +447,7 @@ function cropVisibleViewport(rect, viewport) {
             <tr><td>05</td><td>Table</td><td>Cell boundaries</td><td>Medium</td></tr>
             <tr><td>06</td><td>Sticky</td><td>Scroll alignment</td><td>Medium</td></tr>
             <tr><td>07</td><td>Transform</td><td>Bounding rect</td><td>Medium</td></tr>
-            <tr><td>08</td><td>iframe</td><td>MVP fallback</td><td>High</td></tr>
+            <tr><td>08</td><td>iframe</td><td>Same-origin target</td><td>High</td></tr>
             <tr><td>09</td><td>shadow</td><td>Open shadow traversal</td><td>Medium</td></tr>
             <tr><td>10</td><td>Offscreen</td><td>Visible clipping</td><td>High</td></tr>
           </tbody>
@@ -556,7 +556,7 @@ function cropVisibleViewport(rect, viewport) {
           <body data-crop-fixture="iframe-body">
             <article class="iframe-card" data-crop-fixture="iframe-card">
               <h3>srcdoc iframe card</h3>
-              <p>MVP may treat iframe content as a boundary or fallback target.</p>
+              <p>crop should select this srcdoc content because it is same-origin.</p>
               <button type="button" data-crop-fixture="iframe-button">iframe button</button>
             </article>
           </body>

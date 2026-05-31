@@ -19,6 +19,7 @@ const MIN_DETECT_HEIGHT = 30;
 const MIN_DETECT_WIDTH = 100;
 const DEFAULT_MAX_DETECT_HEIGHT = 700;
 const DEFAULT_MAX_DETECT_WIDTH = 1000;
+const MAX_IFRAME_TRAVERSAL_DEPTH = 8;
 const DO_NOT_AUTOSELECT_TAGS = new Set(["H1", "H2", "H3", "H4", "H5", "H6"]);
 
 let maxDetectHeight = DEFAULT_MAX_DETECT_HEIGHT;
@@ -46,8 +47,18 @@ export interface HitTestResult {
   readonly unsupportedReason?: "iframe";
 }
 
+export interface IframeViewportPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 interface ElementPointRoot {
   elementFromPoint(x: number, y: number): Element | null;
+}
+
+interface HitTestContext {
+  readonly depth: number;
+  readonly visitedIframes: ReadonlySet<Element>;
 }
 
 export function setMaxDetectHeight(maxHeight: number): void {
@@ -68,6 +79,18 @@ export function getElementFromPoint(
   y: number,
   root: ElementPointRoot = document
 ): HitTestResult {
+  return getElementFromPointInRoot(x, y, root, {
+    depth: 0,
+    visitedIframes: new Set()
+  });
+}
+
+function getElementFromPointInRoot(
+  x: number,
+  y: number,
+  root: ElementPointRoot,
+  context: HitTestContext
+): HitTestResult {
   let element = root.elementFromPoint(x, y);
 
   if (!element) {
@@ -75,12 +98,12 @@ export function getElementFromPoint(
   }
 
   if (isIframeElement(element)) {
-    return { element, rect: null, unsupportedReason: "iframe" };
+    return getIframeHitTestResult(element, x, y, context);
   }
 
   element = getDeepestOpenShadowElementFromPoint(element, x, y);
   if (isIframeElement(element)) {
-    return { element, rect: null, unsupportedReason: "iframe" };
+    return getIframeHitTestResult(element, x, y, context);
   }
 
   return { element, rect: null };
@@ -188,6 +211,109 @@ export function getVisibleRectForElement(
   }
 
   return windowDimensions.clipRectToViewport(rect);
+}
+
+export function getAccessibleIframeDocument(element: Element): Document | null {
+  if (!isIframeElement(element)) {
+    return null;
+  }
+
+  try {
+    return (element as HTMLIFrameElement).contentDocument ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function projectPointIntoIframeViewport(
+  iframe: Element,
+  parentViewportX: number,
+  parentViewportY: number
+): IframeViewportPoint | null {
+  const frameRect = getBoundingClientRect(iframe);
+  if (!frameRect) {
+    return null;
+  }
+
+  const origin = getIframeViewportOrigin(iframe, frameRect);
+  return {
+    x: parentViewportX - origin.x,
+    y: parentViewportY - origin.y
+  };
+}
+
+export function projectIframeViewportRectToParentViewport(
+  iframe: Element,
+  iframeViewportRect: RectLike
+): ViewportRect | null {
+  const frameRect = getBoundingClientRect(iframe);
+  if (!frameRect) {
+    return null;
+  }
+
+  const origin = getIframeViewportOrigin(iframe, frameRect);
+  const rect = normalizeRect(iframeViewportRect);
+
+  return rectFromEdges(
+    origin.x + rect.left,
+    origin.y + rect.top,
+    origin.x + rect.right,
+    origin.y + rect.bottom
+  );
+}
+
+function getIframeHitTestResult(
+  iframe: Element,
+  x: number,
+  y: number,
+  context: HitTestContext
+): HitTestResult {
+  if (context.depth >= MAX_IFRAME_TRAVERSAL_DEPTH || context.visitedIframes.has(iframe)) {
+    return createIframeFallback(iframe);
+  }
+
+  const iframeDocument = getAccessibleIframeDocument(iframe);
+  if (!iframeDocument) {
+    return createIframeFallback(iframe);
+  }
+
+  const iframePoint = projectPointIntoIframeViewport(iframe, x, y);
+  if (!iframePoint) {
+    return createIframeFallback(iframe);
+  }
+
+  const visitedIframes = new Set(context.visitedIframes);
+  visitedIframes.add(iframe);
+  const childHit = getElementFromPointInRoot(iframePoint.x, iframePoint.y, iframeDocument, {
+    depth: context.depth + 1,
+    visitedIframes
+  });
+
+  if (!childHit.element) {
+    return createIframeFallback(iframe);
+  }
+
+  const childRect = childHit.rect ?? getBoundingClientRect(childHit.element);
+  if (!childRect) {
+    return childHit.unsupportedReason
+      ? { element: childHit.element, rect: null, unsupportedReason: childHit.unsupportedReason }
+      : { element: childHit.element, rect: null };
+  }
+
+  const rect = projectIframeViewportRectToParentViewport(iframe, childRect);
+  if (!rect) {
+    return childHit.unsupportedReason
+      ? { element: childHit.element, rect: null, unsupportedReason: childHit.unsupportedReason }
+      : { element: childHit.element, rect: null };
+  }
+
+  return childHit.unsupportedReason
+    ? { element: childHit.element, rect, unsupportedReason: childHit.unsupportedReason }
+    : { element: childHit.element, rect };
+}
+
+function createIframeFallback(element: Element): HitTestResult {
+  return { element, rect: null, unsupportedReason: "iframe" };
 }
 
 function getDeepestOpenShadowElementFromPoint(
@@ -307,6 +433,21 @@ function getBoundingClientRect(element: Element): ViewportRect | null {
 
   const rect = element.getBoundingClientRect();
   return normalizeRect(rect);
+}
+
+function getIframeViewportOrigin(iframe: Element, frameRect: ViewportRect): IframeViewportPoint {
+  return {
+    x: frameRect.left + readElementClientOffset(iframe, "clientLeft"),
+    y: frameRect.top + readElementClientOffset(iframe, "clientTop")
+  };
+}
+
+function readElementClientOffset(
+  element: Element,
+  property: "clientLeft" | "clientTop"
+): number {
+  const value = (element as HTMLElement)[property];
+  return Number.isFinite(value) ? value : 0;
 }
 
 function unionRects(first: ViewportRect, second: ViewportRect): ViewportRect {

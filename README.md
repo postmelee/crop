@@ -36,7 +36,7 @@ MVP 제외 범위:
 
 ## 개발 상태
 
-M020 #13 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport capture/crop backend, Copy/Save 사용자 action, selected region 조정 UX 기반이 준비됐다.
+M020 #14 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport capture/crop backend, Copy/Save 사용자 action, selected region 조정 UX, same-origin iframe 요소 선택 기반이 준비됐다.
 
 - `manifest.json` source manifest
 - Vite 기반 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 산출
@@ -49,6 +49,7 @@ M020 #13 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport 
 - Firefox식 overlay crosshair cursor와 drag 중 grabbing cursor
 - Firefox 원본에 가까운 prompt 중앙 배치와 compact mode toolbar 보정
 - Firefox-derived helper 기반 DOM 요소 hover highlight
+- same-origin/srcdoc iframe 내부 요소 hover/click selection과 parent viewport 좌표 변환
 - page-coordinate 기반 hover/click/drag selection과 window scroll-follow highlight
 - Firefox식 viewport+100 감지 기준을 적용한 large element hover 보정
 - 클릭 기반 selected rectangle 고정
@@ -68,7 +69,8 @@ M020 #13 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport 
 - capture 직전 overlay host 숨김과 capture 이후 복구
 - PNG data URL to Blob helper와 ClipboardItem 기반 Copy
 - 문서 title 기반 PNG filename sanitizer
-- Copy/Save 성공 후 overlay 제거와 우측 상단 완료 toast
+- Copy 성공 후 overlay 제거와 우측 상단 완료 toast
+- Save 성공 후 overlay 제거와 다운로드 시작, Save 완료 toast 미표시
 - Copy 실패 시 overlay 유지와 Save fallback 안내
 - Save 실패 시 overlay 유지와 재시도 안내
 - selected rectangle 밖 클릭 시 idle overlay/prompt 상태 복귀
@@ -76,15 +78,14 @@ M020 #13 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport 
 
 아직 구현하지 않은 후속 범위:
 
-- #14 iframe/nested context 내부 선택 고도화
 - #15 full page capture와 scroll stitching
 
 현재 제한:
 
 - 현재 버전은 `chrome.tabs.captureVisibleTab()` 기반 visible viewport 캡처만 저장한다.
 - 화면 밖으로 이어지는 요소를 선택할 수 있어도 실제 Copy/Save PNG는 화면에 보이는 viewport 교차 영역만 포함한다.
-- cross-origin iframe 내부, nested browsing context, closed shadow DOM 내부 선택은 MVP 범위 밖이다.
-- full page capture와 iframe 내부 고도화는 후속 작업 범위다.
+- same-origin/srcdoc iframe 내부 요소 선택은 지원하지만, cross-origin iframe 내부와 closed shadow DOM 내부 선택은 Chrome MV3 권한 경계 때문에 boundary fallback 또는 제한으로 처리된다.
+- full page capture는 후속 작업 범위다.
 
 ## 로컬 개발
 
@@ -124,6 +125,7 @@ npm run typecheck
 - mode toolbar에는 `보이는 영역 선택`과 `전체 페이지 선택`이 보인다. `전체 페이지 선택`은 MVP 범위 밖이므로 현재 비활성 placeholder다.
 - 중앙에는 영역 선택 안내 문구, Cancel button, pointer 위치에 따라 눈동자가 움직이는 preview face가 표시된다.
 - 일반 DOM 요소에 마우스를 올리면 dashed hover highlight가 표시된다.
+- same-origin/srcdoc iframe 내부 요소에 마우스를 올리면 parent page 좌표에 맞춰 dashed hover highlight가 표시되고, 클릭하면 selected rectangle으로 고정된다.
 - viewport 밖으로 이어지는 요소와 화면보다 큰 partially visible 요소는 page 좌표 기준으로 선택되어, 선택 후 window scroll 시 테두리가 같은 문서 영역을 따라간다.
 - hover highlight 상태에서 클릭하면 selected rectangle이 고정되고 Firefox식 selected action buttons가 선택 영역 우하단 기준으로 표시된다. 버튼은 Close, Copy, Save 순서와 원본 icon, focus ring, primary/secondary color 상태를 따른다.
 - selected rectangle에는 8방향 resize handle, 내부 move surface, 중앙 `width x height` size badge가 표시된다.
@@ -136,7 +138,7 @@ npm run typecheck
 - Copy/Save buttons는 capture/crop backend를 호출하고 crop output width/height metadata를 내부 action 결과로 기록한다.
 - Copy를 클릭하면 selected crop PNG가 시스템 클립보드에 기록되고 overlay가 제거된다. 이미지 붙여넣기가 가능한 앱이나 웹 입력면에서 paste할 수 있다.
 - Save를 클릭하면 selected crop PNG가 다운로드된다. 파일명은 문서 title을 기반으로 안전하게 sanitize되고, 중복 파일은 Chrome 다운로드 동작에 따라 고유 이름으로 저장된다.
-- Copy/Save 성공 후 우측 상단에 `crop` 완료 toast가 표시되고, toast host에는 smoke용 action/width/height metadata가 기록된다.
+- Copy 성공 후 우측 상단에 `crop` 완료 toast가 표시되고, toast host에는 smoke용 action/width/height metadata가 기록된다. Save 성공은 다운로드만 시작하고 완료 toast를 표시하지 않는다.
 - Copy 실패 시 overlay가 유지되고 Save fallback 안내가 표시된다. Save 실패 시 overlay가 유지되고 재시도 안내가 표시된다.
 - 중앙 Cancel button, selected 상태의 Cancel button, 또는 Escape 키로 overlay가 제거된다.
 - 처음 overlay를 열 때 mode toolbar flash가 반복되지 않는다.

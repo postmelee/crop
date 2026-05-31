@@ -98,7 +98,7 @@ describe("Phase 6 overlay regression coverage", () => {
           clientHeight: 750
         }
       })
-    ).toEqual(sharedRectFromEdges(184, 72, 1167, 500));
+    ).toEqual(sharedRectFromEdges(185, 73, 1167, 500));
   });
 
   it("uses the last pointer and latest scroll position for edge auto-scroll drag updates", () => {
@@ -169,6 +169,21 @@ describe("Phase 6 overlay regression coverage", () => {
     }
   });
 
+  it("keeps same-origin iframe smoke targets in the fixture", () => {
+    for (const fixtureName of [
+      "same-document-iframe",
+      "iframe-body",
+      "iframe-card",
+      "iframe-button"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+
+    expect(phase6FixtureHtml).toContain("Same-origin target");
+    expect(phase6FixtureHtml).toContain("crop should select this srcdoc content");
+    expect(phase6FixtureHtml).not.toContain("MVP fallback");
+  });
+
   it("keeps the Firefox-style crosshair cursor contract on the overlay surface", () => {
     expect(overlayCss).toContain("cursor: crosshair;");
     expect(overlayCss).toContain(':host([data-crop-state="draggingReady"])');
@@ -213,6 +228,12 @@ describe("Phase 6 overlay regression coverage", () => {
       /\.crop-selection-controls \{[\s\S]*?z-index: var\(--crop-layer-high\);[\s\S]*?\}/
     );
     expect(overlayCss).toMatch(/\.crop-actions \{[\s\S]*?z-index: var\(--crop-layer-highest\);/);
+  });
+
+  it("uses iframe hit-test rects as parent viewport rects before page conversion", () => {
+    expect(overlayRuntime).toContain("viewportRectToPageRect");
+    expect(overlayRuntime).toContain("if (hit.rect) {");
+    expect(overlayRuntime).toContain("return viewportRectToPageRect(hit.rect, windowDimensions);");
   });
 
   it("keeps the copy completion notification Firefox-like and omits it for save", () => {
