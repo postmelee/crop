@@ -63,6 +63,29 @@ export interface FullPageTilePlanOptions {
   readonly maxOutputArea?: number;
 }
 
+export interface CapturedFullPageTile {
+  readonly tile: FullPageTile;
+  readonly dataUrl: string;
+  readonly actualScrollX: number;
+  readonly actualScrollY: number;
+  readonly viewportCropRect: CropRect;
+  readonly destinationCssRect: CropRect;
+}
+
+export interface FullPageCaptureLoopResult {
+  readonly plan: FullPageTilePlan;
+  readonly tiles: readonly CapturedFullPageTile[];
+}
+
+export interface FullPageCaptureLoopOptions extends FullPageTilePlanOptions {
+  readonly captureVisibleTab: () => Promise<string>;
+  readonly readMetrics?: () => FullPageMetrics;
+  readonly scrollTo?: (x: number, y: number) => void | Promise<void>;
+  readonly waitForPaint?: () => Promise<void>;
+  readonly setOverlayHidden?: (hidden: boolean) => void;
+  readonly setScrollBehaviorDisabled?: (disabled: boolean) => void;
+}
+
 interface FullPageElementLike {
   readonly clientWidth: number;
   readonly clientHeight: number;
@@ -84,6 +107,8 @@ interface FullPageWindowLike {
   readonly devicePixelRatio: number;
   readonly document: FullPageDocumentLike;
 }
+
+const TILE_FIT_EPSILON = 0.5;
 
 export function readFullPageMetrics(win: FullPageWindowLike = window): FullPageMetrics {
   const documentElement = win.document.documentElement;
@@ -225,6 +250,76 @@ export function createFullPageTilePlan(
   };
 }
 
+export async function captureFullPageTiles(
+  options: FullPageCaptureLoopOptions
+): Promise<FullPageCaptureLoopResult> {
+  const readMetrics = options.readMetrics ?? readFullPageMetrics;
+  const scrollTo = options.scrollTo ?? defaultScrollTo;
+  const waitForPaint = options.waitForPaint ?? waitForNextPaint;
+  const initialMetrics = readMetrics();
+  const plan = createFullPageTilePlan(initialMetrics, options);
+  const tiles: CapturedFullPageTile[] = [];
+
+  options.setOverlayHidden?.(true);
+  options.setScrollBehaviorDisabled?.(true);
+
+  try {
+    await waitForPaint();
+
+    for (const tile of plan.tiles) {
+      await scrollTo(tile.scrollX, tile.scrollY);
+      await waitForPaint();
+
+      tiles.push(
+        createCapturedFullPageTile({
+          tile,
+          dataUrl: await options.captureVisibleTab(),
+          metrics: readMetrics()
+        })
+      );
+    }
+
+    return {
+      plan,
+      tiles
+    };
+  } finally {
+    try {
+      await scrollTo(initialMetrics.scrollX, initialMetrics.scrollY);
+      await waitForPaint();
+    } finally {
+      options.setScrollBehaviorDisabled?.(false);
+      options.setOverlayHidden?.(false);
+    }
+  }
+}
+
+export function createCapturedFullPageTile(input: {
+  readonly tile: FullPageTile;
+  readonly dataUrl: string;
+  readonly metrics: FullPageMetrics;
+}): CapturedFullPageTile {
+  const viewportCropRect = rectFromEdges(
+    input.tile.pageRect.left - input.metrics.scrollX,
+    input.tile.pageRect.top - input.metrics.scrollY,
+    input.tile.pageRect.right - input.metrics.scrollX,
+    input.tile.pageRect.bottom - input.metrics.scrollY
+  );
+
+  if (!isViewportCropRectVisible(viewportCropRect, input.metrics)) {
+    throw new Error("Captured tile no longer fits inside the visible viewport.");
+  }
+
+  return {
+    tile: input.tile,
+    dataUrl: input.dataUrl,
+    actualScrollX: input.metrics.scrollX,
+    actualScrollY: input.metrics.scrollY,
+    viewportCropRect,
+    destinationCssRect: input.tile.destinationCssRect
+  };
+}
+
 function validateEstimatedOutputSize(
   bounds: FullPageBounds,
   devicePixelRatio: number,
@@ -262,6 +357,27 @@ function createSegments(start: number, end: number, size: number): ReadonlyArray
   }
 
   return segments;
+}
+
+function isViewportCropRectVisible(rect: CropRect, metrics: FullPageMetrics): boolean {
+  return (
+    rect.left >= -TILE_FIT_EPSILON &&
+    rect.top >= -TILE_FIT_EPSILON &&
+    rect.right <= metrics.viewportWidth + TILE_FIT_EPSILON &&
+    rect.bottom <= metrics.viewportHeight + TILE_FIT_EPSILON
+  );
+}
+
+function defaultScrollTo(x: number, y: number): void {
+  window.scrollTo(x, y);
+}
+
+function waitForNextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.setTimeout(resolve, 0);
+    });
+  });
 }
 
 function firstPositive(...values: ReadonlyArray<number | null | undefined>): number {

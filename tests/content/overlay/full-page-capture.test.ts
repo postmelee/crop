@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  captureFullPageTiles,
+  createCapturedFullPageTile,
   createFullPageMetrics,
   createFullPageTilePlan,
   getFullPageBounds,
-  readFullPageMetrics
+  readFullPageMetrics,
+  type FullPageMetrics
 } from "../../../src/content/overlay/full-page-capture";
 import { rectFromEdges } from "../../../src/shared/rect";
 
@@ -138,6 +141,143 @@ describe("full page capture helpers", () => {
       viewportCropRect: rectFromEdges(300, 300, 500, 400),
       destinationCssRect: rectFromEdges(1000, 800, 1200, 900)
     });
+  });
+
+  it("uses actual scroll offsets when preparing a captured tile", () => {
+    const plan = createFullPageTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 400,
+        scrollWidth: 500,
+        scrollHeight: 950
+      })
+    );
+
+    expect(
+      createCapturedFullPageTile({
+        tile: plan.tiles[2],
+        dataUrl: "data:image/png;base64,third",
+        metrics: createFullPageMetrics({
+          viewportWidth: 500,
+          viewportHeight: 400,
+          scrollWidth: 500,
+          scrollHeight: 950,
+          scrollY: 550
+        })
+      })
+    ).toMatchObject({
+      dataUrl: "data:image/png;base64,third",
+      actualScrollX: 0,
+      actualScrollY: 550,
+      viewportCropRect: rectFromEdges(0, 250, 500, 400),
+      destinationCssRect: rectFromEdges(0, 800, 500, 950)
+    });
+  });
+
+  it("captures every tile and restores scroll, overlay visibility, and scroll behavior", async () => {
+    const events: string[] = [];
+    let currentScrollX = 0;
+    let currentScrollY = 120;
+    const readMetrics = (): FullPageMetrics =>
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 400,
+        scrollWidth: 500,
+        scrollHeight: 950,
+        scrollX: currentScrollX,
+        scrollY: currentScrollY
+      });
+
+    const result = await captureFullPageTiles({
+      readMetrics,
+      scrollTo: (x, y) => {
+        events.push(`scroll:${x},${y}`);
+        currentScrollX = x;
+        currentScrollY = y;
+      },
+      waitForPaint: () => {
+        events.push("paint");
+        return Promise.resolve();
+      },
+      setOverlayHidden: (hidden) => {
+        events.push(`hidden:${hidden}`);
+      },
+      setScrollBehaviorDisabled: (disabled) => {
+        events.push(`scrollBehaviorDisabled:${disabled}`);
+      },
+      captureVisibleTab: async () => {
+        events.push(`capture:${currentScrollY}`);
+        return `data:image/png;base64,${currentScrollY}`;
+      }
+    });
+
+    expect(result.tiles.map((tile) => tile.actualScrollY)).toEqual([0, 400, 550]);
+    expect(result.tiles.map((tile) => tile.dataUrl)).toEqual([
+      "data:image/png;base64,0",
+      "data:image/png;base64,400",
+      "data:image/png;base64,550"
+    ]);
+    expect(currentScrollY).toBe(120);
+    expect(events).toEqual([
+      "hidden:true",
+      "scrollBehaviorDisabled:true",
+      "paint",
+      "scroll:0,0",
+      "paint",
+      "capture:0",
+      "scroll:0,400",
+      "paint",
+      "capture:400",
+      "scroll:0,550",
+      "paint",
+      "capture:550",
+      "scroll:0,120",
+      "paint",
+      "scrollBehaviorDisabled:false",
+      "hidden:false"
+    ]);
+  });
+
+  it("restores runtime state when tile capture fails", async () => {
+    const events: string[] = [];
+    let currentScrollY = 0;
+
+    await expect(
+      captureFullPageTiles({
+        readMetrics: () =>
+          createFullPageMetrics({
+            viewportWidth: 500,
+            viewportHeight: 400,
+            scrollWidth: 500,
+            scrollHeight: 950,
+            scrollY: currentScrollY
+          }),
+        scrollTo: (_x, y) => {
+          events.push(`scroll:${y}`);
+          currentScrollY = y;
+        },
+        waitForPaint: () => Promise.resolve(),
+        setOverlayHidden: (hidden) => {
+          events.push(`hidden:${hidden}`);
+        },
+        setScrollBehaviorDisabled: (disabled) => {
+          events.push(`scrollBehaviorDisabled:${disabled}`);
+        },
+        captureVisibleTab: async () => {
+          events.push(`capture:${currentScrollY}`);
+          if (currentScrollY === 400) {
+            throw new Error("capture failed");
+          }
+
+          return `data:image/png;base64,${currentScrollY}`;
+        }
+      })
+    ).rejects.toThrow("capture failed");
+
+    expect(currentScrollY).toBe(0);
+    expect(events.at(-3)).toBe("scroll:0");
+    expect(events.at(-2)).toBe("scrollBehaviorDisabled:false");
+    expect(events.at(-1)).toBe("hidden:false");
   });
 
   it("rejects empty viewports and oversized estimated output", () => {
