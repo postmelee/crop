@@ -54,7 +54,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-07 | 긴 table | `[data-crop-fixture="long-table"]` | 여러 row 포함 | table 전체 또는 cell hover가 예측 가능한 rect로 표시된다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-08 | sticky header | `[data-crop-fixture="sticky-header"]` | 스크롤 후 hover | sticky 위치의 현재 viewport 좌표에 맞춰 outline이 따라온다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-09 | transform/scale 요소 | `[data-crop-fixture="transform-scale-target"]` | CSS transform 적용 | 브라우저가 반환한 visual bounding rect 기준으로 선택된다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
-| P6-10 | same-document iframe | `[data-crop-fixture="same-document-iframe"]` | iframe 내부 hover | MVP에서 iframe 내부 깊은 선택이 제한이면 iframe boundary 또는 제한으로 기록한다. | 수동 OK: MVP fallback 기준 통과 | OK | MVP 제한 후보 | 작업지시자 Stage 3 smoke |
+| P6-10 | same-document iframe | `[data-crop-fixture="same-document-iframe"]` | iframe 내부 hover | same-origin/srcdoc iframe 내부 요소가 parent viewport 좌표로 선택된다. | 자동 OK: #14 iframe traversal 테스트, Stage 4 fixture smoke 후보 | OK | 해당 없음 | `overlay-helpers.test.ts`, Stage 4 smoke |
 | P6-11 | open shadow host | `[data-crop-fixture="open-shadow-host"]` | host hover | host 경계 선택이 안정적으로 동작한다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-12 | open shadow 내부 panel | `[data-crop-fixture="open-shadow-panel"]` | open shadow DOM | composed path 기반으로 내부 요소 rect가 잡히는지 확인한다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
 | P6-13 | viewport 밖 큰 요소 | `[data-crop-fixture="offscreen-large-element"]` | 우측 viewport 밖 확장 | 선택 outline은 요소 rect를 표시하되 Copy/Save 이미지는 visible viewport 교차 영역만 저장한다. | 자동+수동 OK: visible clipping 기준 통과 | OK | MVP 제한 후보 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
@@ -68,8 +68,8 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-21 | zoom 150% | 대표 카드 + Copy/Save | Chrome zoom 150% | 큰 zoom에서도 action bar가 viewport 안에 배치되고 저장 결과가 맞다. | 자동+수동 OK | OK | 해당 없음 | `crop-image.test.ts`, 작업지시자 Stage 3 smoke |
 | P6-22 | HiDPI | 대표 카드 + Copy/Save | Retina / devicePixelRatio > 1 | clipboard/download 이미지가 선택 영역과 같은 픽셀 비율로 잘린다. | 수동 OK: 현재 macOS/Chrome 화면 기준 | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-23 | 비HiDPI | 대표 카드 + Copy/Save | devicePixelRatio = 1 | 가능한 환경이면 결과를 확인하고, 없으면 미확인 제한으로 기록한다. | 미확인: 현재 환경 없음 | 제한 | MVP 제한 후보 | Stage 3 환경 한계 |
-| P6-24 | cross-origin iframe 후보 | 실제 웹 대표 페이지 | 외부 iframe 존재 시 | MVP 제한이면 selection boundary와 README 제한 문구로 분류한다. | 미확인: fixture 범위 밖 | 제한 | MVP 제한 후보 | Stage 4 분류 필요 |
-| P6-25 | closed shadow DOM 후보 | 실제 웹 대표 페이지 | closed shadow 존재 시 | 내부 선택이 불가능하면 제한으로 기록한다. | 미확인: fixture 범위 밖 | 제한 | MVP 제한 후보 | Stage 4 분류 필요 |
+| P6-24 | cross-origin iframe 후보 | 실제 웹 대표 페이지 | 외부 iframe 존재 시 | Chrome MV3 권한 경계상 내부 DOM 접근 없이 iframe boundary fallback 또는 제한으로 처리한다. | 자동 OK: inaccessible iframe fallback 테스트, 실제 대표 페이지 smoke는 수동 후보 | 제한 | 보안 경계 | `overlay-helpers.test.ts`, Stage 4 문서화 |
+| P6-25 | closed shadow DOM 후보 | 실제 웹 대표 페이지 | closed shadow 존재 시 | closed shadow 내부는 접근하지 않고 제한으로 기록한다. | 문서화 OK: README 제한 문구 | 제한 | 보안 경계 | Stage 4 문서화 |
 | P6-26 | 역방향 드래그 선택 | fixture 일반 영역 | 포인터가 시작점보다 위/왼쪽으로 이동 | 선택 rect가 좌상단-우하단 좌표로 정규화된다. | 자동+수동 OK, 단 drag flicker는 P6-27로 분리 | OK | 해당 없음 | `state-machine.test.ts`, 작업지시자 Stage 3 smoke |
 | P6-27 | drag selection flicker | fixture 일반 영역 | 드래그 선택 중 | 선택 중 불필요한 흰색 가로선이 반짝이지 않는다. | Stage 4 CSS 보정 후 작업지시자 수동 재확인 OK | OK | 해당 없음 | 작업지시자 Stage 3/5 smoke, `crop-overlay.css` |
 | P6-28 | Firefox식 선택 후 편집 UI parity | 실제 웹 대표 페이지 | 요소 클릭 후 selected 상태 | resize handle, 점선 표시, 이미지 사이즈 badge, Firefox식 Copy/Save 버튼을 제공한다. | 현재 MVP 미구현, 일부는 #13과 연결, size badge/button parity는 신규 후속 후보 | 후속 | 기존 후속 + 신규 후속 후보 | 작업지시자 첨부 이미지, #13 |
@@ -121,12 +121,24 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 |---|---|---|
 | P6-27 drag selection 흰색 가로선 flicker | 이번 task 결함 | drag 중 전체 viewport frame이 노출되지 않도록 `.crop-frame`을 dragging 상태에서 숨겼고, Stage 5 수동 재 smoke에서 보정 확인. |
 | P6-23 비HiDPI 확인 | 검증 한계 | 현재 환경에서 미확인. README와 최종 보고서에 검증 한계로 기록. |
-| P6-24 cross-origin iframe 후보 | MVP 제한 / 기존 후속 | [#14](https://github.com/postmelee/crop/issues/14) `Follow-up: iframe/nested context 요소 선택 지원`으로 연결. |
-| P6-25 closed shadow DOM 후보 | MVP 제한 / 기존 후속 | Chrome MV3 접근 제약으로 README 제한 문구에 기록. 필요 시 #14 범위에서 함께 검토. |
+| P6-24 cross-origin iframe 후보 | 보안 경계 / 제한 유지 | #14에서 inaccessible iframe fallback을 테스트로 고정. `debugger`, `<all_urls>` 없이 내부 DOM 접근은 지원하지 않는다. |
+| P6-25 closed shadow DOM 후보 | 보안 경계 / 제한 유지 | Chrome MV3 접근 제약으로 README 제한 문구에 기록. closed shadow 내부 접근은 지원하지 않는다. |
 | P6-28 resize/move handles와 keyboard 조정 | 기존 후속 | [#13](https://github.com/postmelee/crop/issues/13) `Follow-up: 선택 영역 resize/move handles와 keyboard 조정 구현`으로 연결. |
 | P6-28 size badge와 Copy/Save button parity | 신규 후속 후보 | 새 이슈 생성은 작업지시자 별도 승인 후 진행. |
 | edge auto-scroll | 기존 후속 | [#12](https://github.com/postmelee/crop/issues/12) `Follow-up: 드래그 선택 edge auto-scroll 구현`으로 연결. |
 | viewport 밖 전체 이미지 저장 / full page | 기존 후속 | [#15](https://github.com/postmelee/crop/issues/15) `Follow-up: full page capture와 scroll stitching 구현`으로 연결. |
+
+## Task #14 갱신 결과
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| same-origin/srcdoc iframe 내부 요소 선택 | OK | `tests/firefox-derived/overlay-helpers.test.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| nested same-origin iframe 좌표 변환 | OK | `tests/firefox-derived/overlay-helpers.test.ts` |
+| iframe 내부 open shadow root traversal | OK | `tests/firefox-derived/overlay-helpers.test.ts` |
+| open shadow root 내부 same-origin iframe traversal | OK | `tests/firefox-derived/overlay-helpers.test.ts` |
+| inaccessible/cross-origin iframe fallback | 제한 유지 / OK | `tests/firefox-derived/overlay-helpers.test.ts` |
+| `debugger`, `<all_urls>` 권한 미추가 | OK | `tests/content/overlay/phase6-regression.test.ts`, `manifest.json` |
+| Phase 6 srcdoc iframe fixture smoke | OK | in-app browser frame locator smoke, `data-crop-fixture="iframe-card"`와 `iframe-button` 확인 |
 
 ## 신규 후속 이슈 후보
 

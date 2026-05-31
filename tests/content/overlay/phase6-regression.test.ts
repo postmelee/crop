@@ -169,6 +169,21 @@ describe("Phase 6 overlay regression coverage", () => {
     }
   });
 
+  it("keeps same-origin iframe smoke targets in the fixture", () => {
+    for (const fixtureName of [
+      "same-document-iframe",
+      "iframe-body",
+      "iframe-card",
+      "iframe-button"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+
+    expect(phase6FixtureHtml).toContain("Same-origin target");
+    expect(phase6FixtureHtml).toContain("crop should select this srcdoc content");
+    expect(phase6FixtureHtml).not.toContain("MVP fallback");
+  });
+
   it("keeps the Firefox-style crosshair cursor contract on the overlay surface", () => {
     expect(overlayCss).toContain("cursor: crosshair;");
     expect(overlayCss).toContain(':host([data-crop-state="draggingReady"])');
