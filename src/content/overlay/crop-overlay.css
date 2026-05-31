@@ -54,7 +54,10 @@
 }
 
 :host([data-crop-state="draggingReady"]) .crop-frame,
-:host([data-crop-state="dragging"]) .crop-frame {
+:host([data-crop-state="dragging"]) .crop-frame,
+:host([data-crop-state="selected"]) .crop-frame,
+:host([data-crop-state="moving"]) .crop-frame,
+:host([data-crop-state="resizing"]) .crop-frame {
   display: none;
 }
 

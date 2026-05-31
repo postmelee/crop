@@ -168,6 +168,16 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toContain("cursor: grabbing;");
   });
 
+  it("keeps the viewport frame hidden during selected adjustment states", () => {
+    const frameHideRule = /:host\(\[data-crop-state="draggingReady"\]\) \.crop-frame,[\s\S]*?:host\(\[data-crop-state="resizing"\]\) \.crop-frame \{\s*display: none;\s*\}/;
+
+    for (const state of ["draggingReady", "dragging", "selected", "moving", "resizing"]) {
+      expect(overlayCss).toContain(`:host([data-crop-state="${state}"]) .crop-frame`);
+    }
+
+    expect(overlayCss).toMatch(frameHideRule);
+  });
+
   it("keeps Firefox-derived action button icons and focus-visible styling wired", () => {
     expect(firefoxUiAssets).toContain("ACTION_CANCEL_SVG");
     expect(firefoxUiAssets).toContain("ACTION_COPY_SVG");
