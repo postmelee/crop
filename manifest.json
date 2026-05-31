@@ -14,8 +14,8 @@
   "commands": {
     "open-crop": {
       "suggested_key": {
-        "default": "Ctrl+Shift+P",
-        "mac": "Command+Shift+P"
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
       },
       "description": "Open crop overlay"
     }

@@ -10,6 +10,7 @@ import {
 } from "./crop-template";
 import {
   applyActionButtonsPresentation,
+  applyDocumentOverlayPresentation,
   applyEyeOffsetPresentation,
   applyHighlightPresentation,
   applySelectionControlsPresentation,
@@ -29,10 +30,12 @@ import {
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
 import {
+  intersectRects,
   pageRectToViewportRect,
   readWindowDimensions,
   type PageRect,
-  type ViewportRect
+  type ViewportRect,
+  type WindowDimensions
 } from "../../firefox-derived/window-dimensions";
 import {
   createInitialOverlayState,
@@ -191,6 +194,21 @@ export function mountCropOverlay(): void {
   let overlayRemoved = false;
   let previousRenderedStatus: CropOverlayState["status"] | null = null;
 
+  const readOverlayWindowDimensions = (): WindowDimensions => {
+    const previousMeasuringState = host.dataset.cropMeasuring;
+    host.dataset.cropMeasuring = "true";
+
+    try {
+      return readWindowDimensions();
+    } finally {
+      if (previousMeasuringState === undefined) {
+        delete host.dataset.cropMeasuring;
+      } else {
+        host.dataset.cropMeasuring = previousMeasuringState;
+      }
+    }
+  };
+
   const removeOverlay = (): void => {
     if (overlayRemoved) {
       return;
@@ -256,7 +274,7 @@ export function mountCropOverlay(): void {
       y: event.clientY
     };
     lastPointer = pointer;
-    const pagePointer = toPagePoint(pointer);
+    const pagePointer = toPagePoint(pointer, readOverlayWindowDimensions());
 
     updatePromptEyes(pointer);
 
@@ -301,10 +319,13 @@ export function mountCropOverlay(): void {
     }
 
     if (overlayState.status === "selected") {
-      const pagePointer = toPagePoint({
-        x: event.clientX,
-        y: event.clientY
-      });
+      const pagePointer = toPagePoint(
+        {
+          x: event.clientX,
+          y: event.clientY
+        },
+        readOverlayWindowDimensions()
+      );
       const explicitResizeHandle = getSelectionResizeHandleFromEvent(event);
       const isExplicitMove = isSelectionMoveEvent(event);
 
@@ -387,10 +408,13 @@ export function mountCropOverlay(): void {
     stopEdgeScroll();
     overlayState = transitionOverlayState(overlayState, {
       type: "dragStart",
-      point: toPagePoint({
-        x: event.clientX,
-        y: event.clientY
-      })
+      point: toPagePoint(
+        {
+          x: event.clientX,
+          y: event.clientY
+        },
+        readOverlayWindowDimensions()
+      )
     });
     renderOverlayState();
   };
@@ -438,7 +462,7 @@ export function mountCropOverlay(): void {
     pendingPointer = null;
     overlayState = transitionOverlayState(overlayState, {
       type: "hover",
-      rect: resolveHoverRect(pointer, host)
+      rect: resolveHoverRect(pointer, host, readOverlayWindowDimensions())
     });
     renderOverlayState();
   };
@@ -493,7 +517,16 @@ export function mountCropOverlay(): void {
 
     overlayState = transitionOverlayState(overlayState, {
       type: "select",
-      rect: overlayState.hoverRect ?? resolveHoverRect({ x: event.clientX, y: event.clientY }, host)
+      rect:
+        overlayState.hoverRect ??
+        resolveHoverRect(
+          {
+            x: event.clientX,
+            y: event.clientY
+          },
+          host,
+          readOverlayWindowDimensions()
+        )
     });
     cancelPendingHoverUpdate();
     renderOverlayState();
@@ -550,7 +583,7 @@ export function mountCropOverlay(): void {
         host.dataset.cropClipboardStatus = "ok";
         showCompletionToast({
           result,
-          message: "복사 완료",
+          message: "스크린샷이 복사되었습니다!",
           status: "copied"
         });
         removeOverlay();
@@ -560,12 +593,6 @@ export function mountCropOverlay(): void {
       const filename = await requestPngDownload(result.dataUrl, document.title);
       host.dataset.cropDownloadStatus = "ok";
       host.dataset.cropDownloadFilename = filename;
-      showCompletionToast({
-        result,
-        message: "저장 완료",
-        status: "saved",
-        filename
-      });
       removeOverlay();
     } catch (error) {
       if (!overlayRemoved) {
@@ -687,36 +714,54 @@ export function mountCropOverlay(): void {
     host.setAttribute("data-crop-state", overlayState.status);
 
     if (template) {
-      const windowDimensions = readWindowDimensions();
-      const activeRect = projectPageRectToViewport(
-        overlayState.selectedRect ?? overlayState.hoverRect,
-        windowDimensions
-      );
-      const selectionRect =
-        isSelectionVisibleStatus(overlayState.status)
-          ? projectPageRectToViewport(overlayState.selectedRect, windowDimensions)
-          : null;
-      const visibleSelectionRect = selectionRect
-        ? windowDimensions.clipRectToViewport(selectionRect)
+      const windowDimensions = readOverlayWindowDimensions();
+      applyDocumentOverlayPresentation(host, windowDimensions);
+
+      const activePageRect = overlayState.selectedRect ?? overlayState.hoverRect;
+      const selectionPageRect = isSelectionVisibleStatus(overlayState.status)
+        ? overlayState.selectedRect
         : null;
-      applyHighlightPresentation(template.highlight, activeRect);
+      const visibleSelectionPageRect = selectionPageRect
+        ? intersectRects(selectionPageRect, windowDimensions.pageViewportRect)
+        : null;
+      const selectionViewportRect = selectionPageRect
+        ? projectPageRectToViewport(selectionPageRect, windowDimensions)
+        : null;
+      const selectionMaskNullRectMode =
+        isSelectionVisibleStatus(overlayState.status) &&
+        selectionPageRect &&
+        !visibleSelectionPageRect
+          ? "solid"
+          : "hidden";
+      template.selectionMask.container.hidden = !activePageRect;
+      applyHighlightPresentation(template.highlight, activePageRect);
       applySelectionControlsPresentation(
         template.selectionControls.container,
-        isSelectionActionVisibleStatus(overlayState.status) ? visibleSelectionRect : null
+        isSelectionActionVisibleStatus(overlayState.status) ? selectionPageRect : null
       );
       applySelectionSizePresentation(
         template.selectionControls.sizeBadge,
         isSelectionActionVisibleStatus(overlayState.status) ? overlayState.selectedRect : null,
-        visibleSelectionRect
+        visibleSelectionPageRect
       );
-      applySelectionMaskPresentation(template.selectionMask, visibleSelectionRect);
+      applySelectionMaskPresentation(template.selectionMask, selectionPageRect, {
+        nullRectMode: selectionMaskNullRectMode,
+        containerSize: {
+          width: windowDimensions.scrollWidth,
+          height: windowDimensions.scrollHeight
+        }
+      });
       template.highlight.classList.toggle(
         "crop-highlight--selected",
         isSelectionVisibleStatus(overlayState.status)
       );
       updateActionButtons(
         template,
-        isSelectionActionVisibleStatus(overlayState.status) ? selectionRect : null
+        isSelectionActionVisibleStatus(overlayState.status) ? selectionViewportRect : null,
+        {
+          clientWidth: windowDimensions.clientWidth,
+          clientHeight: windowDimensions.clientHeight
+        }
       );
 
       if (overlayState.status === "selected" && previousStatus !== "selected") {
@@ -749,7 +794,7 @@ export function mountCropOverlay(): void {
 
   const updateEdgeScroll = (pointer: PointerPosition): void => {
     lastDragPointer = pointer;
-    const windowDimensions = readWindowDimensions();
+    const windowDimensions = readOverlayWindowDimensions();
     const edgeScrollDelta = getEdgeScrollDelta(pointer, {
       clientWidth: windowDimensions.clientWidth,
       clientHeight: windowDimensions.clientHeight
@@ -778,7 +823,7 @@ export function mountCropOverlay(): void {
       return;
     }
 
-    const beforeScroll = readWindowDimensions();
+    const beforeScroll = readOverlayWindowDimensions();
     const edgeScrollDelta = getEdgeScrollDelta(lastDragPointer, {
       clientWidth: beforeScroll.clientWidth,
       clientHeight: beforeScroll.clientHeight
@@ -789,7 +834,7 @@ export function mountCropOverlay(): void {
     }
 
     window.scrollBy(edgeScrollDelta.x, edgeScrollDelta.y);
-    const afterScroll = readWindowDimensions();
+    const afterScroll = readOverlayWindowDimensions();
     const didScroll =
       beforeScroll.scrollX !== afterScroll.scrollX || beforeScroll.scrollY !== afterScroll.scrollY;
 
@@ -841,7 +886,7 @@ export function mountCropOverlay(): void {
       return;
     }
 
-    const windowDimensions = readWindowDimensions();
+    const windowDimensions = readOverlayWindowDimensions();
     applyEyeOffsetPresentation(template.prompt, pointer, {
       clientWidth: windowDimensions.clientWidth,
       clientHeight: windowDimensions.clientHeight
@@ -862,7 +907,8 @@ export function mountCropOverlay(): void {
 
 function resolveHoverRect(
   pointer: PointerPosition,
-  host: HTMLElement
+  host: HTMLElement,
+  windowDimensions = readWindowDimensions()
 ): PageRect | null {
   const hit = getPageElementFromPoint(pointer, host);
 
@@ -870,7 +916,6 @@ function resolveHoverRect(
     return null;
   }
 
-  const windowDimensions = readWindowDimensions();
   return getBestRectForElement(hit.element, {
     windowDimensions,
     coordinateSpace: "page",
@@ -902,8 +947,10 @@ function getPageElementFromPoint(pointer: PointerPosition, host: HTMLElement) {
   }
 }
 
-function toPagePoint(pointer: PointerPosition): PointerPosition {
-  const windowDimensions = readWindowDimensions();
+function toPagePoint(
+  pointer: PointerPosition,
+  windowDimensions = readWindowDimensions()
+): PointerPosition {
   return {
     x: pointer.x + windowDimensions.scrollX,
     y: pointer.y + windowDimensions.scrollY
@@ -966,7 +1013,11 @@ function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
   return element === host || element.closest(`[${ROOT_ATTRIBUTE}="true"]`) === host;
 }
 
-function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect | null): void {
+function updateActionButtons(
+  template: CropOverlayTemplate,
+  rect: ViewportRect | null,
+  viewport: { readonly clientWidth: number; readonly clientHeight: number }
+): void {
   if (!rect) {
     applyActionButtonsPresentation(
       template.actions,
@@ -978,7 +1029,6 @@ function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect |
   }
 
   template.actions.hidden = false;
-  const windowDimensions = readWindowDimensions();
   const actionsRect = template.actions.getBoundingClientRect();
   const actionsSize = {
     width: actionsRect.width || FALLBACK_ACTIONS_SIZE.width,
@@ -988,10 +1038,7 @@ function updateActionButtons(template: CropOverlayTemplate, rect: ViewportRect |
   applyActionButtonsPresentation(
     template.actions,
     rect,
-    {
-      clientWidth: windowDimensions.clientWidth,
-      clientHeight: windowDimensions.clientHeight
-    },
+    viewport,
     actionsSize
   );
 }
@@ -1014,8 +1061,7 @@ function focusFirefoxReferenceActionButton(template: CropOverlayTemplate): void 
 interface CompletionToastOptions {
   readonly result: CropCapturePipelineResult;
   readonly message: string;
-  readonly status: "copied" | "saved";
-  readonly filename?: string;
+  readonly status: "copied";
 }
 
 function showCompletionToast(options: CompletionToastOptions): void {
@@ -1026,10 +1072,6 @@ function showCompletionToast(options: CompletionToastOptions): void {
   toast.host.dataset.cropToastAction = options.result.action;
   toast.host.dataset.cropToastWidth = String(options.result.outputWidth);
   toast.host.dataset.cropToastHeight = String(options.result.outputHeight);
-
-  if (options.filename) {
-    toast.host.dataset.cropToastFilename = options.filename;
-  }
 
   let dismissTimeoutId: number | null = null;
 
@@ -1042,8 +1084,12 @@ function showCompletionToast(options: CompletionToastOptions): void {
     toast.host.remove();
   };
 
-  toast.closeButton.addEventListener("click", removeToast);
   document.documentElement.append(toast.host);
+  window.requestAnimationFrame(() => {
+    toast.host.shadowRoot
+      ?.getElementById("confirmation-hint-checkmark-animation-container")
+      ?.setAttribute("animate", "true");
+  });
   dismissTimeoutId = window.setTimeout(removeToast, TOAST_AUTO_DISMISS_MS);
 }
 

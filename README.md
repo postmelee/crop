@@ -115,7 +115,7 @@ npm run typecheck
 3. Developer mode를 켠다.
 4. Load unpacked를 선택하고 이 저장소의 `dist/` 폴더를 지정한다.
 5. 일반 웹 페이지 탭에서 `crop` action icon을 클릭한다.
-6. 등록 가능한 환경에서는 `Ctrl+Shift+P`, macOS에서는 `Command+Shift+P`도 확인한다.
+6. 등록 가능한 환경에서는 `Ctrl+Shift+S`, macOS에서는 `Command+Shift+S`도 확인한다.
 
 기대 결과:
 

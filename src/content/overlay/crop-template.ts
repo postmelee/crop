@@ -52,6 +52,7 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   highlight.setAttribute("aria-hidden", "true");
 
   const selectionControls = createSelectionControlsTemplate();
+  selectionMask.container.append(highlight, selectionControls.container);
 
   const panel = document.createElement("div");
   panel.className = "crop-mode-toolbar";
@@ -119,8 +120,6 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
     dim,
     frame,
     selectionMask.container,
-    highlight,
-    selectionControls.container,
     prompt,
     actions,
     panel
@@ -147,7 +146,6 @@ export interface CropSelectionControlsTemplate {
 
 export interface CropToastTemplate {
   readonly host: HTMLElement;
-  readonly closeButton: HTMLButtonElement;
 }
 
 export function createCropToastTemplate(message: string): CropToastTemplate {
@@ -160,38 +158,48 @@ export function createCropToastTemplate(message: string): CropToastTemplate {
   style.textContent = overlayStyles;
 
   const toast = document.createElement("div");
-  toast.className = "crop-toast";
+  toast.id = "confirmation-hint";
+  toast.className = "crop-confirmation-hint";
   toast.setAttribute("role", "status");
   toast.setAttribute("aria-live", "polite");
 
-  const indicator = document.createElement("span");
-  indicator.className = "crop-toast-indicator";
-  indicator.setAttribute("aria-hidden", "true");
+  const checkmarkContainer = document.createElement("span");
+  checkmarkContainer.id = "confirmation-hint-checkmark-animation-container";
+  checkmarkContainer.className = "crop-confirmation-checkmark-container";
+  checkmarkContainer.setAttribute("aria-hidden", "true");
 
-  const text = document.createElement("div");
-  text.className = "crop-toast-text";
+  const checkmark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  checkmark.id = "confirmation-hint-checkmark-image";
+  checkmark.classList.add("crop-confirmation-checkmark");
+  checkmark.setAttribute("viewBox", "0 0 14 14");
+  checkmark.setAttribute("width", "14");
+  checkmark.setAttribute("height", "14");
 
-  const title = document.createElement("strong");
-  title.className = "crop-toast-title";
-  title.textContent = "crop";
+  const checkmarkPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  checkmarkPath.setAttribute("d", "M2.1 7.1L5.2 10.2L11.9 3.4");
+  checkmarkPath.setAttribute("fill", "none");
+  checkmarkPath.setAttribute("stroke", "currentColor");
+  checkmarkPath.setAttribute("stroke-width", "2");
+  checkmarkPath.setAttribute("stroke-linecap", "round");
+  checkmarkPath.setAttribute("stroke-linejoin", "round");
+  checkmark.append(checkmarkPath);
+  checkmarkContainer.append(checkmark);
+
+  const messageContainer = document.createElement("span");
+  messageContainer.id = "confirmation-hint-message-container";
+  messageContainer.className = "crop-confirmation-message-container";
 
   const description = document.createElement("span");
-  description.className = "crop-toast-message";
+  description.id = "confirmation-hint-message";
+  description.className = "crop-confirmation-message";
   description.textContent = message;
 
-  const closeButton = document.createElement("button");
-  closeButton.className = "crop-toast-close";
-  closeButton.type = "button";
-  closeButton.setAttribute("aria-label", "알림 닫기");
-  closeButton.textContent = "×";
-
-  text.append(title, description);
-  toast.append(indicator, text, closeButton);
+  messageContainer.append(description);
+  toast.append(checkmarkContainer, messageContainer);
   shadowRoot.append(style, toast);
 
   return {
-    host,
-    closeButton
+    host
   };
 }
 
@@ -292,7 +300,7 @@ function createActionGroup(kind: "primary" | "secondary"): HTMLElement {
 
 function createSelectionMaskTemplate(): CropSelectionMaskTemplate {
   const container = document.createElement("div");
-  container.className = "crop-selection-mask";
+  container.className = "crop-selection-container";
   container.hidden = true;
   container.setAttribute("aria-hidden", "true");
 

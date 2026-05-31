@@ -8,7 +8,7 @@ GitHub Issue: [#13](https://github.com/postmelee/crop/issues/13)
 - 대상 이슈: #13
 - 마일스톤: M020
 - 단계 수: 5
-- 작업 목적: selected 상태에서 8방향 resize handle, 내부 drag move, keyboard move/resize, size badge, Firefox식 action box placement를 구현한다.
+- 작업 목적: selected 상태에서 8방향 resize handle, 내부 drag move, keyboard move/resize, size badge, Firefox식 action box/toast/overlay 동작과 기본 단축키를 구현한다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -16,18 +16,21 @@ GitHub Issue: [#13](https://github.com/postmelee/crop/issues/13)
 |---|---|---|
 | `src/content/overlay/selection-transform.ts` | selected move/resize helper, pointer hit-test, keyboard adjustment helper 추가 | selected rectangle geometry |
 | `src/content/overlay/state-machine.ts` | selected move/resize 상태와 keyboard 조정 이벤트 추가 | overlay 상태 전이 |
-| `src/content/overlay/crop-overlay.ts` | selected pointer move/resize, keyboard 조정, action button target 예외, cursor layer용 interactive overlay 판정, size badge 렌더링 연결, selected 진입 시 Copy focus ring 설정 | overlay runtime interaction |
-| `src/content/overlay/crop-template.ts` | selection controls, 8방향 resize handle, move surface, size badge DOM, Firefox-derived cancel/copy/save icon action DOM 추가 | Shadow DOM template |
-| `src/content/overlay/crop-overlay.css` | Firefox식 crosshair cursor, resize handle, hover scale animation, centered size badge, action box spacing/shadow/cursor, Firefox in-content button token 기반 action button 스타일 추가 | overlay visual/UI |
-| `src/content/overlay/positioning.ts` | selection controls, size badge, Firefox식 action box viewport clamp/우하단 placement helper 보강 | viewport positioning |
+| `src/content/overlay/crop-overlay.ts` | selected pointer move/resize, keyboard 조정, action button target 예외, cursor layer용 interactive overlay 판정, document-coordinate overlay 측정, copy completion toast, size badge 렌더링 연결, selected 진입 시 Copy focus ring 설정 | overlay runtime interaction |
+| `src/content/overlay/crop-template.ts` | selection controls, 8방향 resize handle, move surface, size badge DOM, Firefox-derived cancel/copy/save icon action DOM, Firefox식 confirmation hint toast DOM 추가 | Shadow DOM template |
+| `src/content/overlay/crop-overlay.css` | Firefox식 crosshair cursor, resize handle, hover scale animation, centered size badge, action box spacing/shadow/cursor/layer, Firefox in-content button token 기반 action button 스타일, confirmation hint toast 스타일 추가 | overlay visual/UI |
+| `src/content/overlay/positioning.ts` | document overlay sizing, selection mask numeric bounds, selection controls, size badge, Firefox식 action box viewport clamp/우하단 placement helper 보강 | viewport/document positioning |
 | `src/firefox-derived/screenshots-ui-assets.ts` | Firefox close/edit-copy/download SVG factory 추가, Chrome Shadow DOM용 fill normalization 보강 | MPL-derived UI assets |
 | `src/firefox-derived/README.md`, `NOTICE`, `THIRD_PARTY.md` | Task #13 action icon/source CSS reference attribution 추가 | Firefox-derived boundary 기록 |
 | `tests/content/overlay/selection-transform.test.ts` | move/resize helper, hit-test, keyboard mapping 테스트 추가 | geometry regression |
 | `tests/content/overlay/state-machine.test.ts` | selected adjustment 상태 전이와 keyboard 조정 테스트 추가 | state regression |
-| `tests/content/overlay/positioning.test.ts` | controls/action box/size badge placement 테스트 추가 | layout regression |
-| `tests/content/overlay/phase6-regression.test.ts` | selected adjustment fixture marker, Firefox식 cursor contract, MVP 권한 회귀 테스트 추가 | Phase 6 regression |
+| `tests/content/overlay/positioning.test.ts` | document overlay sizing, selection mask bounds, controls/action box/size badge placement 테스트 추가 | layout regression |
+| `tests/content/overlay/phase6-regression.test.ts` | selected adjustment fixture marker, Firefox식 cursor/toast/layer/document-overlay contract, MVP 권한 회귀 테스트 추가 | Phase 6 regression |
+| `tests/manifest.test.ts` | 기본 단축키와 권한 경계 회귀 테스트 추가 | manifest regression |
 | `tests/fixtures/phase6_edge_cases.html` | selected resize/move/keyboard smoke 전용 target 추가 | 반복 smoke fixture |
-| `README.md` | #13 완료 상태와 Chrome unpacked smoke 기대 결과 갱신 | 기여자 로컬 검증 문서 |
+| `manifest.json` | 기본 단축키를 `Ctrl+Shift+S`, macOS `Command+Shift+S`로 변경 | extension command |
+| `README.md` | #13 완료 상태와 Chrome unpacked smoke 기대 결과, 기본 단축키 갱신 | 기여자 로컬 검증 문서 |
+| `mydocs/tech/task_m020_8_quality_matrix.md` | Phase 6 smoke 단축키 기대값 갱신 | 품질 매트릭스 |
 | `mydocs/plans/task_m020_13.md` | 수행계획서 작성 | Hyper-Waterfall 계획 |
 | `mydocs/plans/task_m020_13_impl.md` | 구현계획서 작성 | Hyper-Waterfall 단계 계획 |
 | `mydocs/working/task_m020_13_stage1.md` ~ `task_m020_13_stage4.md` | Stage별 완료 보고서 작성 | 단계 검증 기록 |
@@ -39,6 +42,7 @@ GitHub Issue: [#13](https://github.com/postmelee/crop/issues/13)
 | 파일 | 계획된 위치 | 실제 위치 | 결과 | 근거 |
 |---|---|---|---|---|
 | `README.md` | 루트 `README.md` | `README.md` | OK | 수행계획서의 문서 위치 판단과 일치하며 로컬 smoke 기대 결과만 좁게 갱신했다. |
+| `mydocs/tech/task_m020_8_quality_matrix.md` | 기존 `mydocs/tech/` | `mydocs/tech/task_m020_8_quality_matrix.md` | OK | 기존 Phase 6 품질 매트릭스의 smoke 단축키 문구만 현재 manifest와 맞췄다. |
 | `tests/fixtures/phase6_edge_cases.html` | `tests/fixtures/` | `tests/fixtures/phase6_edge_cases.html` | OK | Stage 5 산출물 계획과 일치하는 반복 smoke fixture다. |
 | `task_m020_13.md` | `mydocs/plans/` | `mydocs/plans/task_m020_13.md` | OK | 수행계획서 표준 위치와 일치한다. |
 | `task_m020_13_impl.md` | `mydocs/plans/` | `mydocs/plans/task_m020_13_impl.md` | OK | 구현계획서 표준 위치와 일치한다. |
@@ -56,8 +60,11 @@ GitHub Issue: [#13](https://github.com/postmelee/crop/issues/13)
 | size badge | 후속 parity 후보 | selected 내부 `width x height` badge 구현 |
 | Firefox selected UI parity | 일부 후속 후보 | size badge 중앙 배치, 60px resize handle hit target, 16px circle handle, hover scale animation, 우하단 action box, 원본 close/copy/download icon, focus ring, primary/secondary button token 반영 |
 | Firefox overlay cursor parity | 브라우저 기본 cursor 노출 | overlay surface `crosshair`, drag selection 중 `grabbing`, toolbar/action 영역 `auto` 반영 |
+| Firefox document overlay parity | fixed viewport overlay | document-coordinate overlay, scroll과 selection frame 동기화, offscreen dark overlay 유지 |
+| Firefox completion toast parity | 자체 toast | Copy 후 Firefox식 top-right confirmation hint 표시, Save는 toast 미표시 |
+| 기본 단축키 | `Ctrl+Shift+P`, macOS `Command+Shift+P` | `Ctrl+Shift+S`, macOS `Command+Shift+S` |
 | Phase 6 selected adjustment fixture | 없음 | `selected-adjustment-*` marker 4개 추가 |
-| 전체 자동 테스트 | Task #12 완료 기준 12 files / 98 tests | 13 files / 137 tests |
+| 전체 자동 테스트 | Task #12 완료 기준 12 files / 98 tests | 14 files / 149 tests |
 | Stage 보고서 | 없음 | Stage 1~4 보고서 4개 |
 
 ## 검증 결과
@@ -75,6 +82,12 @@ GitHub Issue: [#13](https://github.com/postmelee/crop/issues/13)
 | overlay 화면 기본 커서가 Firefox처럼 crosshair로 표시된다 | OK — Firefox `#screenshots-component { cursor: crosshair; pointer-events: auto; }` 구조를 확인해 host cursor layer에 반영했고, CDP smoke에서 `initial/hover/selected = crosshair`, `draggingReady/dragging = grabbing`을 확인했다. |
 | keyboard 조정 범위가 명확히 동작한다 | OK — 자동 테스트와 CDP smoke에서 Shift+ArrowRight `+10px`, Alt/Option+ArrowDown height `+1px` 조정을 확인했다. |
 | action buttons가 선택 영역과 viewport 조건에 따라 접근 가능한 위치에 표시된다 | OK — selected 상태 CDP smoke에서 actions visible, Stage 3/4 positioning 테스트 통과. |
+| action buttons가 선택 영역 위에 겹쳐도 click과 cursor를 가져간다 | OK — overlap CDP smoke에서 action box와 move surface가 겹친 상태로 `elementFromPoint` target `BUTTON`, `targetAction: cancel`, cursor `pointer`, cancel 클릭 후 overlay 제거를 확인했다. |
+| box resize 중 흰 vertical line seam이 재발하지 않는다 | OK — document measurement-safe mode와 numeric mask bounds를 적용했고, south resize CDP smoke에서 frame/dim hidden, mask/highlight geometry 일치, 시각 seam 미재현을 확인했다. |
+| scroll 시 selected box가 Firefox처럼 지연 없이 따라간다 | OK — document-coordinate overlay로 전환했고 CDP smoke에서 `scrollDelta: 240`, `immediateDelta: -240`으로 scroll 직후 expected top과 actual top이 일치했다. |
+| selected box가 viewport 밖으로 나가도 dark overlay가 유지된다 | OK — offscreen mask CDP smoke에서 selection이 viewport 밖으로 이동해도 top mask가 solid dark overlay로 유지되고 side masks가 hidden 처리됨을 확인했다. |
+| Copy 후 Firefox식 완료 toast가 표시되고 Save 후에는 toast가 표시되지 않는다 | OK — copy toast CDP smoke에서 confirmation hint size와 메시지 표시를 확인했고, Save 경로에는 toast 생성이 없음을 확인했다. |
+| 기본 단축키가 Command/Ctrl+Shift+S로 등록된다 | OK — `manifest.test.ts`, README, 품질 매트릭스 문구가 `Ctrl+Shift+S`와 `Command+Shift+S`를 기준으로 통과했다. |
 | Copy/Save capture 전 overlay controls가 결과에 포함되지 않도록 숨김 경로가 유지된다 | OK — CDP smoke에서 Save pipeline stub 호출 시 `crop.captureVisibleTab` 직전 host visibility가 `hidden`이었다. |
 | `debugger`, `<all_urls>` 권한이 추가되지 않는다 | OK — `phase6-regression.test.ts`와 Stage 5 `rg`에서 권한 경계 유지 확인. |
 
@@ -95,7 +108,7 @@ npm run build
 npm run typecheck
 npm run test
 rg "resize|move|keyboard|Copy|Save|Cancel|debugger|<all_urls>|#13" README.md mydocs src tests manifest.json
-rg "selection-size|crop-selection-size|crop-resize-handle|crop-action|ACTION_BUTTONS|Firefox|mover|crosshair|grabbing|ACTION_COPY_SVG|data-crop-focus-visible|common-shared.css" src tests README.md NOTICE THIRD_PARTY.md mydocs/report/task_m020_13_report.md
+rg "selection-size|crop-selection-size|crop-resize-handle|crop-action|ACTION_BUTTONS|Firefox|mover|crosshair|grabbing|ACTION_COPY_SVG|data-crop-focus-visible|common-shared.css|confirmation-hint|Command\\+Shift\\+S|crop-layer-highest" src tests README.md NOTICE THIRD_PARTY.md mydocs/report/task_m020_13_report.md manifest.json
 git diff --check
 git status --short
 ```
@@ -104,7 +117,7 @@ git status --short
 
 - OK: `npm run build` 통과. `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 빌드 완료.
 - OK: `npm run typecheck` 통과.
-- OK: `npm run test` 통과. 13개 test file, 137개 test가 모두 통과했다.
+- OK: `npm run test` 통과. 14개 test file, 149개 test가 모두 통과했다.
 - OK: `rg "resize|move|keyboard|Copy|Save|Cancel|debugger|<all_urls>|#13" ...`에서 README, 구현, 테스트, 계획/보고 문서의 관련 항목을 확인했다.
 - OK: Firefox UI parity grep에서 size badge 중앙 배치, handle hover scale, action button placement, source action icon factory, focus-visible marker, crosshair/grabbing cursor, upstream 근거 기록을 확인했다.
 - OK: `git diff --check` 경고 없이 통과.
@@ -112,7 +125,12 @@ git status --short
 - OK: 작업지시자 smoke 피드백 반영 후 Headless Chrome CDP UI parity smoke 통과. size badge center delta `0px`, action toolbar right delta `0px`, bottom gap `10px`, handle target `60px`, handle dot `16px`, hover transform `matrix(1.05, 0, 0, 1.05, 0, 0)`, action order `cancel/copy/save`를 확인했다.
 - OK: cursor parity CDP smoke 통과. host cursor `crosshair`, hover highlight 유지, drag 중 `grabbing`, drag selection 후 selected `70 x 60`, click selection 후 selected `1130 x 260`을 확인했다.
 - OK: action button parity CDP smoke 통과. action box `235 x 48`, container background `rgb(28, 27, 34)`, button order `cancel/copy/save`, button size `50/77/77 x 32`, button radius `8px`, icon size `16px`, Copy focus ring `2px #5abad7`, Save background `rgb(90, 186, 215)`, Copy hover background `currentColor 14%`, hover border transparent, button text `취소/복사/저장`을 확인했다.
-- OK: Browser plugin fixture load smoke 통과. `http://127.0.0.1:5173/tests/fixtures/phase6_edge_cases.html` title과 fixture DOM을 확인했다. 인앱 브라우저 로그에는 페이지 소스에 없는 `MutationObserver.observe` error 1건이 관찰되어 Browser 런타임/확장 계층 노이즈로 분류했고, 실제 overlay 검증은 CDP smoke로 수행했다.
+- OK: document-layer scroll CDP smoke 통과. scroll 직후 selected highlight top이 expected top과 일치해 scroll lag가 사라졌음을 확인했다.
+- OK: offscreen mask CDP smoke 통과. selection이 viewport 밖으로 나가도 dark overlay가 유지됨을 확인했다.
+- OK: resize seam CDP smoke 통과. south resize 중 frame/dim hidden, numeric bottom mask, visual seam 미재현을 확인했다.
+- OK: copy toast CDP smoke 통과. Copy 후 Firefox식 confirmation hint 표시, Save 후 toast 미표시를 확인했다.
+- OK: action overlap CDP smoke 통과. action box가 crop box 위에 겹친 상태에서 hit-test target이 `BUTTON`, cursor가 `pointer`, cancel 클릭이 overlay를 제거함을 확인했다.
+- OK: Browser plugin fixture load smoke 통과. `http://127.0.0.1:5174/tests/fixtures/phase6_edge_cases.html` title과 fixture DOM을 확인했고 warn/error 로그는 없었다.
 
 ## 잔여 위험과 후속 작업
 
@@ -121,6 +139,7 @@ git status --short
 - Stage 5 CDP smoke는 content script를 fixture page에 직접 주입하고 `chrome.runtime.sendMessage`를 stub 처리했다. 실제 Chrome toolbar action, 시스템 clipboard write, 실제 downloads 동작은 기존 #7/#8 smoke 경로를 유지하며 이번 task에서는 capture 전 overlay hide 경계만 재확인했다.
 - Pointer handle 체감 크기와 action box 시각 위치는 OS display scale, browser zoom, 페이지 density에 따라 미세 조정 여지가 있을 수 있으나, Firefox upstream의 60px hit target, bottom-right placement 산식, in-content button token을 기준값으로 맞췄다.
 - Keyboard adjustment는 selected rectangle을 page 좌표 기준으로 이동하므로 selection이 viewport 밖으로 이동할 수 있다. 현재 controls/action box는 visible intersection과 clamp 정책으로 대응한다.
+- Scroll/resize 시각 검증은 CDP screenshot과 geometry smoke 중심이다. 실제 foreground Chrome compositor에서 single-frame artifact는 작업지시자 smoke로 최종 확인했다.
 
 ### 후속 작업 후보
 

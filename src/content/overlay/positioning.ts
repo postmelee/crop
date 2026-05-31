@@ -2,7 +2,8 @@ import type { ViewportRect } from "../../firefox-derived/window-dimensions";
 
 export interface HighlightPresentation {
   readonly hidden: boolean;
-  readonly transform: string;
+  readonly left: string;
+  readonly top: string;
   readonly width: string;
   readonly height: string;
 }
@@ -37,6 +38,25 @@ export interface SelectionMaskElements {
   readonly left: HTMLElement;
 }
 
+export interface SelectionMaskPresentationOptions {
+  readonly nullRectMode?: "hidden" | "solid";
+  readonly containerSize?: ElementSize;
+}
+
+export interface DocumentOverlayMetrics {
+  readonly scrollMinX: number;
+  readonly scrollMinY: number;
+  readonly scrollWidth: number;
+  readonly scrollHeight: number;
+}
+
+export interface DocumentOverlayPresentation {
+  readonly left: string;
+  readonly top: string;
+  readonly width: string;
+  readonly height: string;
+}
+
 export interface Point {
   readonly x: number;
   readonly y: number;
@@ -54,11 +74,43 @@ const EYE_OFFSET_SCALE = 10;
 const SELECTION_SIZE_MIN_VISIBLE_WIDTH = 58;
 const SELECTION_SIZE_MIN_VISIBLE_HEIGHT = 26;
 
+export function getDocumentOverlayPresentation(
+  metrics: DocumentOverlayMetrics
+): DocumentOverlayPresentation {
+  return {
+    left: toCssPixel(metrics.scrollMinX),
+    top: toCssPixel(metrics.scrollMinY),
+    width: toCssPixel(metrics.scrollWidth),
+    height: toCssPixel(metrics.scrollHeight)
+  };
+}
+
+export function applyDocumentOverlayPresentation(
+  element: HTMLElement,
+  metrics: DocumentOverlayMetrics
+): void {
+  const presentation = getDocumentOverlayPresentation(metrics);
+
+  if (element.style.left !== presentation.left) {
+    element.style.left = presentation.left;
+  }
+  if (element.style.top !== presentation.top) {
+    element.style.top = presentation.top;
+  }
+  if (element.style.width !== presentation.width) {
+    element.style.width = presentation.width;
+  }
+  if (element.style.height !== presentation.height) {
+    element.style.height = presentation.height;
+  }
+}
+
 export function getHighlightPresentation(rect: ViewportRect | null): HighlightPresentation {
   if (!rect) {
     return {
       hidden: true,
-      transform: "",
+      left: "",
+      top: "",
       width: "",
       height: ""
     };
@@ -66,7 +118,8 @@ export function getHighlightPresentation(rect: ViewportRect | null): HighlightPr
 
   return {
     hidden: false,
-    transform: `translate(${toCssPixel(rect.left)}, ${toCssPixel(rect.top)})`,
+    left: toCssPixel(rect.left),
+    top: toCssPixel(rect.top),
     width: toCssPixel(rect.width),
     height: toCssPixel(rect.height)
   };
@@ -76,9 +129,11 @@ export function applyHighlightPresentation(element: HTMLElement, rect: ViewportR
   const presentation = getHighlightPresentation(rect);
 
   element.hidden = presentation.hidden;
-  element.style.transform = presentation.transform;
+  element.style.left = presentation.left;
+  element.style.top = presentation.top;
   element.style.width = presentation.width;
   element.style.height = presentation.height;
+  element.style.transform = "";
 }
 
 export function getSelectionControlsPresentation(
@@ -94,9 +149,11 @@ export function applySelectionControlsPresentation(
   const presentation = getSelectionControlsPresentation(rect);
 
   element.hidden = presentation.hidden;
-  element.style.transform = presentation.transform;
+  element.style.left = presentation.left;
+  element.style.top = presentation.top;
   element.style.width = presentation.width;
   element.style.height = presentation.height;
+  element.style.transform = "";
 }
 
 export function getSelectionSizePresentation(
@@ -200,31 +257,61 @@ export function applyActionButtonsPresentation(
 
 export function applySelectionMaskPresentation(
   elements: SelectionMaskElements,
-  rect: ViewportRect | null
+  rect: ViewportRect | null,
+  options: SelectionMaskPresentationOptions = {}
 ): void {
-  elements.container.hidden = !rect;
+  const parts = [elements.top, elements.right, elements.bottom, elements.left];
 
   if (!rect) {
-    for (const part of [elements.top, elements.right, elements.bottom, elements.left]) {
+    if (options.nullRectMode === "solid") {
+      const containerSize = options.containerSize;
+      elements.top.hidden = false;
+      elements.top.style.left = "0";
+      elements.top.style.top = "0";
+      elements.top.style.width = containerSize ? toCssPixel(containerSize.width) : "100%";
+      elements.top.style.height = containerSize ? toCssPixel(containerSize.height) : "100%";
+
+      for (const part of [elements.right, elements.bottom, elements.left]) {
+        part.hidden = true;
+        part.removeAttribute("style");
+      }
+      return;
+    }
+
+    for (const part of parts) {
+      part.hidden = true;
       part.removeAttribute("style");
     }
     return;
   }
 
+  for (const part of parts) {
+    part.hidden = false;
+  }
+
+  const containerSize = options.containerSize;
+  const rightMaskWidth = containerSize
+    ? toCssPixel(Math.max(0, containerSize.width - rect.right))
+    : `calc(100% - ${toCssPixel(rect.right)})`;
+  const bottomMaskHeight = containerSize
+    ? toCssPixel(Math.max(0, containerSize.height - rect.bottom))
+    : `calc(100% - ${toCssPixel(rect.bottom)})`;
+  const fullMaskWidth = containerSize ? toCssPixel(containerSize.width) : "100%";
+
   elements.top.style.left = "0";
   elements.top.style.top = "0";
-  elements.top.style.width = "100vw";
+  elements.top.style.width = fullMaskWidth;
   elements.top.style.height = toCssPixel(rect.top);
 
   elements.right.style.left = toCssPixel(rect.right);
   elements.right.style.top = toCssPixel(rect.top);
-  elements.right.style.width = `calc(100vw - ${toCssPixel(rect.right)})`;
+  elements.right.style.width = rightMaskWidth;
   elements.right.style.height = toCssPixel(rect.height);
 
   elements.bottom.style.left = "0";
   elements.bottom.style.top = toCssPixel(rect.bottom);
-  elements.bottom.style.width = "100vw";
-  elements.bottom.style.height = `calc(100vh - ${toCssPixel(rect.bottom)})`;
+  elements.bottom.style.width = fullMaskWidth;
+  elements.bottom.style.height = bottomMaskHeight;
 
   elements.left.style.left = "0";
   elements.left.style.top = toCssPixel(rect.top);
