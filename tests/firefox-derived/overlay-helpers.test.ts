@@ -49,6 +49,16 @@ describe("getElementFromPoint", () => {
     expect(result.unsupportedReason).toBe("iframe");
   });
 
+  it("treats inaccessible iframe documents as unsupported host fallbacks", () => {
+    const iframe = fixtureElement("iframe", rectFromEdges(100, 50, 500, 350))
+      .setInaccessibleFrameContent(new DOMException("Blocked", "SecurityError"));
+    const result = getElementFromPoint(154, 96, asDocument(new FixtureDocument(iframe)));
+
+    expect(result.element).toBe(asElement(iframe));
+    expect(result.rect).toBeNull();
+    expect(result.unsupportedReason).toBe("iframe");
+  });
+
   it("walks into same-origin iframe documents and returns a parent viewport rect", () => {
     const iframeTarget = fixtureElement("article", rectFromEdges(20, 25, 120, 90));
     const iframeDocument = new FixtureDocument(iframeTarget);
@@ -82,6 +92,22 @@ describe("getElementFromPoint", () => {
     expect(result.unsupportedReason).toBeUndefined();
   });
 
+  it("projects nested inaccessible iframe fallbacks into the parent viewport", () => {
+    const nestedIframe = fixtureElement("iframe", rectFromEdges(40, 30, 240, 150))
+      .setClientOffset(2, 3)
+      .setInaccessibleFrameContent(new DOMException("Blocked", "SecurityError"));
+    const outerDocument = new FixtureDocument(nestedIframe);
+    const outerIframe = fixtureElement("iframe", rectFromEdges(100, 50, 500, 350))
+      .setClientOffset(4, 6)
+      .setFrameContentDocument(outerDocument);
+    const result = getElementFromPoint(166, 119, asDocument(new FixtureDocument(outerIframe)));
+
+    expect(outerDocument.lastElementFromPoint).toEqual({ x: 62, y: 63 });
+    expect(result.element).toBe(asElement(nestedIframe));
+    expect(result.rect).toEqual(rectFromEdges(144, 86, 344, 206));
+    expect(result.unsupportedReason).toBe("iframe");
+  });
+
   it("walks into open shadow roots inside same-origin iframe documents", () => {
     const host = fixtureElement("crop-host", rectFromEdges(20, 25, 220, 140));
     const button = fixtureElement("button", rectFromEdges(60, 50, 150, 95));
@@ -107,6 +133,23 @@ describe("getElementFromPoint", () => {
     expect(result.element).toBe(asElement(iframe));
     expect(result.rect).toBeNull();
     expect(result.unsupportedReason).toBe("iframe");
+  });
+
+  it("walks into same-origin iframe documents inside open shadow roots", () => {
+    const host = fixtureElement("crop-host", rectFromEdges(0, 0, 500, 400));
+    const iframeTarget = fixtureElement("article", rectFromEdges(12, 14, 132, 84));
+    const iframeDocument = new FixtureDocument(iframeTarget);
+    const iframe = fixtureElement("iframe", rectFromEdges(20, 20, 300, 200))
+      .setClientOffset(3, 5)
+      .setFrameContentDocument(iframeDocument);
+    host.attachShadowElement(iframe);
+
+    const result = getElementFromPoint(53, 59, asDocument(new FixtureDocument(host)));
+
+    expect(iframeDocument.lastElementFromPoint).toEqual({ x: 30, y: 34 });
+    expect(result.element).toBe(asElement(iframeTarget));
+    expect(result.rect).toEqual(rectFromEdges(35, 39, 155, 109));
+    expect(result.unsupportedReason).toBeUndefined();
   });
 });
 
