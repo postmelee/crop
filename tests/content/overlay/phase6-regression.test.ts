@@ -98,7 +98,7 @@ describe("Phase 6 overlay regression coverage", () => {
           clientHeight: 750
         }
       })
-    ).toEqual(sharedRectFromEdges(184, 72, 1167, 500));
+    ).toEqual(sharedRectFromEdges(185, 73, 1167, 500));
   });
 
   it("uses the last pointer and latest scroll position for edge auto-scroll drag updates", () => {

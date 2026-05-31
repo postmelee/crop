@@ -61,10 +61,10 @@ export function getSourceCropRect(input: SourceCropRectInput): CropRect | null {
   }
 
   const sourceRect = rectFromEdges(
-    Math.floor(input.viewportCropRect.left * scale.scaleX),
-    Math.floor(input.viewportCropRect.top * scale.scaleY),
-    Math.ceil(input.viewportCropRect.right * scale.scaleX),
-    Math.ceil(input.viewportCropRect.bottom * scale.scaleY)
+    Math.round(input.viewportCropRect.left * scale.scaleX),
+    Math.round(input.viewportCropRect.top * scale.scaleY),
+    Math.round(input.viewportCropRect.right * scale.scaleX),
+    Math.round(input.viewportCropRect.bottom * scale.scaleY)
   );
 
   return intersectRects(

@@ -12,6 +12,7 @@ GitHub Issue: [#14](https://github.com/postmelee/crop/issues/14)
 | 2 | same-origin iframe traversal 구현 | `overlay-helpers.ts`, overlay runtime 연결, iframe rect 테스트 | build/typecheck/test/grep/diff |
 | 3 | cross-origin fallback과 nested/open-shadow 회귀 정리 | inaccessible iframe fallback, shadow+iframe 조합 회귀 | build/typecheck/test/permission grep/diff |
 | 4 | fixture, smoke, 문서와 최종 보고 | Phase 6 fixture, README, 품질 매트릭스, 최종 보고서 | build/typecheck/test/smoke/grep/diff/status |
+| 5 | smoke 후속 capture pixel snapping 보정 | Firefox식 source pixel snapping, fractional rect 회귀 테스트, 보고서 보정 | build/typecheck/test/diff/status |
 
 ## 문서 위치 확인
 
@@ -218,6 +219,47 @@ git status --short
 
 ```text
 Task #14 Stage 4 + 최종 보고서: iframe/nested context 선택 지원
+```
+
+## Stage 5 — smoke 후속 capture pixel snapping 보정
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m020_14_stage5.md`
+
+수정:
+
+- `src/shared/crop-image.ts`
+- `tests/shared/crop-image.test.ts`
+- `tests/content/overlay/phase6-regression.test.ts`
+- `mydocs/plans/task_m020_14_impl.md`
+- `mydocs/report/task_m020_14_report.md`
+- `mydocs/orders/20260531.md`
+
+### 변경 내용
+
+- smoke 중 확인된 shadow button/srcdoc card 저장 PNG 상단 1px급 오차를 분석하고, source crop rect 정수화 정책을 Firefox의 region edge rounding에 맞춰 보정한다.
+- Chrome MV3는 Firefox `drawSnapshot` privileged API를 사용할 수 없으므로, `captureVisibleTab()` 결과 이미지를 crop하는 단계에서 `edge * scale`을 nearest source pixel로 snap한다.
+- 기존 `floor(left/top) + ceil(right/bottom)` 바깥쪽 확장 정책이 fractional DOM rect에서 배경 픽셀을 포함하던 문제를 회귀 테스트로 고정한다.
+- zoom-like viewport/image 비율 테스트 기대값을 새 snapping 정책에 맞춰 보정한다.
+
+### 검증
+
+```bash
+npm test -- tests/shared/crop-image.test.ts tests/content/overlay/phase6-regression.test.ts
+npm run build
+npm run typecheck
+npm run test
+git diff --check
+git status --short
+```
+
+### 커밋
+
+```text
+Task #14 Stage 5: capture pixel snapping 보정
 ```
 
 ## 검증 운영

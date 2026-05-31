@@ -41,7 +41,7 @@ describe("crop image helpers", () => {
   it.each([
     { label: "80%", naturalWidth: 800, naturalHeight: 600, expected: rectFromEdges(80, 40, 280, 200) },
     { label: "100%", naturalWidth: 1000, naturalHeight: 750, expected: rectFromEdges(100, 50, 350, 250) },
-    { label: "125%", naturalWidth: 1250, naturalHeight: 937.5, expected: rectFromEdges(125, 62, 438, 313) },
+    { label: "125%", naturalWidth: 1250, naturalHeight: 937.5, expected: rectFromEdges(125, 63, 438, 313) },
     { label: "150%", naturalWidth: 1500, naturalHeight: 1125, expected: rectFromEdges(150, 75, 525, 375) }
   ])("supports $label zoom-like viewport/image ratios", ({ naturalWidth, naturalHeight, expected }) => {
     expect(
@@ -51,6 +51,16 @@ describe("crop image helpers", () => {
         viewportCssSize: { clientWidth: 1000, clientHeight: 750 }
       })
     ).toEqual(expected);
+  });
+
+  it("snaps fractional element rect edges to nearest source pixels", () => {
+    expect(
+      getSourceCropRect({
+        viewportCropRect: rectFromEdges(448.5, 228.3359375, 559.2109375, 266.3359375),
+        imageNaturalSize: { naturalWidth: 1486, naturalHeight: 1726 },
+        viewportCssSize: { clientWidth: 743, clientHeight: 863 }
+      })
+    ).toEqual(rectFromEdges(897, 457, 1118, 533));
   });
 
   it("clips source crop rects to screenshot image bounds", () => {
