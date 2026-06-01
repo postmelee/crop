@@ -238,6 +238,56 @@ describe("full page capture helpers", () => {
     ]);
   });
 
+  it("runs per-tile capture hooks and restores hook state after a failed tile", async () => {
+    const events: string[] = [];
+    let currentScrollY = 0;
+
+    await expect(
+      captureFullPageTiles({
+        readMetrics: () =>
+          createFullPageMetrics({
+            viewportWidth: 500,
+            viewportHeight: 400,
+            scrollWidth: 500,
+            scrollHeight: 950,
+            scrollY: currentScrollY
+          }),
+        scrollTo: (_x, y) => {
+          events.push(`scroll:${y}`);
+          currentScrollY = y;
+        },
+        waitForPaint: () => Promise.resolve(),
+        beforeCaptureTile: (tile, index) => {
+          events.push(`before:${index}:${tile.scrollY}`);
+        },
+        afterCaptureTile: (tile, index) => {
+          events.push(`after:${index}:${tile.scrollY}`);
+        },
+        captureVisibleTab: async () => {
+          events.push(`capture:${currentScrollY}`);
+
+          if (currentScrollY === 400) {
+            throw new Error("capture failed");
+          }
+
+          return `data:image/png;base64,${currentScrollY}`;
+        }
+      })
+    ).rejects.toThrow("capture failed");
+
+    expect(events).toEqual([
+      "scroll:0",
+      "before:0:0",
+      "capture:0",
+      "after:0:0",
+      "scroll:400",
+      "before:1:400",
+      "capture:400",
+      "after:1:400",
+      "scroll:0"
+    ]);
+  });
+
   it("restores runtime state when tile capture fails", async () => {
     const events: string[] = [];
     let currentScrollY = 0;

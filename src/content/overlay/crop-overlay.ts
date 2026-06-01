@@ -207,6 +207,12 @@ export function mountCropOverlay(): void {
   let previousCaptureVisibility: string | null = null;
   let captureOverlayHiddenDepth = 0;
   let previousDocumentScrollBehavior: string | null = null;
+  let suppressedPageChromeElements:
+    | Array<{
+        readonly element: HTMLElement;
+        readonly visibility: string;
+      }>
+    | null = null;
 
   const readOverlayWindowDimensions = (): WindowDimensions => {
     const previousMeasuringState = host.dataset.cropMeasuring;
@@ -727,29 +733,39 @@ export function mountCropOverlay(): void {
     action: CaptureAction
   ): Promise<CropCapturePipelineResult> => {
     const stitchResult = await captureWithOverlayHidden(async () => {
-      const captureResult = await captureFullPageTiles({
-        captureVisibleTab: async () => {
-          const response = await requestVisibleTabCapture();
+      try {
+        const captureResult = await captureFullPageTiles({
+          captureVisibleTab: async () => {
+            const response = await requestVisibleTabCapture();
 
-          if (!response.ok) {
-            throw new Error(response.error);
+            if (!response.ok) {
+              throw new Error(response.error);
+            }
+
+            return response.dataUrl;
+          },
+          setOverlayHidden: setCaptureOverlayHidden,
+          setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled,
+          beforeCaptureTile: (_tile, index) => {
+            setCapturePageChromeSuppressed(index > 0);
+          },
+          afterCaptureTile: () => {
+            setCapturePageChromeSuppressed(false);
           }
+        });
 
-          return response.dataUrl;
-        },
-        setOverlayHidden: setCaptureOverlayHidden,
-        setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled
-      });
-
-      return stitchCapturedTiles({
-        outputCssSize: captureResult.plan.outputCssSize,
-        tiles: captureResult.tiles.map((tile) => ({
-          dataUrl: tile.dataUrl,
-          viewportCropRect: tile.viewportCropRect,
-          destinationCssRect: tile.destinationCssRect,
-          viewportCssSize: captureResult.plan.viewportCssSize
-        }))
-      });
+        return stitchCapturedTiles({
+          outputCssSize: captureResult.plan.outputCssSize,
+          tiles: captureResult.tiles.map((tile) => ({
+            dataUrl: tile.dataUrl,
+            viewportCropRect: tile.viewportCropRect,
+            destinationCssRect: tile.destinationCssRect,
+            viewportCssSize: captureResult.plan.viewportCssSize
+          }))
+        });
+      } finally {
+        setCapturePageChromeSuppressed(false);
+      }
     });
 
     return {
@@ -817,6 +833,35 @@ export function mountCropOverlay(): void {
 
     documentElement.style.scrollBehavior = previousDocumentScrollBehavior;
     previousDocumentScrollBehavior = null;
+  };
+
+  const setCapturePageChromeSuppressed = (suppressed: boolean): void => {
+    if (suppressed) {
+      if (suppressedPageChromeElements) {
+        return;
+      }
+
+      suppressedPageChromeElements = collectFullPageChromeElements(host).map((element) => ({
+        element,
+        visibility: element.style.visibility
+      }));
+
+      for (const entry of suppressedPageChromeElements) {
+        entry.element.style.visibility = "hidden";
+      }
+
+      return;
+    }
+
+    if (!suppressedPageChromeElements) {
+      return;
+    }
+
+    for (const entry of suppressedPageChromeElements) {
+      entry.element.style.visibility = entry.visibility;
+    }
+
+    suppressedPageChromeElements = null;
   };
 
   const setCapturePending = (isPending: boolean): void => {
@@ -1172,6 +1217,51 @@ function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
   }
 
   return element === host || element.closest(`[${ROOT_ATTRIBUTE}="true"]`) === host;
+}
+
+function collectFullPageChromeElements(host: HTMLElement): HTMLElement[] {
+  const body = document.body;
+
+  if (!body) {
+    return [];
+  }
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const chromeElements: HTMLElement[] = [];
+
+  for (const element of body.querySelectorAll<HTMLElement>("*")) {
+    if (!(element instanceof HTMLElement) || isCropOverlayElement(element, host)) {
+      continue;
+    }
+
+    const style = window.getComputedStyle(element);
+
+    if (style.display === "none" || style.visibility === "hidden") {
+      continue;
+    }
+
+    if (style.position !== "fixed" && style.position !== "sticky") {
+      continue;
+    }
+
+    if (!isViewportRectVisible(element.getBoundingClientRect(), viewportWidth, viewportHeight)) {
+      continue;
+    }
+
+    chromeElements.push(element);
+  }
+
+  return chromeElements;
+}
+
+function isViewportRectVisible(
+  rect: DOMRect,
+  viewportWidth: number,
+  viewportHeight: number
+): boolean {
+  return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 &&
+    rect.left < viewportWidth && rect.top < viewportHeight;
 }
 
 function updateActionButtons(

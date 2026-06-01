@@ -56,6 +56,21 @@ describe("stitch image helpers", () => {
     ).toEqual(rectFromEdges(1500, 1200, 1801, 1350));
   });
 
+  it("keeps adjacent destination tiles edge-aligned after pixel snapping", () => {
+    const scale = {
+      scaleX: 1.5,
+      scaleY: 1.5
+    };
+    const firstTile = getStitchDestinationPixelRect(rectFromEdges(0, 0, 333.3, 400), scale);
+    const secondTile = getStitchDestinationPixelRect(
+      rectFromEdges(333.3, 0, 666.6, 400),
+      scale
+    );
+
+    expect(firstTile.right).toBe(secondTile.left);
+    expect(firstTile.bottom).toBe(secondTile.bottom);
+  });
+
   it("rejects empty and over-limit output sizes", () => {
     expect(() => validateOutputPixelSize({ width: 0, height: 10 })).toThrow("non-empty");
     expect(() =>

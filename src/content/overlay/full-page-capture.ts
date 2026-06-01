@@ -84,6 +84,8 @@ export interface FullPageCaptureLoopOptions extends FullPageTilePlanOptions {
   readonly waitForPaint?: () => Promise<void>;
   readonly setOverlayHidden?: (hidden: boolean) => void;
   readonly setScrollBehaviorDisabled?: (disabled: boolean) => void;
+  readonly beforeCaptureTile?: (tile: FullPageTile, index: number) => void | Promise<void>;
+  readonly afterCaptureTile?: (tile: FullPageTile, index: number) => void | Promise<void>;
 }
 
 interface FullPageElementLike {
@@ -266,17 +268,24 @@ export async function captureFullPageTiles(
   try {
     await waitForPaint();
 
-    for (const tile of plan.tiles) {
+    for (let index = 0; index < plan.tiles.length; index += 1) {
+      const tile = plan.tiles[index];
+
       await scrollTo(tile.scrollX, tile.scrollY);
       await waitForPaint();
+      await options.beforeCaptureTile?.(tile, index);
 
-      tiles.push(
-        createCapturedFullPageTile({
-          tile,
-          dataUrl: await options.captureVisibleTab(),
-          metrics: readMetrics()
-        })
-      );
+      try {
+        tiles.push(
+          createCapturedFullPageTile({
+            tile,
+            dataUrl: await options.captureVisibleTab(),
+            metrics: readMetrics()
+          })
+        );
+      } finally {
+        await options.afterCaptureTile?.(tile, index);
+      }
     }
 
     return {

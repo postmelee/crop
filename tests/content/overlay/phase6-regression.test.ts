@@ -169,6 +169,21 @@ describe("Phase 6 overlay regression coverage", () => {
     }
   });
 
+  it("keeps full page stitching smoke targets in the fixture", () => {
+    for (const fixtureName of [
+      "full-page-capture-section",
+      "full-page-top-marker",
+      "full-page-mid-seam-marker",
+      "full-page-horizontal-overflow",
+      "full-page-bottom-marker",
+      "full-page-fixed-marker",
+      "sticky-header",
+      "offscreen-large-element"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+  });
+
   it("keeps same-origin iframe smoke targets in the fixture", () => {
     for (const fixtureName of [
       "same-document-iframe",
@@ -296,6 +311,11 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("stitchCapturedTiles");
     expect(overlayRuntime).toContain("captureFullPageRegion");
     expect(overlayRuntime).toContain("setCaptureScrollBehaviorDisabled");
+    expect(overlayRuntime).toContain("beforeCaptureTile");
+    expect(overlayRuntime).toContain("afterCaptureTile");
+    expect(overlayRuntime).toContain("setCapturePageChromeSuppressed(index > 0)");
+    expect(overlayRuntime).toContain("collectFullPageChromeElements");
+    expect(overlayRuntime).toContain('style.position !== "fixed" && style.position !== "sticky"');
     expect(overlayRuntime).toContain("host.dataset.cropCaptureMode = result.mode;");
     expect(overlayRuntime).toContain("host.dataset.cropCaptureTileCount");
     expect(overlayRuntime).toContain('selectedCaptureMode !== "full-page"');
