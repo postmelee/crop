@@ -29,7 +29,7 @@ import {
   getBestRectForElement,
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
-import { captureFullPageTiles } from "./full-page-capture";
+import { captureFullPageTiles, capturePageRectTiles } from "./full-page-capture";
 import {
   intersectRects,
   pageRectToViewportRect,
@@ -53,6 +53,7 @@ import { createPngFilename } from "../../shared/filename";
 import {
   clipPageRectToViewport,
   getViewportRect,
+  pageRectToViewportRect as pageRectToSharedViewportRect,
   type CropRect,
   type ViewportMetrics
 } from "../../shared/rect";
@@ -141,6 +142,7 @@ const TOAST_AUTO_DISMISS_MS = 2400;
 const FIREFOX_DETECT_VIEWPORT_MARGIN = 100;
 const FIREFOX_MIN_MAX_DETECT_HEIGHT = 700;
 const FIREFOX_MIN_MAX_DETECT_WIDTH = 1000;
+const RECT_EDGE_EPSILON = 0.001;
 
 function flashExistingOverlay(existingRoot: HTMLElement): boolean {
   if (existingRoot.getAttribute(ROOT_ATTRIBUTE) !== "true") {
@@ -881,6 +883,21 @@ export function mountCropOverlay(): void {
     selectedRect: PageRect,
     visibilityOptions: CaptureOverlayVisibilityOptions = {}
   ): Promise<CropCapturePipelineResult> => {
+    const viewport = getViewportMetrics();
+    const viewportRect = clipPageRectToViewport(selectedRect, viewport);
+
+    if (!viewportRect || !isPageRectFullyInsideViewport(selectedRect, viewport, viewportRect)) {
+      return captureSelectedPageRectRegion(action, selectedRect, visibilityOptions);
+    }
+
+    return captureVisibleSelectedRegion(action, selectedRect, visibilityOptions);
+  };
+
+  const captureVisibleSelectedRegion = async (
+    action: CaptureAction,
+    selectedRect: PageRect,
+    visibilityOptions: CaptureOverlayVisibilityOptions
+  ): Promise<CropCapturePipelineResult> => {
     const cropResult = await captureWithOverlayHidden(async () => {
       const viewport = getViewportMetrics();
       const viewportRect = clipPageRectToViewport(selectedRect, viewport);
@@ -917,6 +934,57 @@ export function mountCropOverlay(): void {
       sourceRect: cropResult.cropResult.sourceRect,
       outputWidth: cropResult.cropResult.outputWidth,
       outputHeight: cropResult.cropResult.outputHeight
+    };
+  };
+
+  const captureSelectedPageRectRegion = async (
+    action: CaptureAction,
+    selectedRect: PageRect,
+    visibilityOptions: CaptureOverlayVisibilityOptions
+  ): Promise<CropCapturePipelineResult> => {
+    let stitchResult: StitchCapturedTilesResult;
+
+    try {
+      setCaptureDocumentChromeSuppressed(true);
+
+      const captureResult = await capturePageRectTiles({
+        pageRect: selectedRect,
+        captureVisibleTab: captureVisibleTabDataUrl,
+        setOverlayHidden: setCaptureOverlayHidden,
+        setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled,
+        beforeCaptureTile: (_tile, index) => {
+          setCapturePageChromeSuppressed(index > 0);
+        },
+        afterCaptureTile: () => {
+          setCapturePageChromeSuppressed(false);
+        }
+      });
+
+      stitchResult = await stitchCapturedTiles({
+        outputCssSize: captureResult.plan.outputCssSize,
+        tiles: captureResult.tiles.map((tile) => ({
+          dataUrl: tile.dataUrl,
+          viewportCropRect: tile.viewportCropRect,
+          destinationCssRect: tile.destinationCssRect,
+          viewportCssSize: captureResult.plan.viewportCssSize
+        }))
+      });
+
+      if (visibilityOptions.keepHiddenOnSuccess) {
+        setCaptureOverlayHidden(true);
+      }
+    } finally {
+      setCapturePageChromeSuppressed(false);
+      setCaptureDocumentChromeSuppressed(false);
+    }
+
+    return {
+      action,
+      mode: "visible",
+      dataUrl: stitchResult.dataUrl,
+      outputWidth: stitchResult.outputWidth,
+      outputHeight: stitchResult.outputHeight,
+      tileCount: stitchResult.drawnTiles
     };
   };
 
@@ -967,15 +1035,7 @@ export function mountCropOverlay(): void {
       setCaptureDocumentChromeSuppressed(true);
 
       const captureResult = await captureFullPageTiles({
-        captureVisibleTab: async () => {
-          const response = await requestVisibleTabCapture();
-
-          if (!response.ok) {
-            throw new Error(response.error);
-          }
-
-          return response.dataUrl;
-        },
+        captureVisibleTab: captureVisibleTabDataUrl,
         setOverlayHidden: setCaptureOverlayHidden,
         setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled,
         beforeCaptureTile: (_tile, index) => {
@@ -1008,6 +1068,16 @@ export function mountCropOverlay(): void {
       outputHeight: stitchResult.outputHeight,
       tileCount: stitchResult.drawnTiles
     };
+  };
+
+  const captureVisibleTabDataUrl = async (): Promise<string> => {
+    const response = await requestVisibleTabCapture();
+
+    if (!response.ok) {
+      throw new Error(response.error);
+    }
+
+    return response.dataUrl;
   };
 
   const captureWithOverlayHidden = async <Result>(
@@ -1892,6 +1962,26 @@ function getViewportMetrics(): ViewportMetrics {
     scrollX: windowDimensions.scrollX,
     scrollY: windowDimensions.scrollY
   };
+}
+
+function isPageRectFullyInsideViewport(
+  pageRect: PageRect,
+  viewport: ViewportMetrics,
+  visibleViewportRect: CropRect
+): boolean {
+  return areRectEdgesApproximatelyEqual(
+    pageRectToSharedViewportRect(pageRect, viewport),
+    visibleViewportRect
+  );
+}
+
+function areRectEdgesApproximatelyEqual(first: CropRect, second: CropRect): boolean {
+  return (
+    Math.abs(first.left - second.left) <= RECT_EDGE_EPSILON &&
+    Math.abs(first.top - second.top) <= RECT_EDGE_EPSILON &&
+    Math.abs(first.right - second.right) <= RECT_EDGE_EPSILON &&
+    Math.abs(first.bottom - second.bottom) <= RECT_EDGE_EPSILON
+  );
 }
 
 function getPreviewKeyboardAction(event: KeyboardEvent): CaptureAction | null {

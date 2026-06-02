@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   captureFullPageTiles,
+  capturePageRectTiles,
   createCapturedFullPageTile,
   createFullPageMetrics,
   createFullPageTilePlan,
@@ -341,6 +342,64 @@ describe("full page capture helpers", () => {
       "hidden:false",
       "paint",
       "scroll:0,120",
+      "paint",
+      "scrollBehaviorDisabled:false",
+      "hidden:false"
+    ]);
+  });
+
+  it("captures selected page rect tiles and restores the initial scroll position", async () => {
+    const events: string[] = [];
+    let currentScrollX = 12;
+    let currentScrollY = 34;
+    const readMetrics = (): FullPageMetrics =>
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 400,
+        scrollWidth: 1600,
+        scrollHeight: 1200,
+        scrollX: currentScrollX,
+        scrollY: currentScrollY
+      });
+
+    const result = await capturePageRectTiles({
+      pageRect: rectFromEdges(420, 360, 1120, 960),
+      readMetrics,
+      scrollTo: (x, y) => {
+        events.push(`scroll:${x},${y}`);
+        currentScrollX = x;
+        currentScrollY = y;
+      },
+      waitForPaint: () => {
+        events.push("paint");
+        return Promise.resolve();
+      },
+      setOverlayHidden: (hidden) => {
+        events.push(`hidden:${hidden}`);
+      },
+      setScrollBehaviorDisabled: (disabled) => {
+        events.push(`scrollBehaviorDisabled:${disabled}`);
+      },
+      captureVisibleTab: async () => {
+        events.push(`capture:${currentScrollX},${currentScrollY}`);
+        return `data:image/png;base64,${currentScrollX}-${currentScrollY}`;
+      }
+    });
+
+    expect(result.plan.outputCssSize).toEqual({ width: 700, height: 600 });
+    expect(result.tiles.map((tile) => tile.actualScrollX)).toEqual([420, 920, 420, 920]);
+    expect(result.tiles.map((tile) => tile.actualScrollY)).toEqual([360, 360, 760, 760]);
+    expect(result.tiles.map((tile) => tile.destinationCssRect)).toEqual([
+      rectFromEdges(0, 0, 500, 400),
+      rectFromEdges(500, 0, 700, 400),
+      rectFromEdges(0, 400, 500, 600),
+      rectFromEdges(500, 400, 700, 600)
+    ]);
+    expect(currentScrollX).toBe(12);
+    expect(currentScrollY).toBe(34);
+    expect(events.at(0)).toBe("scrollBehaviorDisabled:true");
+    expect(events.slice(-4)).toEqual([
+      "scroll:12,34",
       "paint",
       "scrollBehaviorDisabled:false",
       "hidden:false"

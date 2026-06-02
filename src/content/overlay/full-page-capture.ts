@@ -93,6 +93,10 @@ export interface FullPageCaptureLoopOptions extends FullPageTilePlanOptions {
   readonly afterCaptureTile?: (tile: FullPageTile, index: number) => void | Promise<void>;
 }
 
+export interface PageRectCaptureLoopOptions extends FullPageCaptureLoopOptions {
+  readonly pageRect: CropRectLike;
+}
+
 interface FullPageElementLike {
   readonly clientWidth: number;
   readonly clientHeight: number;
@@ -281,11 +285,26 @@ export function createPageRectTilePlan(
 export async function captureFullPageTiles(
   options: FullPageCaptureLoopOptions
 ): Promise<FullPageCaptureLoopResult> {
+  return captureTiles(options, (metrics) => createFullPageTilePlan(metrics, options));
+}
+
+export async function capturePageRectTiles(
+  options: PageRectCaptureLoopOptions
+): Promise<FullPageCaptureLoopResult> {
+  return captureTiles(options, (metrics) =>
+    createPageRectTilePlan(metrics, options.pageRect, options)
+  );
+}
+
+async function captureTiles(
+  options: FullPageCaptureLoopOptions,
+  createTilePlan: (metrics: FullPageMetrics) => FullPageTilePlan
+): Promise<FullPageCaptureLoopResult> {
   const readMetrics = options.readMetrics ?? readFullPageMetrics;
   const scrollTo = options.scrollTo ?? defaultScrollTo;
   const waitForPaint = options.waitForPaint ?? waitForNextPaint;
   const initialMetrics = readMetrics();
-  const plan = createFullPageTilePlan(initialMetrics, options);
+  const plan = createTilePlan(initialMetrics);
   const tiles: CapturedFullPageTile[] = [];
 
   options.setScrollBehaviorDisabled?.(true);

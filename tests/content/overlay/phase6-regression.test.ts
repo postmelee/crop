@@ -362,6 +362,9 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("setPreviewCaptureResult");
     expect(overlayRuntime).toContain("captureVisibleViewportRegion");
     expect(overlayRuntime).toContain("getViewportRect(viewport)");
+    expect(overlayRuntime).toContain("isPageRectFullyInsideViewport");
+    expect(overlayRuntime).toContain("captureSelectedPageRectRegion");
+    expect(overlayRuntime).toContain("capturePageRectTiles");
     expect(overlayRuntime).toContain("setModeCapturePending");
     expect(overlayCss).toContain('[data-crop-mode-capture-pending="true"]');
     expect(overlayRuntime).toContain("captureFullPageTiles");
