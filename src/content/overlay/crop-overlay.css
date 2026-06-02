@@ -295,11 +295,18 @@
   display: none;
 }
 
+:host([data-crop-preview="true"]) .crop-prompt,
+:host([data-crop-mode-capture-pending="true"]) .crop-prompt {
+  display: none;
+}
+
 :host([data-crop-state="draggingReady"]) .crop-mode-toolbar,
 :host([data-crop-state="dragging"]) .crop-mode-toolbar,
 :host([data-crop-state="selected"]) .crop-mode-toolbar,
 :host([data-crop-state="moving"]) .crop-mode-toolbar,
-:host([data-crop-state="resizing"]) .crop-mode-toolbar {
+:host([data-crop-state="resizing"]) .crop-mode-toolbar,
+:host([data-crop-preview="true"]) .crop-mode-toolbar,
+:host([data-crop-mode-capture-pending="true"]) .crop-mode-toolbar {
   display: none;
 }
 
@@ -408,6 +415,132 @@
 }
 
 .crop-actions[hidden] {
+  display: none;
+}
+
+.crop-preview {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 52px 44px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.58);
+  overscroll-behavior: contain;
+  cursor: auto;
+  pointer-events: auto;
+  z-index: var(--crop-layer-highest);
+}
+
+.crop-preview[hidden] {
+  display: none;
+}
+
+.crop-preview-dialog {
+  --crop-preview-inline-padding: 24px;
+  display: flex;
+  flex-direction: column;
+  width: min(1480px, calc(100vw - 104px));
+  height: min(860px, calc(100vh - 68px));
+  overflow: hidden;
+  border-radius: 6px;
+  background: #44414f;
+  box-shadow:
+    0 24px 58px rgba(0, 0, 0, 0.46),
+    0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.crop-preview-surface {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--crop-preview-inline-padding) 24px;
+  background: #44414f;
+}
+
+.crop-preview-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+
+:host([data-crop-capture-mode="visible"]) .crop-preview-surface {
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+:host([data-crop-capture-mode="visible"]) .crop-preview-image {
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.crop-preview-footer {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding: 8px var(--crop-preview-inline-padding) 6px;
+  pointer-events: none;
+}
+
+.crop-preview-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: calc(100vw - 56px);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #fbfbfe;
+  box-shadow: none;
+  pointer-events: auto;
+  --crop-firefox-button-background-color: color-mix(in srgb, currentColor 7%, transparent);
+  --crop-firefox-button-background-color-hover: color-mix(
+    in srgb,
+    currentColor 14%,
+    transparent
+  );
+  --crop-firefox-button-background-color-active: color-mix(
+    in srgb,
+    currentColor 21%,
+    transparent
+  );
+  --crop-firefox-primary-background-color: #5abad7;
+  --crop-firefox-primary-background-color-hover: #90d3e8;
+  --crop-firefox-primary-background-color-active: #c0e7f5;
+  --crop-firefox-primary-text-color: #15141a;
+  --crop-firefox-focus-outline-color: #5abad7;
+}
+
+.crop-preview-actions .crop-action-group {
+  gap: 8px;
+}
+
+.crop-preview-actions .crop-action {
+  margin: 0;
+}
+
+.crop-preview-status {
+  flex-basis: 100%;
+  max-width: 230px;
+  padding: 1px 6px 2px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 15px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.crop-preview-status[hidden] {
   display: none;
 }
 
@@ -549,7 +682,7 @@
 
 .crop-mode-toolbar {
   position: fixed;
-  top: -8px;
+  top: 8px;
   right: 10px;
   display: inline-flex;
   align-items: stretch;
@@ -611,8 +744,16 @@
 }
 
 .crop-mode-button--full-page {
-  background: #2f7df6;
+  background: #0060df;
   color: #ffffff;
+}
+
+.crop-mode-button--full-page:hover {
+  background: #0250bb;
+}
+
+.crop-mode-button--full-page:hover:active {
+  background: #054096;
 }
 
 .crop-mode-icon {
@@ -710,6 +851,15 @@
 }
 
 @media (max-width: 520px) {
+  .crop-preview {
+    padding: 16px;
+  }
+
+  .crop-preview-dialog {
+    width: calc(100vw - 32px);
+    height: calc(100vh - 32px);
+  }
+
   .crop-mode-toolbar {
     top: 4px;
     right: 4px;

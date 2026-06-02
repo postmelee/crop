@@ -29,11 +29,7 @@ import {
   getBestRectForElement,
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
-import {
-  captureFullPageTiles,
-  getFullPageBounds,
-  readFullPageMetrics
-} from "./full-page-capture";
+import { captureFullPageTiles } from "./full-page-capture";
 import {
   intersectRects,
   pageRectToViewportRect,
@@ -54,16 +50,21 @@ import {
 } from "../../shared/clipboard";
 import { cropPngDataUrl } from "../../shared/crop-image";
 import { createPngFilename } from "../../shared/filename";
-import { clipPageRectToViewport, type CropRect, type ViewportMetrics } from "../../shared/rect";
-import { stitchCapturedTiles } from "../../shared/stitch-image";
+import {
+  clipPageRectToViewport,
+  getViewportRect,
+  type CropRect,
+  type ViewportMetrics
+} from "../../shared/rect";
+import { stitchCapturedTiles, type StitchCapturedTilesResult } from "../../shared/stitch-image";
 
 interface PointerPosition {
   readonly x: number;
   readonly y: number;
 }
 
-type CropAction = "copy" | "save" | "cancel";
-type CaptureAction = Exclude<CropAction, "cancel">;
+type CropAction = "copy" | "save" | "cancel" | "retry";
+type CaptureAction = Exclude<CropAction, "cancel" | "retry">;
 type CaptureMode = "visible" | "full-page";
 
 const CROP_CAPTURE_VISIBLE_TAB_MESSAGE = "crop.captureVisibleTab";
@@ -119,6 +120,10 @@ interface CropCapturePipelineResult {
   readonly outputWidth: number;
   readonly outputHeight: number;
   readonly tileCount?: number;
+}
+
+interface CaptureOverlayVisibilityOptions {
+  readonly keepHiddenOnSuccess?: boolean;
 }
 
 interface CropCaptureHost extends HTMLElement {
@@ -207,6 +212,8 @@ export function mountCropOverlay(): void {
   let previousCaptureVisibility: string | null = null;
   let captureOverlayHiddenDepth = 0;
   let previousDocumentScrollBehavior: string | null = null;
+  let captureDocumentChromeStyle: HTMLStyleElement | null = null;
+  let previewCaptureResult: CropCapturePipelineResult | null = null;
   let suppressedPageChromeElements:
     | Array<{
         readonly element: HTMLElement;
@@ -240,11 +247,14 @@ export function mountCropOverlay(): void {
     window.removeEventListener("pointermove", handlePointerMove, true);
     window.removeEventListener("pointerup", handlePointerUp, true);
     window.removeEventListener("click", handleClick, true);
+    window.removeEventListener("wheel", handleWheel, true);
     window.removeEventListener("scroll", handleViewportChange, true);
     window.removeEventListener("resize", handleViewportChange, true);
     clearSuppressedDocumentClick();
     cancelPendingHoverUpdate();
     stopEdgeScroll();
+    setCapturePageChromeSuppressed(false);
+    setCaptureDocumentChromeSuppressed(false);
     host.remove();
   };
 
@@ -259,6 +269,29 @@ export function mountCropOverlay(): void {
       event.preventDefault();
       event.stopPropagation();
       requestClose();
+      return;
+    }
+
+    const previewShortcutAction = getPreviewKeyboardAction(event);
+
+    if (previewCaptureResult && previewShortcutAction) {
+      event.preventDefault();
+      event.stopPropagation();
+      startPreviewAction(previewShortcutAction);
+      return;
+    }
+
+    const selectedShortcutAction = getCaptureKeyboardAction(event);
+
+    if (
+      selectedShortcutAction &&
+      overlayState.status === "selected" &&
+      overlayState.selectedRect &&
+      !shouldIgnoreCaptureKeyboardTarget(event.target)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      startCaptureAction(selectedShortcutAction);
       return;
     }
 
@@ -508,6 +541,14 @@ export function mountCropOverlay(): void {
 
       if (action === "cancel") {
         requestClose();
+      } else if (action === "retry") {
+        if (previewCaptureResult?.mode === "visible") {
+          startVisibleViewportPreview();
+        } else {
+          startFullPagePreview();
+        }
+      } else if (previewCaptureResult) {
+        startPreviewAction(action);
       } else {
         startCaptureAction(action);
       }
@@ -522,12 +563,9 @@ export function mountCropOverlay(): void {
       event.stopPropagation();
 
       if (mode === "full-page") {
-        selectFullPageMode();
+        startFullPagePreview();
       } else {
-        selectedCaptureMode = "visible";
-        overlayState = transitionOverlayState(overlayState, { type: "resetSelection" });
-        cancelPendingHoverUpdate();
-        renderOverlayState();
+        startVisibleViewportPreview();
       }
 
       return;
@@ -569,20 +607,111 @@ export function mountCropOverlay(): void {
         )
     });
     selectedCaptureMode = "visible";
+    previewCaptureResult = null;
+    setPreviewCaptureResult(null);
     cancelPendingHoverUpdate();
     renderOverlayState();
   };
 
-  const selectFullPageMode = (): void => {
-    const fullPageBounds = getFullPageBounds(readFullPageMetrics());
-    selectedCaptureMode = "full-page";
-    overlayState = transitionOverlayState(overlayState, {
-      type: "select",
-      rect: fullPageBounds
-    });
+  const handleWheel = (event: WheelEvent): void => {
+    if (!previewCaptureResult || !isCropOverlayEvent(event, host)) {
+      return;
+    }
+
+    event.stopPropagation();
+
+    if (!isPreviewScrollableEvent(event)) {
+      event.preventDefault();
+    }
+  };
+
+  const startVisibleViewportPreview = (): void => {
+    if (pendingCapture) {
+      return;
+    }
+
+    pendingCapture = true;
+    selectedCaptureMode = "visible";
+    previewCaptureResult = null;
+    setPreviewCaptureResult(null);
+    setModeCapturePending(true);
+    setActionStatus(null);
+    overlayState = transitionOverlayState(overlayState, { type: "resetSelection" });
     cancelPendingHoverUpdate();
     stopEdgeScroll();
     renderOverlayState();
+
+    void captureVisibleViewportRegion("copy")
+      .then((result) => {
+        if (overlayRemoved) {
+          return;
+        }
+
+        previewCaptureResult = result;
+        recordCaptureSuccess(result);
+        setPreviewCaptureResult(result);
+      })
+      .catch((error) => {
+        if (overlayRemoved) {
+          return;
+        }
+
+        recordCaptureFailure(error, "copy");
+        console.warn(`[crop] Failed to capture visible viewport: ${formatCaptureError(error)}.`);
+      })
+      .finally(() => {
+        pendingCapture = false;
+
+        if (!overlayRemoved) {
+          setModeCapturePending(false);
+          renderOverlayState();
+        }
+      });
+  };
+
+  const startFullPagePreview = (): void => {
+    if (pendingCapture) {
+      return;
+    }
+
+    pendingCapture = true;
+    selectedCaptureMode = "full-page";
+    previewCaptureResult = null;
+    setPreviewCaptureResult(null);
+    setModeCapturePending(true);
+    setActionStatus(null);
+    overlayState = transitionOverlayState(overlayState, { type: "resetSelection" });
+    cancelPendingHoverUpdate();
+    stopEdgeScroll();
+    renderOverlayState();
+
+    void captureFullPageRegion("copy")
+      .then((result) => {
+        if (overlayRemoved) {
+          return;
+        }
+
+        previewCaptureResult = result;
+        recordCaptureSuccess(result);
+        setPreviewCaptureResult(result);
+      })
+      .catch((error) => {
+        if (overlayRemoved) {
+          return;
+        }
+
+        selectedCaptureMode = "visible";
+        recordCaptureFailure(error, "copy");
+        console.warn(`[crop] Failed to capture full page: ${formatCaptureError(error)}.`);
+      })
+      .finally(() => {
+        pendingCapture = false;
+
+        if (!overlayRemoved) {
+          setModeCapturePending(false);
+          renderOverlayState();
+        }
+      });
   };
 
   const startCaptureAction = (action: CaptureAction): void => {
@@ -619,10 +748,9 @@ export function mountCropOverlay(): void {
     selectedRect: PageRect
   ): Promise<void> => {
     try {
-      const result =
-        selectedCaptureMode === "full-page"
-          ? await captureFullPageRegion(action)
-          : await captureSelectedRegion(action, selectedRect);
+      const result = await captureSelectedRegion(action, selectedRect, {
+        keepHiddenOnSuccess: true
+      });
 
       if (overlayRemoved) {
         return;
@@ -647,8 +775,70 @@ export function mountCropOverlay(): void {
       host.dataset.cropDownloadFilename = filename;
       removeOverlay();
     } catch (error) {
+      setCaptureOverlayHidden(false);
       throw error;
     }
+  };
+
+  const startPreviewAction = (action: CaptureAction): void => {
+    if (pendingCapture || !previewCaptureResult) {
+      return;
+    }
+
+    pendingCapture = true;
+    setPreviewStatus(null);
+    setPreviewPending(true);
+
+    void performPreviewAction(action, previewCaptureResult)
+      .catch((error) => {
+        if (overlayRemoved) {
+          return;
+        }
+
+        recordCaptureFailure(error, action);
+        setPreviewStatus(
+          action === "copy"
+            ? "복사 실패. Save로 저장할 수 있습니다."
+            : "저장 실패. 다시 시도하세요.",
+          action
+        );
+      })
+      .finally(() => {
+        pendingCapture = false;
+
+        if (!overlayRemoved) {
+          setPreviewPending(false);
+        }
+      });
+  };
+
+  const performPreviewAction = async (
+    action: CaptureAction,
+    previewResult: CropCapturePipelineResult
+  ): Promise<void> => {
+    const result = {
+      ...previewResult,
+      action
+    };
+
+    recordCaptureSuccess(result);
+
+    if (action === "copy") {
+      await writePngDataUrlToClipboard(result.dataUrl);
+      host.dataset.cropClipboardStatus = "ok";
+      showCompletionToast({
+        result,
+        message: "스크린샷이 복사되었습니다!",
+        status: "copied"
+      });
+      removeOverlay();
+      return;
+    }
+
+    const filename = await requestPngDownload(result.dataUrl, document.title);
+    host.dataset.cropDownloadStatus = "ok";
+    host.dataset.cropDownloadFilename = filename;
+    removeOverlay();
   };
 
   const recordCaptureSuccess = (result: CropCapturePipelineResult): void => {
@@ -688,7 +878,8 @@ export function mountCropOverlay(): void {
 
   const captureSelectedRegion = async (
     action: CaptureAction,
-    selectedRect: PageRect
+    selectedRect: PageRect,
+    visibilityOptions: CaptureOverlayVisibilityOptions = {}
   ): Promise<CropCapturePipelineResult> => {
     const cropResult = await captureWithOverlayHidden(async () => {
       const viewport = getViewportMetrics();
@@ -716,7 +907,7 @@ export function mountCropOverlay(): void {
           }
         })
       };
-    });
+    }, visibilityOptions);
 
     return {
       action,
@@ -729,44 +920,85 @@ export function mountCropOverlay(): void {
     };
   };
 
+  const captureVisibleViewportRegion = async (
+    action: CaptureAction
+  ): Promise<CropCapturePipelineResult> => {
+    const captureResult = await captureWithOverlayHidden(async () => {
+      const viewport = getViewportMetrics();
+      const viewportRect = getViewportRect(viewport);
+
+      await waitForNextPaint();
+      const captureResponse = await requestVisibleTabCapture();
+
+      if (!captureResponse.ok) {
+        throw new Error(captureResponse.error);
+      }
+
+      return {
+        viewportRect,
+        cropResult: await cropPngDataUrl({
+          dataUrl: captureResponse.dataUrl,
+          viewportCropRect: viewportRect,
+          viewportCssSize: {
+            clientWidth: viewport.clientWidth,
+            clientHeight: viewport.clientHeight
+          }
+        })
+      };
+    });
+
+    return {
+      action,
+      mode: "visible",
+      dataUrl: captureResult.cropResult.dataUrl,
+      viewportRect: captureResult.viewportRect,
+      sourceRect: captureResult.cropResult.sourceRect,
+      outputWidth: captureResult.cropResult.outputWidth,
+      outputHeight: captureResult.cropResult.outputHeight
+    };
+  };
+
   const captureFullPageRegion = async (
     action: CaptureAction
   ): Promise<CropCapturePipelineResult> => {
-    const stitchResult = await captureWithOverlayHidden(async () => {
-      try {
-        const captureResult = await captureFullPageTiles({
-          captureVisibleTab: async () => {
-            const response = await requestVisibleTabCapture();
+    let stitchResult: StitchCapturedTilesResult;
 
-            if (!response.ok) {
-              throw new Error(response.error);
-            }
+    try {
+      setCaptureDocumentChromeSuppressed(true);
 
-            return response.dataUrl;
-          },
-          setOverlayHidden: setCaptureOverlayHidden,
-          setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled,
-          beforeCaptureTile: (_tile, index) => {
-            setCapturePageChromeSuppressed(index > 0);
-          },
-          afterCaptureTile: () => {
-            setCapturePageChromeSuppressed(false);
+      const captureResult = await captureFullPageTiles({
+        captureVisibleTab: async () => {
+          const response = await requestVisibleTabCapture();
+
+          if (!response.ok) {
+            throw new Error(response.error);
           }
-        });
 
-        return stitchCapturedTiles({
-          outputCssSize: captureResult.plan.outputCssSize,
-          tiles: captureResult.tiles.map((tile) => ({
-            dataUrl: tile.dataUrl,
-            viewportCropRect: tile.viewportCropRect,
-            destinationCssRect: tile.destinationCssRect,
-            viewportCssSize: captureResult.plan.viewportCssSize
-          }))
-        });
-      } finally {
-        setCapturePageChromeSuppressed(false);
-      }
-    });
+          return response.dataUrl;
+        },
+        setOverlayHidden: setCaptureOverlayHidden,
+        setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled,
+        beforeCaptureTile: (_tile, index) => {
+          setCapturePageChromeSuppressed(index > 0);
+        },
+        afterCaptureTile: () => {
+          setCapturePageChromeSuppressed(false);
+        }
+      });
+
+      stitchResult = await stitchCapturedTiles({
+        outputCssSize: captureResult.plan.outputCssSize,
+        tiles: captureResult.tiles.map((tile) => ({
+          dataUrl: tile.dataUrl,
+          viewportCropRect: tile.viewportCropRect,
+          destinationCssRect: tile.destinationCssRect,
+          viewportCssSize: captureResult.plan.viewportCssSize
+        }))
+      });
+    } finally {
+      setCapturePageChromeSuppressed(false);
+      setCaptureDocumentChromeSuppressed(false);
+    }
 
     return {
       action,
@@ -779,14 +1011,20 @@ export function mountCropOverlay(): void {
   };
 
   const captureWithOverlayHidden = async <Result>(
-    capture: () => Promise<Result>
+    capture: () => Promise<Result>,
+    visibilityOptions: CaptureOverlayVisibilityOptions = {}
   ): Promise<Result> => {
     setCaptureOverlayHidden(true);
+    let completed = false;
 
     try {
-      return await capture();
+      const result = await capture();
+      completed = true;
+      return result;
     } finally {
-      setCaptureOverlayHidden(false);
+      if (!visibilityOptions.keepHiddenOnSuccess || !completed) {
+        setCaptureOverlayHidden(false);
+      }
     }
   };
 
@@ -833,6 +1071,34 @@ export function mountCropOverlay(): void {
 
     documentElement.style.scrollBehavior = previousDocumentScrollBehavior;
     previousDocumentScrollBehavior = null;
+  };
+
+  const setCaptureDocumentChromeSuppressed = (suppressed: boolean): void => {
+    if (suppressed) {
+      if (captureDocumentChromeStyle) {
+        return;
+      }
+
+      const style = document.createElement("style");
+      style.setAttribute("data-crop-capture-style", "true");
+      style.textContent = `
+        html, body, * {
+          scrollbar-width: none !important;
+        }
+
+        ::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+      `;
+      (document.head ?? document.documentElement).append(style);
+      captureDocumentChromeStyle = style;
+      return;
+    }
+
+    captureDocumentChromeStyle?.remove();
+    captureDocumentChromeStyle = null;
   };
 
   const setCapturePageChromeSuppressed = (suppressed: boolean): void => {
@@ -904,6 +1170,66 @@ export function mountCropOverlay(): void {
     }
   };
 
+  const setModeCapturePending = (isPending: boolean): void => {
+    if (isPending) {
+      host.dataset.cropModeCapturePending = "true";
+      return;
+    }
+
+    delete host.dataset.cropModeCapturePending;
+  };
+
+  const setPreviewCaptureResult = (result: CropCapturePipelineResult | null): void => {
+    if (!template) {
+      return;
+    }
+
+    if (!result) {
+      delete host.dataset.cropPreview;
+      template.preview.container.hidden = true;
+      template.preview.image.removeAttribute("src");
+      setPreviewStatus(null);
+      return;
+    }
+
+    host.dataset.cropPreview = "true";
+    template.preview.image.src = result.dataUrl;
+    template.preview.container.hidden = false;
+    setPreviewStatus(null);
+  };
+
+  const setPreviewPending = (isPending: boolean): void => {
+    if (!template) {
+      return;
+    }
+
+    if (isPending) {
+      template.preview.actions.setAttribute("aria-busy", "true");
+    } else {
+      template.preview.actions.removeAttribute("aria-busy");
+    }
+  };
+
+  const setPreviewStatus = (message: string | null, action?: CaptureAction): void => {
+    if (!template) {
+      return;
+    }
+
+    if (!message) {
+      template.preview.status.hidden = true;
+      template.preview.status.textContent = "";
+      delete template.preview.status.dataset.cropActionStatus;
+      return;
+    }
+
+    template.preview.status.hidden = false;
+    template.preview.status.textContent = message;
+
+    if (action) {
+      template.preview.status.dataset.cropActionStatus = action;
+    }
+  };
+
   const renderOverlayState = (): void => {
     const previousStatus = previousRenderedStatus;
     previousRenderedStatus = overlayState.status;
@@ -914,6 +1240,18 @@ export function mountCropOverlay(): void {
       const windowDimensions = readOverlayWindowDimensions();
       applyDocumentOverlayPresentation(host, windowDimensions);
       updateModeButtons(template, selectedCaptureMode);
+
+      if (previewCaptureResult) {
+        template.selectionMask.container.hidden = true;
+        applyHighlightPresentation(template.highlight, null);
+        applySelectionControlsPresentation(template.selectionControls.container, null);
+        applySelectionSizePresentation(template.selectionControls.sizeBadge, null, null);
+        updateActionButtons(template, null, {
+          clientWidth: windowDimensions.clientWidth,
+          clientHeight: windowDimensions.clientHeight
+        });
+        return;
+      }
 
       const activePageRect = overlayState.selectedRect ?? overlayState.hoverRect;
       const selectionPageRect = isSelectionVisibleStatus(overlayState.status)
@@ -1103,6 +1441,7 @@ export function mountCropOverlay(): void {
   window.addEventListener("pointermove", handlePointerMove, true);
   window.addEventListener("pointerup", handlePointerUp, true);
   window.addEventListener("click", handleClick, true);
+  window.addEventListener("wheel", handleWheel, { capture: true, passive: false });
   window.addEventListener("scroll", handleViewportChange, true);
   window.addEventListener("resize", handleViewportChange, true);
 }
@@ -1205,7 +1544,22 @@ function isCropOverlayEvent(event: Event, host: HTMLElement): boolean {
     return (
       eventTarget.classList.contains("crop-actions") ||
       eventTarget.classList.contains("crop-action-group") ||
-      eventTarget.classList.contains("crop-action-status")
+      eventTarget.classList.contains("crop-action-status") ||
+      eventTarget.classList.contains("crop-preview") ||
+      eventTarget.classList.contains("crop-preview-dialog") ||
+      eventTarget.classList.contains("crop-preview-surface") ||
+      eventTarget.classList.contains("crop-preview-footer") ||
+      eventTarget.classList.contains("crop-preview-actions") ||
+      eventTarget.classList.contains("crop-preview-status")
+    );
+  });
+}
+
+function isPreviewScrollableEvent(event: Event): boolean {
+  return event.composedPath().some((eventTarget) => {
+    return (
+      eventTarget instanceof HTMLElement &&
+      eventTarget.classList.contains("crop-preview-surface")
     );
   });
 }
@@ -1382,7 +1736,7 @@ function getCropActionFromEvent(event: Event): CropAction | null {
 
     const action = eventTarget.dataset.cropAction;
 
-    if (action === "copy" || action === "save" || action === "cancel") {
+    if (action === "copy" || action === "save" || action === "cancel" || action === "retry") {
       return action;
     }
   }
@@ -1436,19 +1790,27 @@ function shouldIgnoreSelectionKeyboardTarget(target: EventTarget | null): boolea
     return false;
   }
 
-  if (target.isContentEditable) {
-    return true;
-  }
-
-  if (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
-  ) {
+  if (shouldIgnoreCaptureKeyboardTarget(target)) {
     return true;
   }
 
   return Boolean(target.closest("[data-crop-action]"));
+}
+
+function shouldIgnoreCaptureKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
 }
 
 async function requestVisibleTabCapture(): Promise<CropCaptureVisibleTabResponse> {
@@ -1530,6 +1892,35 @@ function getViewportMetrics(): ViewportMetrics {
     scrollX: windowDimensions.scrollX,
     scrollY: windowDimensions.scrollY
   };
+}
+
+function getPreviewKeyboardAction(event: KeyboardEvent): CaptureAction | null {
+  return getCaptureKeyboardAction(event);
+}
+
+function getCaptureKeyboardAction(event: KeyboardEvent): CaptureAction | null {
+  if (!getAccelKey(event)) {
+    return null;
+  }
+
+  switch (event.key) {
+    case "c":
+      return "copy";
+    case "s":
+      return "save";
+    default:
+      return null;
+  }
+}
+
+function getAccelKey(event: KeyboardEvent): boolean {
+  return isMacLikePlatform() ? event.metaKey : event.ctrlKey;
+}
+
+function isMacLikePlatform(): boolean {
+  const platform = globalThis.navigator?.platform ?? "";
+
+  return /Mac|iPhone|iPad|iPod/i.test(platform);
 }
 
 function formatCaptureError(error: unknown): string {

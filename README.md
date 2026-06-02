@@ -1,6 +1,6 @@
 # crop
 
-`crop`은 Chrome MV3 확장 프로젝트다. 목표 MVP는 사용자가 확장 아이콘 또는 단축키로 오버레이를 열고, DOM 요소를 선택해 visible viewport 안의 PNG를 복사하거나 저장하는 가벼운 스크린샷 UX를 제공하는 것이다.
+`crop`은 Chrome MV3 확장 프로젝트다. 목표 MVP는 사용자가 확장 아이콘 또는 단축키로 오버레이를 열고, DOM 요소를 선택해 visible viewport 안의 PNG를 복사하거나 저장하는 가벼운 스크린샷 UX를 제공하는 것이다. M020 #15 이후에는 후속 기능으로 현재 top-level document의 full page capture와 scroll stitching도 지원한다.
 
 ## MVP 방향
 
@@ -16,11 +16,17 @@ MVP 포함 범위:
 
 MVP 제외 범위:
 
-- full page capture
-- scroll stitching
 - `debugger` 권한
 - `<all_urls>` host 권한
 - telemetry 또는 server upload
+
+M020 후속 구현 범위:
+
+- `전체 페이지 선택` 기반 full page capture
+- visible viewport screenshot tile 기반 scroll stitching
+- Firefox식 full page preview 기반 Copy/Save action pipeline
+- full page capture 중 overlay와 action controls 숨김
+- full page capture 완료/실패 후 시작 scroll position 복구
 
 ## 저장소 운영 방식
 
@@ -36,7 +42,7 @@ MVP 제외 범위:
 
 ## 개발 상태
 
-M020 #14 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport capture/crop backend, Copy/Save 사용자 action, selected region 조정 UX, same-origin iframe 요소 선택 기반이 준비됐다.
+M020 #15 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport capture/crop backend, full page capture/scroll stitching backend, Copy/Save 사용자 action, selected region 조정 UX, same-origin iframe 요소 선택 기반이 준비됐다.
 
 - `manifest.json` source manifest
 - Vite 기반 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js` 산출
@@ -75,17 +81,22 @@ M020 #14 기준으로 Chrome MV3 shell, Firefox식 overlay UI, visible viewport 
 - Save 실패 시 overlay 유지와 재시도 안내
 - selected rectangle 밖 클릭 시 idle overlay/prompt 상태 복귀
 - 중복 실행 시 mode toolbar one-shot flash와 반복 flash debounce
-
-아직 구현하지 않은 후속 범위:
-
-- #15 full page capture와 scroll stitching
+- `보이는 영역 선택`을 누르면 현재 visible viewport를 캡처하고 Firefox식 preview 화면에 표시
+- `전체 페이지 선택`을 누르면 현재 top-level document 전체를 tile 단위로 캡처하고 Firefox식 preview 화면에 표시
+- full page preview에서 Copy 성공 시 기존 복사 완료 toast 표시, Save 성공 시 다운로드만 시작하고 완료 toast 미표시
+- full page preview toolbar는 Firefox식 tooltip shortcut을 사용한다. Copy는 `Command+C`/`Ctrl+C`, Save는 `Command+S`/`Ctrl+S`, Cancel은 `esc`/`Esc`가 표시된다.
+- full page capture 중 crop overlay, resize handles, action buttons가 결과 PNG에 포함되지 않도록 숨김
+- full page capture 완료/실패 후 시작 scroll position 복구
+- 큰 full page output은 canvas dimension/area 한계를 넘으면 명시 오류로 중단
 
 현재 제한:
 
-- 현재 버전은 `chrome.tabs.captureVisibleTab()` 기반 visible viewport 캡처만 저장한다.
-- 화면 밖으로 이어지는 요소를 선택할 수 있어도 실제 Copy/Save PNG는 화면에 보이는 viewport 교차 영역만 포함한다.
+- 일반 요소 선택 Copy/Save는 `chrome.tabs.captureVisibleTab()` 기반 visible viewport 교차 영역만 저장한다.
+- full page capture는 Firefox privileged `drawSnapshot()`이 아니라 `captureVisibleTab()` + scroll stitching 방식이다. 캡처 중 browser scrollbar는 임시 style로 숨긴다.
+- full page capture는 현재 top-level document만 대상으로 한다. cross-origin iframe 내부 full page stitching과 iframe 내부 document full page capture는 지원하지 않는다.
+- fixed/sticky page chrome은 첫 tile에는 포함하고, 이후 tile에서는 viewport에 보이는 fixed/sticky 요소를 capture 직전에 임시로 숨겨 반복 노출을 줄인다. Firefox `drawSnapshot()`과 pixel-perfect parity는 아니다.
+- capture 중 lazy loading, animation, layout shift가 발생하는 페이지에서는 tile 간 내용 차이가 생길 수 있다.
 - same-origin/srcdoc iframe 내부 요소 선택은 지원하지만, cross-origin iframe 내부와 closed shadow DOM 내부 선택은 Chrome MV3 권한 경계 때문에 boundary fallback 또는 제한으로 처리된다.
-- full page capture는 후속 작업 범위다.
 
 ## 로컬 개발
 
@@ -109,6 +120,18 @@ npm run typecheck
 
 빌드 결과는 `dist/`에 생성된다. Chrome에 로드할 대상 폴더도 `dist/`다.
 
+로컬 fixture 서버:
+
+```bash
+./node_modules/.bin/vite --host 127.0.0.1 --port 5176
+```
+
+Phase 6 fixture URL:
+
+```text
+http://127.0.0.1:5176/tests/fixtures/phase6_edge_cases.html
+```
+
 ## Chrome Unpacked Extension 로드
 
 1. `npm run build`를 실행한다.
@@ -122,7 +145,7 @@ npm run typecheck
 
 - 현재 탭에 dark dim overlay, dashed viewport boundary, 오른쪽 위 mode toolbar가 표시된다.
 - overlay 위의 기본 커서는 Firefox처럼 crosshair로 표시되고, drag selection 중에는 grabbing으로 표시된다.
-- mode toolbar에는 `보이는 영역 선택`과 `전체 페이지 선택`이 보인다. `전체 페이지 선택`은 MVP 범위 밖이므로 현재 비활성 placeholder다.
+- mode toolbar에는 `보이는 영역 선택`과 `전체 페이지 선택`이 보인다. `전체 페이지 선택`은 Firefox처럼 파란색 기본 상태와 더 진한 hover 상태를 사용하며, 클릭 시 selection rectangle 편집 상태로 들어가지 않고 바로 full page preview를 연다.
 - 중앙에는 영역 선택 안내 문구, Cancel button, pointer 위치에 따라 눈동자가 움직이는 preview face가 표시된다.
 - 일반 DOM 요소에 마우스를 올리면 dashed hover highlight가 표시된다.
 - same-origin/srcdoc iframe 내부 요소에 마우스를 올리면 parent page 좌표에 맞춰 dashed hover highlight가 표시되고, 클릭하면 selected rectangle으로 고정된다.
@@ -138,6 +161,12 @@ npm run typecheck
 - Copy/Save buttons는 capture/crop backend를 호출하고 crop output width/height metadata를 내부 action 결과로 기록한다.
 - Copy를 클릭하면 selected crop PNG가 시스템 클립보드에 기록되고 overlay가 제거된다. 이미지 붙여넣기가 가능한 앱이나 웹 입력면에서 paste할 수 있다.
 - Save를 클릭하면 selected crop PNG가 다운로드된다. 파일명은 문서 title을 기반으로 안전하게 sanitize되고, 중복 파일은 Chrome 다운로드 동작에 따라 고유 이름으로 저장된다.
+- `보이는 영역 선택` 후 preview 상단 우측 toolbar에서 Copy/Save를 누르면 현재 visible viewport PNG가 복사 또는 저장된다.
+- `전체 페이지 선택` 후 preview 상단 우측 toolbar에서 Copy/Save를 누르면 현재 문서를 여러 visible viewport tile로 캡처한 stitched PNG가 복사 또는 저장된다.
+- full page preview에서 이미지를 스크롤해도 modal 뒤의 원본 페이지가 함께 스크롤되지 않는다.
+- full page preview toolbar hover title에 Copy/Save shortcut이 보이고, 실제 shortcut으로 Copy/Save가 실행된다.
+- full page Save 결과는 fixture 기준 top/mid/bottom marker와 horizontal overflow marker를 포함해야 한다.
+- full page capture 후 원래 scroll position으로 돌아와야 한다.
 - Copy 성공 후 우측 상단에 `crop` 완료 toast가 표시되고, toast host에는 smoke용 action/width/height metadata가 기록된다. Save 성공은 다운로드만 시작하고 완료 toast를 표시하지 않는다.
 - Copy 실패 시 overlay가 유지되고 Save fallback 안내가 표시된다. Save 실패 시 overlay가 유지되고 재시도 안내가 표시된다.
 - 중앙 Cancel button, selected 상태의 Cancel button, 또는 Escape 키로 overlay가 제거된다.

@@ -262,7 +262,6 @@ export async function captureFullPageTiles(
   const plan = createFullPageTilePlan(initialMetrics, options);
   const tiles: CapturedFullPageTile[] = [];
 
-  options.setOverlayHidden?.(true);
   options.setScrollBehaviorDisabled?.(true);
 
   try {
@@ -273,19 +272,40 @@ export async function captureFullPageTiles(
 
       await scrollTo(tile.scrollX, tile.scrollY);
       await waitForPaint();
-      await options.beforeCaptureTile?.(tile, index);
+
+      if (options.beforeCaptureTile) {
+        await options.beforeCaptureTile(tile, index);
+        await waitForPaint();
+      }
+
+      let dataUrl: string;
 
       try {
-        tiles.push(
-          createCapturedFullPageTile({
-            tile,
-            dataUrl: await options.captureVisibleTab(),
-            metrics: readMetrics()
-          })
-        );
+        if (options.setOverlayHidden) {
+          options.setOverlayHidden(true);
+          await waitForPaint();
+        }
+
+        dataUrl = await options.captureVisibleTab();
       } finally {
+        if (options.setOverlayHidden) {
+          options.setOverlayHidden(false);
+        }
+
         await options.afterCaptureTile?.(tile, index);
+
+        if (options.setOverlayHidden) {
+          await waitForPaint();
+        }
       }
+
+      tiles.push(
+        createCapturedFullPageTile({
+          tile,
+          dataUrl,
+          metrics: readMetrics()
+        })
+      );
     }
 
     return {

@@ -219,18 +219,29 @@ describe("full page capture helpers", () => {
     ]);
     expect(currentScrollY).toBe(120);
     expect(events).toEqual([
-      "hidden:true",
       "scrollBehaviorDisabled:true",
       "paint",
       "scroll:0,0",
       "paint",
+      "hidden:true",
+      "paint",
       "capture:0",
+      "hidden:false",
+      "paint",
       "scroll:0,400",
       "paint",
+      "hidden:true",
+      "paint",
       "capture:400",
+      "hidden:false",
+      "paint",
       "scroll:0,550",
       "paint",
+      "hidden:true",
+      "paint",
       "capture:550",
+      "hidden:false",
+      "paint",
       "scroll:0,120",
       "paint",
       "scrollBehaviorDisabled:false",
@@ -256,7 +267,10 @@ describe("full page capture helpers", () => {
           events.push(`scroll:${y}`);
           currentScrollY = y;
         },
-        waitForPaint: () => Promise.resolve(),
+        waitForPaint: () => {
+          events.push("paint");
+          return Promise.resolve();
+        },
         beforeCaptureTile: (tile, index) => {
           events.push(`before:${index}:${tile.scrollY}`);
         },
@@ -276,15 +290,21 @@ describe("full page capture helpers", () => {
     ).rejects.toThrow("capture failed");
 
     expect(events).toEqual([
+      "paint",
       "scroll:0",
+      "paint",
       "before:0:0",
+      "paint",
       "capture:0",
       "after:0:0",
       "scroll:400",
+      "paint",
       "before:1:400",
+      "paint",
       "capture:400",
       "after:1:400",
-      "scroll:0"
+      "scroll:0",
+      "paint"
     ]);
   });
 

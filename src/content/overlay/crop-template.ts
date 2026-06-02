@@ -9,6 +9,7 @@ import {
   createScreenshotsDownloadIconSvg,
   createScreenshotsFullPageIconSvg,
   createScreenshotsPreviewFaceSvg,
+  createScreenshotsRetryIconSvg,
   createScreenshotsVisibleIconSvg
 } from "../../firefox-derived/screenshots-ui-assets";
 
@@ -19,7 +20,7 @@ export const FLASH_CLASS = "crop-panel--flash";
 export const TOAST_ROOT_ID = "__crop_toast__";
 export const TOAST_ATTRIBUTE = "data-crop-toast-root";
 
-type CropActionName = "copy" | "save" | "cancel";
+type CropActionName = "copy" | "save" | "cancel" | "retry";
 
 export interface CropOverlayTemplate {
   readonly panel: HTMLElement;
@@ -28,6 +29,7 @@ export interface CropOverlayTemplate {
   readonly actions: HTMLElement;
   readonly actionStatus: HTMLElement;
   readonly prompt: HTMLElement;
+  readonly preview: CropPreviewTemplate;
   readonly selectionMask: CropSelectionMaskTemplate;
 }
 
@@ -115,17 +117,19 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   secondaryActionGroup.append(cancelButton);
   primaryActionGroup.append(copyButton, saveButton);
   actions.append(secondaryActionGroup, primaryActionGroup, actionStatus);
+  const preview = createPreviewTemplate();
   shell.append(
     dim,
     frame,
     selectionMask.container,
     prompt,
     actions,
+    preview.container,
     panel
   );
   shadowRoot.append(style, shell);
 
-  return { panel, highlight, selectionControls, actions, actionStatus, prompt, selectionMask };
+  return { panel, highlight, selectionControls, actions, actionStatus, prompt, preview, selectionMask };
 }
 
 export interface CropSelectionMaskTemplate {
@@ -141,6 +145,14 @@ export interface CropSelectionControlsTemplate {
   readonly moveSurface: HTMLElement;
   readonly sizeBadge: HTMLElement;
   readonly handles: Readonly<Record<SelectionResizeHandle, HTMLButtonElement>>;
+}
+
+export interface CropPreviewTemplate {
+  readonly container: HTMLElement;
+  readonly dialog: HTMLElement;
+  readonly image: HTMLImageElement;
+  readonly actions: HTMLElement;
+  readonly status: HTMLElement;
 }
 
 export interface CropToastTemplate {
@@ -248,6 +260,60 @@ function createPromptFace(): HTMLElement {
   return face;
 }
 
+function createPreviewTemplate(): CropPreviewTemplate {
+  const container = document.createElement("div");
+  container.className = "crop-preview";
+  container.hidden = true;
+  container.setAttribute("role", "dialog");
+  container.setAttribute("aria-label", "전체 페이지 스크린샷 미리보기");
+
+  const dialog = document.createElement("div");
+  dialog.className = "crop-preview-dialog";
+
+  const surface = document.createElement("div");
+  surface.className = "crop-preview-surface";
+
+  const image = document.createElement("img");
+  image.className = "crop-preview-image";
+  image.alt = "전체 페이지 스크린샷 미리보기";
+
+  const footer = document.createElement("div");
+  footer.className = "crop-preview-footer";
+
+  const actions = document.createElement("div");
+  actions.className = "crop-preview-actions";
+  actions.setAttribute("role", "toolbar");
+  actions.setAttribute("aria-label", "Full page screenshot actions");
+
+  const retryButton = createActionButton("retry", "다시 시도", true);
+  const cancelButton = createActionButton("cancel", "취소", true);
+  const copyButton = createActionButton("copy", "복사");
+  const saveButton = createActionButton("save", "저장");
+  const secondaryActionGroup = createActionGroup("secondary");
+  const primaryActionGroup = createActionGroup("primary");
+  const status = document.createElement("div");
+  status.className = "crop-preview-status";
+  status.hidden = true;
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+
+  secondaryActionGroup.append(retryButton, cancelButton);
+  primaryActionGroup.append(copyButton, saveButton);
+  actions.append(secondaryActionGroup, primaryActionGroup, status);
+  footer.append(actions);
+  surface.append(image);
+  dialog.append(footer, surface);
+  container.append(dialog);
+
+  return {
+    container,
+    dialog,
+    image,
+    actions,
+    status
+  };
+}
+
 function createActionButton(
   action: CropActionName,
   label: string,
@@ -258,7 +324,7 @@ function createActionButton(
   button.className = `crop-action crop-action--${action}`;
   button.type = "button";
   button.setAttribute("data-crop-action", action);
-  button.setAttribute("title", label);
+  button.setAttribute("title", getActionTitle(action, label));
   button.setAttribute("aria-label", label);
   button.addEventListener("blur", () => {
     delete button.dataset.cropFocusVisible;
@@ -282,6 +348,8 @@ function createActionIcon(action: CropActionName): SVGSVGElement {
   switch (action) {
     case "cancel":
       return createScreenshotsCancelIconSvg(document);
+    case "retry":
+      return createScreenshotsRetryIconSvg(document);
     case "copy":
       return createScreenshotsCopyIconSvg(document);
     case "save":
@@ -295,6 +363,29 @@ function createActionGroup(kind: "primary" | "secondary"): HTMLElement {
   group.className = `crop-action-group crop-action-group--${kind}`;
 
   return group;
+}
+
+function getActionTitle(action: CropActionName, label: string): string {
+  switch (action) {
+    case "cancel":
+      return `${label} (${isMacLikePlatform() ? "esc" : "Esc"})`;
+    case "copy":
+      return `${label} (${getAccelShortcut("C")})`;
+    case "save":
+      return `${label} (${getAccelShortcut("S")})`;
+    case "retry":
+      return label;
+  }
+}
+
+function getAccelShortcut(key: string): string {
+  return isMacLikePlatform() ? `⌘${key}` : `Ctrl+${key}`;
+}
+
+function isMacLikePlatform(): boolean {
+  const platform = globalThis.navigator?.platform ?? "";
+
+  return /Mac|iPhone|iPad|iPod/i.test(platform);
 }
 
 function createSelectionMaskTemplate(): CropSelectionMaskTemplate {

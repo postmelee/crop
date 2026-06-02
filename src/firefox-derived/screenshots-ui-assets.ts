@@ -28,6 +28,11 @@ const ACTION_CANCEL_SVG = `
   <path d="m9.108 7.776 4.709-4.709a.626.626 0 0 0-.884-.885L8.244 6.871l-.488 0-4.689-4.688a.625.625 0 1 0-.884.885L6.87 7.754l0 .491-4.687 4.687a.626.626 0 0 0 .884.885L7.754 9.13l.491 0 4.687 4.687a.627.627 0 0 0 .885 0 .626.626 0 0 0 0-.885L9.108 8.223l0-.447z"/>
 </svg>`;
 
+const ACTION_RELOAD_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity">
+  <path d="M10.707 6 14.7 6l.3-.3 0-3.993a.5.5 0 0 0-.854-.354l-1.459 1.459A6.95 6.95 0 0 0 8 1C4.141 1 1 4.141 1 8s3.141 7 7 7a6.97 6.97 0 0 0 6.968-6.322.626.626 0 0 0-.562-.682.635.635 0 0 0-.682.562A5.726 5.726 0 0 1 8 13.75c-3.171 0-5.75-2.579-5.75-5.75S4.829 2.25 8 2.25a5.71 5.71 0 0 1 3.805 1.445l-1.451 1.451a.5.5 0 0 0 .353.854z"/>
+</svg>`;
+
 const ACTION_COPY_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity">
   <path d="M6.035 1.25c-1 0-1.812.812-1.812 1.813h1.5c0-.173.14-.313.312-.313h5.95c.172 0 .313.14.313.313v7.65c0 .172-.14.312-.313.312v1.5c1 0 1.813-.812 1.813-1.813v-7.65c0-1-.812-1.812-1.813-1.812h-5.95z"/>
@@ -54,6 +59,10 @@ export function createScreenshotsFullPageIconSvg(doc: Document = document): SVGS
 
 export function createScreenshotsCancelIconSvg(doc: Document = document): SVGSVGElement {
   return createActionIconSvgElement(ACTION_CANCEL_SVG, "crop-screenshots-cancel-icon", doc);
+}
+
+export function createScreenshotsRetryIconSvg(doc: Document = document): SVGSVGElement {
+  return createActionIconSvgElement(ACTION_RELOAD_SVG, "crop-screenshots-retry-icon", doc);
 }
 
 export function createScreenshotsCopyIconSvg(doc: Document = document): SVGSVGElement {
