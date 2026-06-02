@@ -260,6 +260,50 @@
         color: #31502c;
       }
 
+      .large-wrapper-fixture {
+        position: relative;
+        width: 1520px;
+        min-height: 920px;
+        padding: 28px;
+        overflow: visible;
+        color: #172033;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.88), transparent 58%),
+          repeating-linear-gradient(45deg, #f8fbff 0 28px, #edf2f8 28px 56px);
+        border: 3px dashed #6b7a90;
+        border-radius: 12px;
+      }
+
+      .large-wrapper-fixture h2 {
+        max-width: 760px;
+      }
+
+      .large-wrapper-fixture p {
+        max-width: 760px;
+        color: #42516a;
+      }
+
+      .large-wrapper-grid {
+        display: grid;
+        grid-template-columns: 320px minmax(0, 520px);
+        gap: 22px;
+        align-items: start;
+        max-width: 880px;
+        margin-top: 20px;
+      }
+
+      .large-wrapper-infobox {
+        border: 2px solid #2f6fed;
+      }
+
+      .large-wrapper-card {
+        min-height: 220px;
+        padding: 20px;
+        background: #fff;
+        border: 2px solid #b85900;
+        border-radius: 10px;
+      }
+
       .edge-scroll-fixture {
         min-height: 1040px;
         overflow: visible;
@@ -417,6 +461,7 @@
         <a href="#embed">iframe and shadow</a>
         <a href="#adjustment">Adjust</a>
         <a href="#edge-scroll">Edge scroll</a>
+        <a href="#large-wrapper">Large wrapper</a>
         <a href="#offscreen">Large element</a>
       </nav>
     </header>
@@ -606,6 +651,34 @@ function cropVisibleViewport(rect, viewport) {
             viewport. MVP capture should save only the visible viewport
             intersection even if the selection outline shows the full element.
           </p>
+        </div>
+      </section>
+
+      <section id="large-wrapper" class="section offscreen-wrap" data-crop-fixture="too-large-wrapper-section">
+        <div class="large-wrapper-fixture" data-crop-fixture="too-large-wrapper">
+          <h2>Too-large wrapper auto-select policy</h2>
+          <p>
+            The outer wrapper is intentionally wider and taller than the
+            automatic selection threshold. Hovering the empty wrapper area
+            should not create a clipped viewport-sized candidate, while the
+            inner table and card remain normal selection targets.
+          </p>
+          <div class="large-wrapper-grid">
+            <table class="large-wrapper-infobox" data-crop-fixture="too-large-wrapper-infobox">
+              <tbody>
+                <tr><th>Item</th><td>Large wrapper</td></tr>
+                <tr><th>Status</th><td>Inner table should select</td></tr>
+                <tr><th>Risk</th><td>Wrapper fallback should stay off</td></tr>
+              </tbody>
+            </table>
+            <article class="large-wrapper-card" data-crop-fixture="too-large-wrapper-card">
+              <strong>Inner content card</strong>
+              <p>
+                This card is a normal candidate inside the large wrapper and
+                should continue to produce a stable automatic selection rect.
+              </p>
+            </article>
+          </div>
         </div>
       </section>
 
