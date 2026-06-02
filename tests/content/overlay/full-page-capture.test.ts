@@ -4,6 +4,7 @@ import {
   createCapturedFullPageTile,
   createFullPageMetrics,
   createFullPageTilePlan,
+  createPageRectTilePlan,
   getFullPageBounds,
   readFullPageMetrics,
   type FullPageMetrics
@@ -140,6 +141,103 @@ describe("full page capture helpers", () => {
       pageRect: rectFromEdges(1000, 800, 1200, 900),
       viewportCropRect: rectFromEdges(300, 300, 500, 400),
       destinationCssRect: rectFromEdges(1000, 800, 1200, 900)
+    });
+  });
+
+  it("plans selected page rect tiles relative to the selected bounds", () => {
+    const selectedRect = rectFromEdges(240, 320, 1760, 1240);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 800,
+        viewportHeight: 600,
+        scrollWidth: 2000,
+        scrollHeight: 1600,
+        devicePixelRatio: 2
+      }),
+      selectedRect
+    );
+    const bottomRight = plan.tiles.at(-1);
+
+    expect(plan.bounds).toEqual({
+      ...selectedRect,
+      devicePixelRatio: 2
+    });
+    expect(plan.outputCssSize).toEqual({ width: 1520, height: 920 });
+    expect(plan.viewportCssSize).toEqual({ clientWidth: 800, clientHeight: 600 });
+    expect(plan.tiles).toHaveLength(4);
+    expect(plan.tiles[0]).toMatchObject({
+      indexX: 0,
+      indexY: 0,
+      scrollX: 240,
+      scrollY: 320,
+      pageRect: rectFromEdges(240, 320, 1040, 920),
+      viewportCropRect: rectFromEdges(0, 0, 800, 600),
+      destinationCssRect: rectFromEdges(0, 0, 800, 600)
+    });
+    expect(bottomRight).toMatchObject({
+      indexX: 1,
+      indexY: 1,
+      scrollX: 1040,
+      scrollY: 920,
+      pageRect: rectFromEdges(1040, 920, 1760, 1240),
+      viewportCropRect: rectFromEdges(0, 0, 720, 320),
+      destinationCssRect: rectFromEdges(800, 600, 1520, 920)
+    });
+  });
+
+  it("clamps selected page rect tile scroll while preserving destination size", () => {
+    const selectedRect = rectFromEdges(1200, 900, 1520, 1160);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 400,
+        scrollWidth: 1600,
+        scrollHeight: 1200,
+        scrollX: 40,
+        scrollY: 80
+      }),
+      selectedRect
+    );
+
+    expect(plan.outputCssSize).toEqual({ width: 320, height: 260 });
+    expect(plan.tiles).toHaveLength(1);
+    expect(plan.tiles[0]).toMatchObject({
+      indexX: 0,
+      indexY: 0,
+      scrollX: 1100,
+      scrollY: 800,
+      pageRect: selectedRect,
+      viewportCropRect: rectFromEdges(100, 100, 420, 360),
+      destinationCssRect: rectFromEdges(0, 0, 320, 260)
+    });
+  });
+
+  it("normalizes reversed selected page rect bounds before planning tiles", () => {
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 400,
+        scrollWidth: 1200,
+        scrollHeight: 900
+      }),
+      {
+        left: 700,
+        top: 650,
+        right: 300,
+        bottom: 250
+      }
+    );
+
+    expect(plan.bounds).toEqual({
+      ...rectFromEdges(300, 250, 700, 650),
+      devicePixelRatio: 1
+    });
+    expect(plan.outputCssSize).toEqual({ width: 400, height: 400 });
+    expect(plan.tiles[0]).toMatchObject({
+      scrollX: 300,
+      scrollY: 250,
+      viewportCropRect: rectFromEdges(0, 0, 400, 400),
+      destinationCssRect: rectFromEdges(0, 0, 400, 400)
     });
   });
 

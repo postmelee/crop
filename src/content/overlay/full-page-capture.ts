@@ -4,7 +4,12 @@ import {
   type OutputCssSize,
   type StitchImageScale
 } from "../../shared/stitch-image";
-import { rectFromEdges, type CropRect } from "../../shared/rect";
+import {
+  normalizeRect,
+  rectFromEdges,
+  type CropRect,
+  type CropRectLike
+} from "../../shared/rect";
 
 export interface FullPageMetricsInput {
   readonly viewportWidth?: number | null;
@@ -191,15 +196,36 @@ export function createFullPageTilePlan(
   metrics: FullPageMetrics,
   options: FullPageTilePlanOptions = {}
 ): FullPageTilePlan {
+  return createPageRectTilePlan(metrics, getFullPageBounds(metrics), options);
+}
+
+export function createPageRectTilePlan(
+  metrics: FullPageMetrics,
+  pageRect: CropRectLike,
+  options: FullPageTilePlanOptions = {}
+): FullPageTilePlan {
   if (metrics.viewportWidth <= 0 || metrics.viewportHeight <= 0) {
     throw new Error("Full page capture requires a non-empty viewport.");
   }
 
-  const bounds = getFullPageBounds(metrics);
+  const normalizedBounds = normalizeRect(pageRect);
+  const bounds = {
+    ...normalizedBounds,
+    devicePixelRatio: metrics.devicePixelRatio
+  };
+
   validateEstimatedOutputSize(bounds, metrics.devicePixelRatio, options);
 
-  const xSegments = createSegments(bounds.left, bounds.right, metrics.viewportWidth);
-  const ySegments = createSegments(bounds.top, bounds.bottom, metrics.viewportHeight);
+  const xSegments = createSegments(
+    normalizedBounds.left,
+    normalizedBounds.right,
+    metrics.viewportWidth
+  );
+  const ySegments = createSegments(
+    normalizedBounds.top,
+    normalizedBounds.bottom,
+    metrics.viewportHeight
+  );
   const tiles: FullPageTile[] = [];
 
   for (let yIndex = 0; yIndex < ySegments.length; yIndex += 1) {
