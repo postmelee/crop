@@ -73,17 +73,37 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-26 | 역방향 드래그 선택 | fixture 일반 영역 | 포인터가 시작점보다 위/왼쪽으로 이동 | 선택 rect가 좌상단-우하단 좌표로 정규화된다. | 자동+수동 OK, 단 drag flicker는 P6-27로 분리 | OK | 해당 없음 | `state-machine.test.ts`, 작업지시자 Stage 3 smoke |
 | P6-27 | drag selection flicker | fixture 일반 영역 | 드래그 선택 중 | 선택 중 불필요한 흰색 가로선이 반짝이지 않는다. | Stage 4 CSS 보정 후 작업지시자 수동 재확인 OK | OK | 해당 없음 | 작업지시자 Stage 3/5 smoke, `crop-overlay.css` |
 | P6-28 | Firefox식 선택 후 편집 UI parity | 실제 웹 대표 페이지 | 요소 클릭 후 selected 상태 | resize handle, 점선 표시, 이미지 사이즈 badge, Firefox식 Copy/Save 버튼을 제공한다. | 현재 MVP 미구현, 일부는 #13과 연결, size badge/button parity는 신규 후속 후보 | 후속 | 기존 후속 + 신규 후속 후보 | 작업지시자 첨부 이미지, #13 |
+| P6-29 | full page mode 진입 | `[data-crop-fixture="full-page-capture-section"]` | `전체 페이지 선택` 클릭 | Firefox처럼 거대한 selected rectangle을 만들지 않고 full page capture preview가 표시된다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
+| P6-29a | visible viewport mode 진입 | 현재 visible viewport | `보이는 영역 선택` 클릭 | Firefox처럼 같은 preview modal에 visible viewport capture가 표시된다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
+| P6-29b | visible preview no-scroll | visible preview modal | `보이는 영역 선택` 클릭 후 preview | preview dialog가 상단에 가깝게 표시되고 visible viewport 이미지는 내부 스크롤 없이 맞춰진다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression |
+| P6-29c | preview toolbar/image right alignment | visible/full page preview modal | preview 표시 | Save button 오른쪽 끝과 image 오른쪽 끝이 같은 inline padding 기준으로 정렬된다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression |
+| P6-30 | full page stitching top/mid/bottom | `[data-crop-fixture="full-page-top-marker"]`, `[data-crop-fixture="full-page-mid-seam-marker"]`, `[data-crop-fixture="full-page-bottom-marker"]` | full page Save | 저장 PNG에 상단, 중간 seam marker, 하단 partial tile marker가 포함된다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, `stitch-image.test.ts`, 작업지시자 PNG smoke |
+| P6-31 | full page horizontal overflow | `[data-crop-fixture="full-page-horizontal-overflow"]` | full page Save | 오른쪽으로 확장된 horizontal marker가 stitched PNG에 포함된다. | 자동+수동 OK | OK | 해당 없음 | `full-page-capture.test.ts`, 작업지시자 PNG smoke |
+| P6-32 | fixed/sticky 반복 노출 정책 | `[data-crop-fixture="sticky-header"]`, `[data-crop-fixture="full-page-fixed-marker"]` | full page Save | 첫 tile 이후 viewport에 보이는 fixed/sticky page chrome 반복 노출을 capture 직전 숨김으로 줄인다. Firefox `drawSnapshot()`과 pixel-perfect parity는 아니다. | 자동+수동 OK / 제한 문서화 | OK | 제한 문서화 | `phase6-regression.test.ts`, README, 작업지시자 smoke |
+| P6-33 | full page scroll restoration | fixture 임의 scroll 위치 | full page Copy/Save 후 | capture 시작 전 scroll position으로 돌아온다. | 자동+수동 OK | OK | 해당 없음 | `full-page-capture.test.ts`, 작업지시자 smoke |
+| P6-34 | full page overlay 오염 방지 | full page preview Copy/Save 결과 | preview visible 상태 | crop overlay, preview, handles, action box, scrollbar가 저장 PNG에 포함되지 않는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 PNG smoke |
+| P6-35 | full page preview toolbar parity | full page preview toolbar | hover 및 keydown | Retry icon이 Firefox reload icon 크기와 맞고, Copy/Save/Cancel tooltip shortcut 및 Copy/Save shortcut 동작이 맞는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
+| P6-36 | Copy/Save 종료 flicker | selected/drag/visible/full page capture | Copy 또는 Save 직후 | 닫히기 직전 선택 박스가 재노출되거나 preview toolbar가 disabled opacity로 깜빡이지 않는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
 
 ## 수동 smoke 절차 초안
 
 1. `npm run build` 후 Chrome `chrome://extensions`에서 `dist/`를 reload한다.
-2. Fixture를 로컬 파일 또는 정적 서버로 연다.
+2. Fixture를 로컬 파일 또는 정적 서버로 연다. #15 기준 로컬 서버 URL은 `http://127.0.0.1:5176/tests/fixtures/phase6_edge_cases.html`이다.
 3. 확장 아이콘 또는 `Command+Shift+S`로 crop overlay를 실행한다.
 4. 각 `data-crop-fixture` target을 hover, click selection, 박스 외 클릭 복귀, Cancel로 확인한다.
 5. 대표 target에서 `Copy` 후 이미지 paste를 확인한다.
 6. 대표 target에서 `Save` 후 PNG 다운로드를 확인한다.
 7. Chrome zoom 80%, 100%, 125%, 150%에서 대표 target의 Copy/Save를 반복한다.
 8. overlay, prompt, action bar, toast가 결과 이미지에 포함되는지 확인한다.
+9. `전체 페이지 선택` 후 Firefox식 full page preview가 열리고 이상한 drag selection 상태가 되지 않는지 확인한다.
+10. preview에서 `Save`를 눌러 저장 PNG에 top/mid/bottom marker와 horizontal overflow marker가 포함되는지 확인한다.
+11. full page Save 후 원래 scroll position으로 돌아오는지 확인한다.
+12. 다시 `전체 페이지 선택` 후 preview에서 `Copy`를 눌러 clipboard 이미지 paste가 가능한지 확인한다.
+13. preview toolbar hover title에 Copy/Save/Cancel shortcut이 표시되고 `Command+C`/`Command+S` 또는 `Ctrl+C`/`Ctrl+S`가 동작하는지 확인한다.
+14. `보이는 영역 선택` 후 Firefox식 preview modal이 열리고 visible viewport Copy/Save가 동작하는지 확인한다.
+15. visible preview가 내부 스크롤 없이 한 화면에 맞춰지고 modal 위치가 과도하게 낮지 않은지 확인한다.
+16. visible/full page preview의 modal 크기가 동일하고 Save button 오른쪽 끝이 image 오른쪽 끝과 맞는지 확인한다.
+17. selected/drag/visible/full page 각 모드에서 Copy/Save 직후 선택 박스나 preview toolbar가 깜빡이지 않는지 확인한다.
 
 ## Stage별 갱신 계획
 
@@ -126,7 +146,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-28 resize/move handles와 keyboard 조정 | 기존 후속 | [#13](https://github.com/postmelee/crop/issues/13) `Follow-up: 선택 영역 resize/move handles와 keyboard 조정 구현`으로 연결. |
 | P6-28 size badge와 Copy/Save button parity | 신규 후속 후보 | 새 이슈 생성은 작업지시자 별도 승인 후 진행. |
 | edge auto-scroll | 기존 후속 | [#12](https://github.com/postmelee/crop/issues/12) `Follow-up: 드래그 선택 edge auto-scroll 구현`으로 연결. |
-| viewport 밖 전체 이미지 저장 / full page | 기존 후속 | [#15](https://github.com/postmelee/crop/issues/15) `Follow-up: full page capture와 scroll stitching 구현`으로 연결. |
+| viewport 밖 전체 이미지 저장 / full page | #15 구현 완료 | [#15](https://github.com/postmelee/crop/issues/15)에서 top-level document full page capture와 scroll stitching 구현. iframe 내부 full page와 Firefox `drawSnapshot()` parity는 제한으로 유지. |
 
 ## Task #14 갱신 결과
 
@@ -139,6 +159,21 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | inaccessible/cross-origin iframe fallback | 제한 유지 / OK | `tests/firefox-derived/overlay-helpers.test.ts` |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `tests/content/overlay/phase6-regression.test.ts`, `manifest.json` |
 | Phase 6 srcdoc iframe fixture smoke | OK | in-app browser frame locator smoke, `data-crop-fixture="iframe-card"`와 `iframe-button` 확인 |
+
+## Task #15 갱신 결과
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| full page tile/stitch helper | OK | `tests/content/overlay/full-page-capture.test.ts`, `tests/shared/stitch-image.test.ts` |
+| `전체 페이지 선택` UI와 Firefox식 preview 상단 toolbar Copy/Save action pipeline 연결 | OK | `tests/content/overlay/phase6-regression.test.ts` |
+| full page fixture marker 보강 | OK | `tests/fixtures/phase6_edge_cases.html`, `phase6-regression.test.ts` |
+| bottom partial tile와 horizontal overflow tile plan | OK | `full-page-capture.test.ts` |
+| fractional destination edge seam 회귀 | OK | `stitch-image.test.ts` |
+| fixed/sticky 반복 노출 최소 보정 | OK / 제한 | 두 번째 tile 이후 viewport에 보이는 fixed/sticky page chrome을 capture 직전에 숨김. Firefox `drawSnapshot()`과 완전 동일하지 않음 |
+| full page scroll restoration | 자동+수동 OK | `full-page-capture.test.ts`, 작업지시자 smoke |
+| full page preview 내부 스크롤 잠금 | 자동+수동 OK | `crop-overlay.ts`, `crop-overlay.css`, `phase6-regression.test.ts`, 작업지시자 smoke |
+| full page Save/Copy 실제 PNG smoke | OK | `http://127.0.0.1:5176/tests/fixtures/phase6_edge_cases.html`에서 작업지시자 직접 검증 |
+| `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, `phase6-regression.test.ts`, Stage 4/5 grep |
 
 ## 신규 후속 이슈 후보
 

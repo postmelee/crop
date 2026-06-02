@@ -36,6 +36,24 @@
           var(--bg);
       }
 
+      .fixture-fixed-marker {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 10;
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 10px;
+        color: #17351f;
+        font-size: 13px;
+        font-weight: 700;
+        background: #edf8f0;
+        border: 1px solid #26844d;
+        border-radius: 8px;
+        pointer-events: none;
+      }
+
       .fixture-sticky {
         position: sticky;
         top: 0;
@@ -250,6 +268,50 @@
           #fff;
       }
 
+      .full-page-smoke {
+        min-height: 920px;
+        overflow: visible;
+        background:
+          linear-gradient(180deg, rgba(47, 111, 237, 0.08), rgba(47, 111, 237, 0.02) 55%, transparent),
+          #fff;
+      }
+
+      .full-page-marker {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 120px;
+        margin: 18px 0;
+        padding: 18px;
+        color: #132344;
+        background: #eef4ff;
+        border: 2px solid #2f6fed;
+        border-radius: 10px;
+      }
+
+      .full-page-seam-band {
+        min-height: 180px;
+        margin: 220px 0;
+        padding: 18px;
+        color: #17351f;
+        background:
+          repeating-linear-gradient(90deg, rgba(38, 132, 77, 0.16) 0 24px, transparent 24px 48px),
+          #f0fdf4;
+        border: 2px dashed #26844d;
+        border-radius: 10px;
+      }
+
+      .full-page-horizontal {
+        width: 1560px;
+        min-height: 120px;
+        padding: 18px;
+        color: #1d2a13;
+        background:
+          repeating-linear-gradient(90deg, #d3f2dc 0 80px, #b7e4c6 80px 160px);
+        border: 3px dashed #26844d;
+        border-radius: 10px;
+      }
+
       .adjustment-stage {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 220px;
@@ -351,12 +413,17 @@
       <nav aria-label="fixture sections">
         <a href="#document">Document</a>
         <a href="#cards">Cards</a>
+        <a href="#full-page">Full page</a>
         <a href="#embed">iframe and shadow</a>
         <a href="#adjustment">Adjust</a>
         <a href="#edge-scroll">Edge scroll</a>
         <a href="#offscreen">Large element</a>
       </nav>
     </header>
+
+    <aside class="fixture-fixed-marker" data-crop-fixture="full-page-fixed-marker">
+      Fixed marker
+    </aside>
 
     <main>
       <h1 class="page-title" data-crop-fixture="document-heading">
@@ -459,6 +526,23 @@ function cropVisibleViewport(rect, viewport) {
         <div class="transform-target" data-crop-fixture="transform-scale-target">
           CSS transform target. The overlay should use the visual bounding box
           returned by the browser, not the untransformed layout box.
+        </div>
+      </section>
+
+      <section id="full-page" class="section full-page-smoke" data-crop-fixture="full-page-capture-section">
+        <h2>Full page capture smoke area</h2>
+        <div class="full-page-marker" data-crop-fixture="full-page-top-marker">
+          <strong>Full page top marker</strong>
+          <span>Visible in the first stitched tile.</span>
+        </div>
+        <div class="full-page-seam-band" data-crop-fixture="full-page-mid-seam-marker">
+          Middle seam marker for checking tile joins across scroll boundaries.
+        </div>
+        <div class="full-page-horizontal" data-crop-fixture="full-page-horizontal-overflow">
+          Horizontal overflow marker for right-side tile planning.
+        </div>
+        <div class="full-page-seam-band" data-crop-fixture="full-page-bottom-marker">
+          Bottom partial tile marker for the final stitched segment.
         </div>
       </section>
 

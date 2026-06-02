@@ -169,6 +169,21 @@ describe("Phase 6 overlay regression coverage", () => {
     }
   });
 
+  it("keeps full page stitching smoke targets in the fixture", () => {
+    for (const fixtureName of [
+      "full-page-capture-section",
+      "full-page-top-marker",
+      "full-page-mid-seam-marker",
+      "full-page-horizontal-overflow",
+      "full-page-bottom-marker",
+      "full-page-fixed-marker",
+      "sticky-header",
+      "offscreen-large-element"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+  });
+
   it("keeps same-origin iframe smoke targets in the fixture", () => {
     for (const fixtureName of [
       "same-document-iframe",
@@ -273,8 +288,10 @@ describe("Phase 6 overlay regression coverage", () => {
 
   it("keeps Firefox-derived action button icons and focus-visible styling wired", () => {
     expect(firefoxUiAssets).toContain("ACTION_CANCEL_SVG");
+    expect(firefoxUiAssets).toContain("ACTION_RELOAD_SVG");
     expect(firefoxUiAssets).toContain("ACTION_COPY_SVG");
     expect(firefoxUiAssets).toContain("ACTION_DOWNLOAD_SVG");
+    expect(firefoxUiAssets).toContain("createScreenshotsRetryIconSvg");
     expect(firefoxUiAssets).toContain("createScreenshotsCopyIconSvg");
     expect(firefoxUiAssets).toContain("createScreenshotsDownloadIconSvg");
     expect(overlayCss).toContain(
@@ -283,6 +300,95 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toContain("--crop-firefox-primary-background-color: #5abad7;");
     expect(overlayCss).toContain('.crop-action[data-crop-focus-visible="true"]');
     expect(overlayCss).toContain("outline: 2px solid var(--crop-firefox-focus-outline-color);");
+  });
+
+  it("wires full page mode to a Firefox-style capture preview pipeline", () => {
+    expect(overlayTemplate).toContain('label: "전체 페이지 선택"');
+    expect(overlayTemplate).toContain('mode: "full-page"');
+    expect(overlayTemplate).not.toContain('mode: "full-page",\n    disabled: true');
+    expect(overlayTemplate).toContain('container.className = "crop-preview";');
+    expect(overlayTemplate).toContain('dialog.className = "crop-preview-dialog";');
+    expect(overlayTemplate).toContain('createActionButton("retry", "다시 시도", true)');
+    expect(overlayTemplate).toContain("getActionTitle(action, label)");
+    expect(overlayTemplate).toContain('return `${label} (${getAccelShortcut("C")})`;');
+    expect(overlayTemplate).toContain('return `${label} (${getAccelShortcut("S")})`;');
+    expect(overlayTemplate).toContain('return `${label} (${isMacLikePlatform() ? "esc" : "Esc"})`;');
+    expect(overlayTemplate).toContain("createScreenshotsRetryIconSvg");
+    expect(overlayTemplate).not.toContain("function createRetryIconSvg");
+    expect(overlayTemplate).toContain('image.className = "crop-preview-image";');
+    expect(overlayCss).toContain(".crop-preview");
+    expect(overlayCss).toContain(".crop-preview-dialog");
+    expect(overlayCss).toContain("align-items: flex-start;");
+    expect(overlayCss).toContain("padding: 24px 52px 44px;");
+    expect(overlayCss).toContain("width: min(1480px, calc(100vw - 104px));");
+    expect(overlayCss).toContain("height: min(860px, calc(100vh - 68px));");
+    expect(overlayCss).toContain("--crop-preview-inline-padding: 24px;");
+    expect(overlayCss).toContain("padding: 0 var(--crop-preview-inline-padding) 24px;");
+    expect(overlayCss).toContain("padding: 8px var(--crop-preview-inline-padding) 6px;");
+    expect(overlayCss).toContain("background: #44414f;");
+    expect(overlayCss).toContain(':host([data-crop-capture-mode="visible"]) .crop-preview-surface');
+    expect(overlayCss).toContain("overflow: hidden;");
+    expect(overlayCss).toContain("max-height: 100%;");
+    expect(overlayCss).toContain("object-fit: contain;");
+    expect(overlayCss).toMatch(/\.crop-preview \{[\s\S]*?cursor: auto;/);
+    expect(overlayCss).toContain(".crop-preview-image");
+    expect(overlayCss).toContain(".crop-preview-actions");
+    expect(overlayCss).toContain(".crop-preview-actions .crop-action-group");
+    expect(overlayCss).toContain(".crop-preview-actions .crop-action");
+    expect(overlayCss).toContain(".crop-mode-button--full-page");
+    expect(overlayCss).toContain("background: #0060df;");
+    expect(overlayCss).toContain("background: #0250bb;");
+    expect(overlayCss).toContain("background: #054096;");
+    expect(overlayCss).toContain("overscroll-behavior: contain;");
+    expect(overlayRuntime).toContain('type CaptureMode = "visible" | "full-page";');
+    expect(overlayRuntime).toContain("getCropModeFromEvent");
+    expect(overlayRuntime).toContain("handleWheel");
+    expect(overlayRuntime).toContain("isPreviewScrollableEvent");
+    expect(overlayRuntime).toContain("getPreviewKeyboardAction");
+    expect(overlayRuntime).toContain("getCaptureKeyboardAction");
+    expect(overlayRuntime).toContain("selectedShortcutAction");
+    expect(overlayRuntime).toContain("startCaptureAction(selectedShortcutAction)");
+    expect(overlayRuntime).toContain("shouldIgnoreCaptureKeyboardTarget");
+    expect(overlayRuntime).toContain("getAccelKey(event)");
+    expect(overlayRuntime).toContain('case "c":');
+    expect(overlayRuntime).toContain('case "s":');
+    expect(overlayRuntime).toContain("interface CaptureOverlayVisibilityOptions");
+    expect(overlayRuntime).toContain("keepHiddenOnSuccess: true");
+    expect(overlayRuntime).toContain("if (!visibilityOptions.keepHiddenOnSuccess || !completed)");
+    expect(overlayRuntime).toContain('action === "retry"');
+    expect(overlayRuntime).toContain("startVisibleViewportPreview");
+    expect(overlayRuntime).toContain("startFullPagePreview");
+    expect(overlayRuntime).toContain("startPreviewAction");
+    expect(overlayRuntime).toContain("setPreviewCaptureResult");
+    expect(overlayRuntime).toContain("captureVisibleViewportRegion");
+    expect(overlayRuntime).toContain("getViewportRect(viewport)");
+    expect(overlayRuntime).toContain("setModeCapturePending");
+    expect(overlayCss).toContain('[data-crop-mode-capture-pending="true"]');
+    expect(overlayRuntime).toContain("captureFullPageTiles");
+    expect(overlayRuntime).toContain("stitchCapturedTiles");
+    expect(overlayRuntime).toContain("captureFullPageRegion");
+    expect(overlayRuntime).toContain("setCaptureDocumentChromeSuppressed");
+    expect(overlayRuntime).toContain("setCaptureScrollBehaviorDisabled");
+    expect(overlayRuntime).toContain("beforeCaptureTile");
+    expect(overlayRuntime).toContain("afterCaptureTile");
+    expect(overlayRuntime).toContain("setCapturePageChromeSuppressed(index > 0)");
+    expect(overlayRuntime).toContain("collectFullPageChromeElements");
+    expect(overlayRuntime).toContain('style.position !== "fixed" && style.position !== "sticky"');
+    expect(overlayRuntime).toContain("host.dataset.cropCaptureMode = result.mode;");
+    expect(overlayRuntime).toContain("host.dataset.cropCaptureTileCount");
+    expect(overlayRuntime).not.toContain("getFullPageBounds");
+
+    const previewPendingStart = overlayRuntime.indexOf("const setPreviewPending");
+    const previewPendingEnd = overlayRuntime.indexOf("const setPreviewStatus");
+    const previewPendingBlock = overlayRuntime.slice(previewPendingStart, previewPendingEnd);
+
+    expect(previewPendingBlock).toContain('setAttribute("aria-busy", "true")');
+    expect(previewPendingBlock).not.toContain("button.disabled");
+  });
+
+  it("keeps the mode toolbar inside the page viewport below browser chrome", () => {
+    expect(overlayCss).toMatch(/\.crop-mode-toolbar \{[\s\S]*?position: fixed;[\s\S]*?top: 8px;/);
+    expect(overlayCss).not.toContain("top: -8px;");
   });
 
   it("keeps MVP extension permissions free of debugger and all-url host access", () => {
