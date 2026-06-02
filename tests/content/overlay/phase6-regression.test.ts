@@ -31,6 +31,10 @@ const phase6FixtureHtml = readFileSync(
   resolve(testDir, "../../fixtures/phase6_edge_cases.html"),
   "utf8"
 );
+const qualityMatrix = readFileSync(
+  resolve(testDir, "../../../mydocs/tech/task_m020_8_quality_matrix.md"),
+  "utf8"
+);
 const overlayCss = readFileSync(
   resolve(testDir, "../../../src/content/overlay/crop-overlay.css"),
   "utf8"
@@ -182,6 +186,22 @@ describe("Phase 6 overlay regression coverage", () => {
     ]) {
       expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
     }
+  });
+
+  it("keeps selected scroll capture smoke targets and quality criteria", () => {
+    for (const fixtureName of [
+      "selected-scroll-capture-section",
+      "selected-scroll-capture-target",
+      "selected-scroll-capture-top-marker",
+      "selected-scroll-capture-bottom-marker"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+
+    expect(phase6FixtureHtml).toContain('data-crop-expected-css-size="1520x920"');
+    expect(qualityMatrix).toContain("P6-37");
+    expect(qualityMatrix).toContain("selected-scroll-capture-target");
+    expect(qualityMatrix).toContain("Task #26");
   });
 
   it("keeps same-origin iframe smoke targets in the fixture", () => {
