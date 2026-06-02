@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import {
-  intersectRects,
   normalizeRect,
   rectFromEdges,
   type RectLike,
@@ -151,10 +150,7 @@ export function getBestRectForElement(
     }
 
     if (isTooLarge(rawRect, thresholds)) {
-      if (!selectedRect) {
-        selectedRect = getFallbackRect(rawRect, windowDimensions, thresholds, coordinateSpace);
-        selectedNode = node;
-      } else {
+      if (selectedRect) {
         attemptExtend = true;
       }
       break;
@@ -401,29 +397,6 @@ function tryExtendWithSibling(
   }
 
   return combined;
-}
-
-function getFallbackRect(
-  rect: ViewportRect,
-  windowDimensions: WindowDimensions,
-  thresholds: DetectionThresholds,
-  coordinateSpace: "viewport" | "page"
-): ViewportRect | null {
-  const viewportRect = intersectRects(rect, windowDimensions.viewportRect);
-  if (!viewportRect || isAbsolutelyTooSmall(viewportRect, thresholds)) {
-    return null;
-  }
-
-  const fallbackViewportRect = isTooLarge(viewportRect, thresholds)
-    ? rectFromEdges(
-        viewportRect.left,
-        viewportRect.top,
-        Math.min(viewportRect.left + thresholds.maxDetectWidth, viewportRect.right),
-        Math.min(viewportRect.top + thresholds.maxDetectHeight, viewportRect.bottom)
-      )
-    : viewportRect;
-
-  return toCoordinateSpaceRect(fallbackViewportRect, windowDimensions, coordinateSpace);
 }
 
 function getBoundingClientRect(element: Element): ViewportRect | null {
