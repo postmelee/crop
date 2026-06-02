@@ -952,8 +952,8 @@ export function mountCropOverlay(): void {
         captureVisibleTab: captureVisibleTabDataUrl,
         setOverlayHidden: setCaptureOverlayHidden,
         setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled,
-        beforeCaptureTile: (_tile, index) => {
-          setCapturePageChromeSuppressed(index > 0);
+        beforeCaptureTile: () => {
+          setCapturePageChromeSuppressed(true);
         },
         afterCaptureTile: () => {
           setCapturePageChromeSuppressed(false);

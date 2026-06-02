@@ -204,6 +204,29 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(qualityMatrix).toContain("Task #26");
   });
 
+  it("suppresses sticky and fixed page chrome for every selected stitching tile", () => {
+    const selectedCaptureStart = overlayRuntime.indexOf("const captureSelectedPageRectRegion");
+    const visibleViewportStart = overlayRuntime.indexOf("const captureVisibleViewportRegion");
+    const selectedCaptureBlock = overlayRuntime.slice(
+      selectedCaptureStart,
+      visibleViewportStart
+    );
+    const fullPageCaptureStart = overlayRuntime.indexOf("const captureFullPageRegion");
+    const visibleTabCaptureStart = overlayRuntime.indexOf("const captureVisibleTabDataUrl");
+    const fullPageCaptureBlock = overlayRuntime.slice(
+      fullPageCaptureStart,
+      visibleTabCaptureStart
+    );
+
+    expect(selectedCaptureBlock).toContain("capturePageRectTiles");
+    expect(selectedCaptureBlock).toContain("beforeCaptureTile: () =>");
+    expect(selectedCaptureBlock).toContain("setCapturePageChromeSuppressed(true)");
+    expect(selectedCaptureBlock).not.toContain("setCapturePageChromeSuppressed(index > 0)");
+
+    expect(fullPageCaptureBlock).toContain("captureFullPageTiles");
+    expect(fullPageCaptureBlock).toContain("setCapturePageChromeSuppressed(index > 0)");
+  });
+
   it("keeps same-origin iframe smoke targets in the fixture", () => {
     for (const fixtureName of [
       "same-document-iframe",

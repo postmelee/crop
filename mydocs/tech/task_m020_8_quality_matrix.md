@@ -84,7 +84,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-34 | full page overlay 오염 방지 | full page preview Copy/Save 결과 | preview visible 상태 | crop overlay, preview, handles, action box, scrollbar가 저장 PNG에 포함되지 않는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 PNG smoke |
 | P6-35 | full page preview toolbar parity | full page preview toolbar | hover 및 keydown | Retry icon이 Firefox reload icon 크기와 맞고, Copy/Save/Cancel tooltip shortcut 및 Copy/Save shortcut 동작이 맞는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
 | P6-36 | Copy/Save 종료 flicker | selected/drag/visible/full page capture | Copy 또는 Save 직후 | 닫히기 직전 선택 박스가 재노출되거나 preview toolbar가 disabled opacity로 깜빡이지 않는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
-| P6-37 | selected scroll capture 전체 rect 저장 | `[data-crop-fixture="selected-scroll-capture-target"]` | 선택 후 스크롤로 rect 일부가 viewport 밖에 있는 상태에서 Save/Copy | 저장 PNG 크기가 선택 박스 CSS 크기 x DPR과 일치하고 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다. | #26 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #26 |
+| P6-37 | selected scroll capture 전체 rect 저장 | `[data-crop-fixture="selected-scroll-capture-target"]` | 선택 후 스크롤로 rect 일부가 viewport 밖에 있고 sticky header가 선택 영역 위에 겹친 상태에서 Save/Copy | 저장 PNG 크기가 선택 박스 CSS 크기 x DPR과 일치하고 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다. 선택 박스 밖 sticky/fixed page chrome도 포함되지 않는다. | #26 Stage 5 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #26 |
 
 ## 수동 smoke 절차 초안
 
@@ -108,7 +108,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 18. `[data-crop-fixture="selected-scroll-capture-target"]` 전체 panel을 선택하고 표시 크기 `1520 x 920`을 기록한다.
 19. 선택 상태를 유지한 채 스크롤해 sticky header가 선택 영역 위쪽과 겹치도록 만든 뒤 `Save`를 실행한다.
 20. 저장 PNG 크기가 DPR 2 환경에서는 `3040 x 1840`처럼 선택 CSS 크기 x DPR과 일치하는지 확인한다.
-21. 저장 PNG에 top/bottom marker가 모두 포함되고 crop overlay, handles, action buttons가 포함되지 않는지 확인한다.
+21. 저장 PNG에 top/bottom marker가 모두 포함되고 crop overlay, handles, action buttons, 선택 박스 밖 sticky header가 포함되지 않는지 확인한다.
 22. selected scroll Save 후 시작 scroll position으로 복구되는지 확인한다.
 
 ## Stage별 갱신 계획
@@ -189,6 +189,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | viewport 밖 selected capture runtime 분기 | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
 | selected rect capture scroll restoration | OK | `tests/content/overlay/full-page-capture.test.ts` |
 | selected scroll capture fixture marker | OK | `tests/fixtures/phase6_edge_cases.html`, `tests/content/overlay/phase6-regression.test.ts` |
+| selected scroll capture sticky/fixed page chrome suppression | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
 | 실제 PNG dimension smoke | 수동 후보 | `[data-crop-fixture="selected-scroll-capture-target"]`, `data-crop-expected-css-size="1520x920"` |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 3/4 grep |
 
