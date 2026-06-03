@@ -97,6 +97,37 @@ describe("extension i18n messages", () => {
       { name: "actionSave", substitutions: undefined }
     ]);
   });
+
+  it("passes placeholder substitutions to chrome.i18n before falling back", () => {
+    const calls: Array<{
+      readonly name: string;
+      readonly substitutions?: string | string[];
+    }> = [];
+    const globalWithChrome = globalThis as typeof globalThis & { chrome?: TestChromeApi };
+    globalWithChrome.chrome = {
+      i18n: {
+        getMessage(name, substitutions) {
+          calls.push({ name, substitutions });
+          return name === "actionTitleWithShortcut" ? "Localized shortcut" : "";
+        }
+      }
+    };
+
+    expect(getCropMessage("actionTitleWithShortcut", ["Copy", "Ctrl+C"])).toBe(
+      "Localized shortcut"
+    );
+    expect(getCropMessage("resizeHandleLabel", "Top right")).toBe("Top right resize handle");
+    expect(calls).toEqual([
+      {
+        name: "actionTitleWithShortcut",
+        substitutions: ["Copy", "Ctrl+C"]
+      },
+      {
+        name: "resizeHandleLabel",
+        substitutions: ["Top right"]
+      }
+    ]);
+  });
 });
 
 function readLocaleMessages(locale: (typeof localeNames)[number]): Record<CropI18nMessageName, LocaleMessage> {

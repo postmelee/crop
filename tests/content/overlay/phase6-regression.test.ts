@@ -61,6 +61,44 @@ const manifestJson = JSON.parse(
   permissions?: string[];
   host_permissions?: string[];
 };
+const koLocaleMessages = JSON.parse(
+  readFileSync(resolve(testDir, "../../../_locales/ko/messages.json"), "utf8")
+) as Record<
+  string,
+  {
+    message?: string;
+  }
+>;
+const overlaySource = `${overlayTemplate}\n${overlayRuntime}`;
+const overlayI18nMessageKeys = [
+  "overlayCaptureModesLabel",
+  "modeVisible",
+  "modeFullPage",
+  "promptAreaSelectionLabel",
+  "promptInstructionMain",
+  "promptInstructionSub",
+  "actionCopy",
+  "actionSave",
+  "actionCancel",
+  "actionRetry",
+  "actionsToolbarLabel",
+  "previewDialogLabel",
+  "previewImageAlt",
+  "previewActionsToolbarLabel",
+  "actionTitleWithShortcut",
+  "resizeHandleLabel",
+  "resizeDirectionNorth",
+  "resizeDirectionSouth",
+  "resizeDirectionEast",
+  "resizeDirectionWest",
+  "resizeDirectionNorthEast",
+  "resizeDirectionNorthWest",
+  "resizeDirectionSouthEast",
+  "resizeDirectionSouthWest",
+  "copySuccessToast",
+  "copyFailureSaveHint",
+  "saveFailureRetryHint"
+] as const;
 
 describe("Phase 6 overlay regression coverage", () => {
   it("clips a page selection that extends outside every viewport edge before source mapping", () => {
@@ -377,6 +415,28 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("viewportRectToPageRect");
     expect(overlayRuntime).toContain("if (hit.rect) {");
     expect(overlayRuntime).toContain("return viewportRectToPageRect(hit.rect, windowDimensions);");
+  });
+
+  it("routes user-facing overlay strings through i18n message keys", () => {
+    expect(overlayTemplate).toContain('import { getCropMessage');
+    expect(overlayRuntime).toContain('import { getCropMessage }');
+
+    for (const key of overlayI18nMessageKeys) {
+      expect(overlaySource).toContain(`"${key}"`);
+    }
+
+    for (const key of [
+      "actionCopy",
+      "actionSave",
+      "actionCancel",
+      "actionRetry",
+      "copySuccessToast",
+      "promptInstructionMain"
+    ]) {
+      const koMessage = koLocaleMessages[key]?.message;
+      expect(koMessage).toBeTruthy();
+      expect(overlaySource).not.toContain(JSON.stringify(koMessage));
+    }
   });
 
   it("keeps the copy completion notification Firefox-like and omits it for save", () => {
