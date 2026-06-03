@@ -260,7 +260,7 @@ describe("getBestRectForElement", () => {
     ).toEqual(rectFromEdges(40, 40, 160, 90));
   });
 
-  it("does not auto-select an initial element that is larger than thresholds", () => {
+  it("rejects the initial element when it is larger than thresholds", () => {
     const target = fixtureElement("main", rectFromEdges(0, 0, 1600, 1200));
 
     expect(getBestRectForElement(asElement(target), { windowDimensions: viewport })).toBeNull();
@@ -322,10 +322,10 @@ describe("getBestRectForElement", () => {
   it("allows max detection thresholds to be adjusted for tests and future UI tuning", () => {
     const target = fixtureElement("main", rectFromEdges(0, 0, 700, 500));
 
-    setMaxDetectWidth(600);
-    setMaxDetectHeight(400);
-
     try {
+      setMaxDetectWidth(600);
+      setMaxDetectHeight(400);
+
       expect(getBestRectForElement(asElement(target), { windowDimensions: viewport })).toBeNull();
     } finally {
       resetDetectThresholds();

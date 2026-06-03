@@ -57,7 +57,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-10 | same-document iframe | `[data-crop-fixture="same-document-iframe"]` | iframe 내부 hover | same-origin/srcdoc iframe 내부 요소가 parent viewport 좌표로 선택된다. | 자동 OK: #14 iframe traversal 테스트, Stage 4 fixture smoke 후보 | OK | 해당 없음 | `overlay-helpers.test.ts`, Stage 4 smoke |
 | P6-11 | open shadow host | `[data-crop-fixture="open-shadow-host"]` | host hover | host 경계 선택이 안정적으로 동작한다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-12 | open shadow 내부 panel | `[data-crop-fixture="open-shadow-panel"]` | open shadow DOM | composed path 기반으로 내부 요소 rect가 잡히는지 확인한다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
-| P6-13 | viewport 밖 큰 요소 | `[data-crop-fixture="offscreen-large-element"]` | 우측 viewport 밖 확장 | 선택 outline은 요소 rect를 표시하되 Copy/Save 이미지는 visible viewport 교차 영역만 저장한다. | 자동+수동 OK: visible clipping 기준 통과 | OK | MVP 제한 후보 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
+| P6-13 | viewport 밖 큰 요소 | `[data-crop-fixture="offscreen-large-element"]` | 우측 viewport 밖 확장, 첫 hit 후보가 Firefox max detect threshold보다 큼 | Firefox처럼 oversized initial element는 자동 추천하지 않고, clipped viewport-sized fallback 선택 박스를 만들지 않는다. | #26 Stage 6 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `overlay-helpers.test.ts`, `phase6-regression.test.ts`, #26 |
 | P6-14 | scroll tail | `[data-crop-fixture="scroll-tail"]` | 하단 스크롤 후 hover | 스크롤 위치가 반영되어 outline이 target에 맞는다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-15 | Copy 액션 | 선택 완료 후 `Copy` | zoom 100% | overlay/prompt/buttons/toast가 결과 이미지에 포함되지 않고 clipboard paste가 가능하다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-16 | Save 액션 | 선택 완료 후 `Save` | zoom 100% | overlay/prompt/buttons/toast가 결과 이미지에 포함되지 않고 PNG 다운로드가 시작된다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
@@ -86,6 +86,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-36 | Copy/Save 종료 flicker | selected/drag/visible/full page capture | Copy 또는 Save 직후 | 닫히기 직전 선택 박스가 재노출되거나 preview toolbar가 disabled opacity로 깜빡이지 않는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
 | P6-37 | 너무 큰 wrapper 자동 추천 제외 | `[data-crop-fixture="too-large-wrapper"]` | wrapper 빈 영역 hover | `MAX_DETECT_WIDTH`/`MAX_DETECT_HEIGHT`를 초과하는 wrapper는 viewport/maxDetect 크기로 잘린 자동 선택 후보를 만들지 않고 hover state를 초기화한다. | 자동 OK | OK | 해당 없음 | #24 Stage 1/2 regression, `overlay-helpers.test.ts`, `phase6-regression.test.ts` |
 | P6-38 | 큰 wrapper 내부 실제 요소 선택 유지 | `[data-crop-fixture="too-large-wrapper-infobox"]`, `[data-crop-fixture="too-large-wrapper-card"]` | wrapper 내부 table/card hover | 큰 wrapper 내부의 infobox/table/card는 자동 선택 후보로 계속 유지된다. | 자동 OK, 수동 smoke 후보 | OK | 해당 없음 | #24 Stage 1/2 regression, `overlay-helpers.test.ts`, `phase6-regression.test.ts`, `phase6_edge_cases.html` |
+| P6-39 | selected scroll capture 전체 rect 저장 | `[data-crop-fixture="selected-scroll-capture-target"]` | 선택 후 스크롤로 rect 일부가 viewport 밖에 있고 sticky header가 선택 영역 위에 겹친 상태에서 Save/Copy | 저장 PNG 크기가 선택 박스 CSS 크기 x DPR과 일치하고 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다. 선택 박스 밖 sticky/fixed page chrome도 포함되지 않는다. | #26 Stage 5 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #26 |
 
 ## 수동 smoke 절차 초안
 
@@ -106,8 +107,14 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 15. visible preview가 내부 스크롤 없이 한 화면에 맞춰지고 modal 위치가 과도하게 낮지 않은지 확인한다.
 16. visible/full page preview의 modal 크기가 동일하고 Save button 오른쪽 끝이 image 오른쪽 끝과 맞는지 확인한다.
 17. selected/drag/visible/full page 각 모드에서 Copy/Save 직후 선택 박스나 preview toolbar가 깜빡이지 않는지 확인한다.
-18. `too-large-wrapper`의 빈 wrapper 영역을 hover해 큰 선택 박스가 생기지 않는지 확인한다.
-19. 같은 영역의 `too-large-wrapper-infobox`, `too-large-wrapper-card`를 hover해 내부 table/card가 정상 선택되는지 확인한다.
+18. `[data-crop-fixture="selected-scroll-capture-target"]` 전체 panel을 선택하고 표시 크기 `1520 x 920`을 기록한다.
+19. 선택 상태를 유지한 채 스크롤해 sticky header가 선택 영역 위쪽과 겹치도록 만든 뒤 `Save`를 실행한다.
+20. 저장 PNG 크기가 DPR 2 환경에서는 `3040 x 1840`처럼 선택 CSS 크기 x DPR과 일치하는지 확인한다.
+21. 저장 PNG에 top/bottom marker가 모두 포함되고 crop overlay, handles, action buttons, 선택 박스 밖 sticky header가 포함되지 않는지 확인한다.
+22. selected scroll Save 후 시작 scroll position으로 복구되는지 확인한다.
+23. `[data-crop-fixture="offscreen-large-element"]`의 빈 큰 영역을 hover/click해도 자동 추천 박스가 생성되지 않는지 확인한다.
+24. `too-large-wrapper`의 빈 wrapper 영역을 hover해 큰 선택 박스가 생기지 않는지 확인한다.
+25. 같은 영역의 `too-large-wrapper-infobox`, `too-large-wrapper-card`를 hover해 내부 table/card가 정상 선택되는지 확인한다.
 
 ## Stage별 갱신 계획
 
@@ -178,6 +185,19 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | full page preview 내부 스크롤 잠금 | 자동+수동 OK | `crop-overlay.ts`, `crop-overlay.css`, `phase6-regression.test.ts`, 작업지시자 smoke |
 | full page Save/Copy 실제 PNG smoke | OK | `http://127.0.0.1:5176/tests/fixtures/phase6_edge_cases.html`에서 작업지시자 직접 검증 |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, `phase6-regression.test.ts`, Stage 4/5 grep |
+
+## Task #26 갱신 결과
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| selected page rect tile plan | OK | `tests/content/overlay/full-page-capture.test.ts` |
+| viewport 밖 selected capture runtime 분기 | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| oversized initial element auto-select rejection | OK | `src/firefox-derived/overlay-helpers.ts`, `tests/firefox-derived/overlay-helpers.test.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| selected rect capture scroll restoration | OK | `tests/content/overlay/full-page-capture.test.ts` |
+| selected scroll capture fixture marker | OK | `tests/fixtures/phase6_edge_cases.html`, `tests/content/overlay/phase6-regression.test.ts` |
+| selected scroll capture sticky/fixed page chrome suppression | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| 실제 PNG dimension smoke | 수동 후보 | `[data-crop-fixture="selected-scroll-capture-target"]`, `data-crop-expected-css-size="1520x920"` |
+| `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 3/4 grep |
 
 ## Task #24 갱신 결과
 

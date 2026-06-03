@@ -35,6 +35,10 @@ const phase6FixtureHtml = readFileSync(
   resolve(testDir, "../../fixtures/phase6_edge_cases.html"),
   "utf8"
 );
+const qualityMatrix = readFileSync(
+  resolve(testDir, "../../../mydocs/tech/task_m020_8_quality_matrix.md"),
+  "utf8"
+);
 const overlayCss = readFileSync(
   resolve(testDir, "../../../src/content/overlay/crop-overlay.css"),
   "utf8"
@@ -144,6 +148,24 @@ describe("Phase 6 overlay regression coverage", () => {
     ).toEqual(visualRect);
   });
 
+  it("does not auto-select an initial oversized element beyond Firefox thresholds", () => {
+    const viewport = new WindowDimensions({
+      clientWidth: 1341,
+      clientHeight: 900
+    });
+    const largeElement = fixtureElement("div", firefoxRectFromEdges(0, 0, 1480, 520));
+
+    expect(
+      getBestRectForElement(asElement(largeElement), {
+        windowDimensions: viewport,
+        thresholds: {
+          maxDetectWidth: viewport.clientWidth + 100,
+          maxDetectHeight: Math.max(viewport.clientHeight + 100, 700)
+        }
+      })
+    ).toBeNull();
+  });
+
   it("clears hover state when a too-large wrapper has no automatic candidate", () => {
     const viewport = new WindowDimensions({
       clientWidth: 800,
@@ -236,6 +258,45 @@ describe("Phase 6 overlay regression coverage", () => {
     ]) {
       expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
     }
+  });
+
+  it("keeps selected scroll capture smoke targets and quality criteria", () => {
+    for (const fixtureName of [
+      "selected-scroll-capture-section",
+      "selected-scroll-capture-target",
+      "selected-scroll-capture-top-marker",
+      "selected-scroll-capture-bottom-marker"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+
+    expect(phase6FixtureHtml).toContain('data-crop-expected-css-size="1520x920"');
+    expect(qualityMatrix).toContain("P6-39");
+    expect(qualityMatrix).toContain("selected-scroll-capture-target");
+    expect(qualityMatrix).toContain("Task #26");
+  });
+
+  it("suppresses sticky and fixed page chrome for every selected stitching tile", () => {
+    const selectedCaptureStart = overlayRuntime.indexOf("const captureSelectedPageRectRegion");
+    const visibleViewportStart = overlayRuntime.indexOf("const captureVisibleViewportRegion");
+    const selectedCaptureBlock = overlayRuntime.slice(
+      selectedCaptureStart,
+      visibleViewportStart
+    );
+    const fullPageCaptureStart = overlayRuntime.indexOf("const captureFullPageRegion");
+    const visibleTabCaptureStart = overlayRuntime.indexOf("const captureVisibleTabDataUrl");
+    const fullPageCaptureBlock = overlayRuntime.slice(
+      fullPageCaptureStart,
+      visibleTabCaptureStart
+    );
+
+    expect(selectedCaptureBlock).toContain("capturePageRectTiles");
+    expect(selectedCaptureBlock).toContain("beforeCaptureTile: () =>");
+    expect(selectedCaptureBlock).toContain("setCapturePageChromeSuppressed(true)");
+    expect(selectedCaptureBlock).not.toContain("setCapturePageChromeSuppressed(index > 0)");
+
+    expect(fullPageCaptureBlock).toContain("captureFullPageTiles");
+    expect(fullPageCaptureBlock).toContain("setCapturePageChromeSuppressed(index > 0)");
   });
 
   it("keeps same-origin iframe smoke targets in the fixture", () => {
@@ -429,6 +490,9 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("setPreviewCaptureResult");
     expect(overlayRuntime).toContain("captureVisibleViewportRegion");
     expect(overlayRuntime).toContain("getViewportRect(viewport)");
+    expect(overlayRuntime).toContain("isPageRectFullyInsideViewport");
+    expect(overlayRuntime).toContain("captureSelectedPageRectRegion");
+    expect(overlayRuntime).toContain("capturePageRectTiles");
     expect(overlayRuntime).toContain("setModeCapturePending");
     expect(overlayCss).toContain('[data-crop-mode-capture-pending="true"]');
     expect(overlayRuntime).toContain("captureFullPageTiles");

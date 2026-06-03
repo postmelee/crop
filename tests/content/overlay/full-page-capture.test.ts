@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   captureFullPageTiles,
+  capturePageRectTiles,
   createCapturedFullPageTile,
   createFullPageMetrics,
   createFullPageTilePlan,
+  createPageRectTilePlan,
   getFullPageBounds,
   readFullPageMetrics,
   type FullPageMetrics
@@ -143,6 +145,103 @@ describe("full page capture helpers", () => {
     });
   });
 
+  it("plans selected page rect tiles relative to the selected bounds", () => {
+    const selectedRect = rectFromEdges(240, 320, 1760, 1240);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 800,
+        viewportHeight: 600,
+        scrollWidth: 2000,
+        scrollHeight: 1600,
+        devicePixelRatio: 2
+      }),
+      selectedRect
+    );
+    const bottomRight = plan.tiles.at(-1);
+
+    expect(plan.bounds).toEqual({
+      ...selectedRect,
+      devicePixelRatio: 2
+    });
+    expect(plan.outputCssSize).toEqual({ width: 1520, height: 920 });
+    expect(plan.viewportCssSize).toEqual({ clientWidth: 800, clientHeight: 600 });
+    expect(plan.tiles).toHaveLength(4);
+    expect(plan.tiles[0]).toMatchObject({
+      indexX: 0,
+      indexY: 0,
+      scrollX: 240,
+      scrollY: 320,
+      pageRect: rectFromEdges(240, 320, 1040, 920),
+      viewportCropRect: rectFromEdges(0, 0, 800, 600),
+      destinationCssRect: rectFromEdges(0, 0, 800, 600)
+    });
+    expect(bottomRight).toMatchObject({
+      indexX: 1,
+      indexY: 1,
+      scrollX: 1040,
+      scrollY: 920,
+      pageRect: rectFromEdges(1040, 920, 1760, 1240),
+      viewportCropRect: rectFromEdges(0, 0, 720, 320),
+      destinationCssRect: rectFromEdges(800, 600, 1520, 920)
+    });
+  });
+
+  it("clamps selected page rect tile scroll while preserving destination size", () => {
+    const selectedRect = rectFromEdges(1200, 900, 1520, 1160);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 400,
+        scrollWidth: 1600,
+        scrollHeight: 1200,
+        scrollX: 40,
+        scrollY: 80
+      }),
+      selectedRect
+    );
+
+    expect(plan.outputCssSize).toEqual({ width: 320, height: 260 });
+    expect(plan.tiles).toHaveLength(1);
+    expect(plan.tiles[0]).toMatchObject({
+      indexX: 0,
+      indexY: 0,
+      scrollX: 1100,
+      scrollY: 800,
+      pageRect: selectedRect,
+      viewportCropRect: rectFromEdges(100, 100, 420, 360),
+      destinationCssRect: rectFromEdges(0, 0, 320, 260)
+    });
+  });
+
+  it("normalizes reversed selected page rect bounds before planning tiles", () => {
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 400,
+        scrollWidth: 1200,
+        scrollHeight: 900
+      }),
+      {
+        left: 700,
+        top: 650,
+        right: 300,
+        bottom: 250
+      }
+    );
+
+    expect(plan.bounds).toEqual({
+      ...rectFromEdges(300, 250, 700, 650),
+      devicePixelRatio: 1
+    });
+    expect(plan.outputCssSize).toEqual({ width: 400, height: 400 });
+    expect(plan.tiles[0]).toMatchObject({
+      scrollX: 300,
+      scrollY: 250,
+      viewportCropRect: rectFromEdges(0, 0, 400, 400),
+      destinationCssRect: rectFromEdges(0, 0, 400, 400)
+    });
+  });
+
   it("uses actual scroll offsets when preparing a captured tile", () => {
     const plan = createFullPageTilePlan(
       createFullPageMetrics({
@@ -243,6 +342,64 @@ describe("full page capture helpers", () => {
       "hidden:false",
       "paint",
       "scroll:0,120",
+      "paint",
+      "scrollBehaviorDisabled:false",
+      "hidden:false"
+    ]);
+  });
+
+  it("captures selected page rect tiles and restores the initial scroll position", async () => {
+    const events: string[] = [];
+    let currentScrollX = 12;
+    let currentScrollY = 34;
+    const readMetrics = (): FullPageMetrics =>
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 400,
+        scrollWidth: 1600,
+        scrollHeight: 1200,
+        scrollX: currentScrollX,
+        scrollY: currentScrollY
+      });
+
+    const result = await capturePageRectTiles({
+      pageRect: rectFromEdges(420, 360, 1120, 960),
+      readMetrics,
+      scrollTo: (x, y) => {
+        events.push(`scroll:${x},${y}`);
+        currentScrollX = x;
+        currentScrollY = y;
+      },
+      waitForPaint: () => {
+        events.push("paint");
+        return Promise.resolve();
+      },
+      setOverlayHidden: (hidden) => {
+        events.push(`hidden:${hidden}`);
+      },
+      setScrollBehaviorDisabled: (disabled) => {
+        events.push(`scrollBehaviorDisabled:${disabled}`);
+      },
+      captureVisibleTab: async () => {
+        events.push(`capture:${currentScrollX},${currentScrollY}`);
+        return `data:image/png;base64,${currentScrollX}-${currentScrollY}`;
+      }
+    });
+
+    expect(result.plan.outputCssSize).toEqual({ width: 700, height: 600 });
+    expect(result.tiles.map((tile) => tile.actualScrollX)).toEqual([420, 920, 420, 920]);
+    expect(result.tiles.map((tile) => tile.actualScrollY)).toEqual([360, 360, 760, 760]);
+    expect(result.tiles.map((tile) => tile.destinationCssRect)).toEqual([
+      rectFromEdges(0, 0, 500, 400),
+      rectFromEdges(500, 0, 700, 400),
+      rectFromEdges(0, 400, 500, 600),
+      rectFromEdges(500, 400, 700, 600)
+    ]);
+    expect(currentScrollX).toBe(12);
+    expect(currentScrollY).toBe(34);
+    expect(events.at(0)).toBe("scrollBehaviorDisabled:true");
+    expect(events.slice(-4)).toEqual([
+      "scroll:12,34",
       "paint",
       "scrollBehaviorDisabled:false",
       "hidden:false"

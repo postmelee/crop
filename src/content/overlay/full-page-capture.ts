@@ -4,7 +4,12 @@ import {
   type OutputCssSize,
   type StitchImageScale
 } from "../../shared/stitch-image";
-import { rectFromEdges, type CropRect } from "../../shared/rect";
+import {
+  normalizeRect,
+  rectFromEdges,
+  type CropRect,
+  type CropRectLike
+} from "../../shared/rect";
 
 export interface FullPageMetricsInput {
   readonly viewportWidth?: number | null;
@@ -86,6 +91,10 @@ export interface FullPageCaptureLoopOptions extends FullPageTilePlanOptions {
   readonly setScrollBehaviorDisabled?: (disabled: boolean) => void;
   readonly beforeCaptureTile?: (tile: FullPageTile, index: number) => void | Promise<void>;
   readonly afterCaptureTile?: (tile: FullPageTile, index: number) => void | Promise<void>;
+}
+
+export interface PageRectCaptureLoopOptions extends FullPageCaptureLoopOptions {
+  readonly pageRect: CropRectLike;
 }
 
 interface FullPageElementLike {
@@ -191,15 +200,36 @@ export function createFullPageTilePlan(
   metrics: FullPageMetrics,
   options: FullPageTilePlanOptions = {}
 ): FullPageTilePlan {
+  return createPageRectTilePlan(metrics, getFullPageBounds(metrics), options);
+}
+
+export function createPageRectTilePlan(
+  metrics: FullPageMetrics,
+  pageRect: CropRectLike,
+  options: FullPageTilePlanOptions = {}
+): FullPageTilePlan {
   if (metrics.viewportWidth <= 0 || metrics.viewportHeight <= 0) {
     throw new Error("Full page capture requires a non-empty viewport.");
   }
 
-  const bounds = getFullPageBounds(metrics);
+  const normalizedBounds = normalizeRect(pageRect);
+  const bounds = {
+    ...normalizedBounds,
+    devicePixelRatio: metrics.devicePixelRatio
+  };
+
   validateEstimatedOutputSize(bounds, metrics.devicePixelRatio, options);
 
-  const xSegments = createSegments(bounds.left, bounds.right, metrics.viewportWidth);
-  const ySegments = createSegments(bounds.top, bounds.bottom, metrics.viewportHeight);
+  const xSegments = createSegments(
+    normalizedBounds.left,
+    normalizedBounds.right,
+    metrics.viewportWidth
+  );
+  const ySegments = createSegments(
+    normalizedBounds.top,
+    normalizedBounds.bottom,
+    metrics.viewportHeight
+  );
   const tiles: FullPageTile[] = [];
 
   for (let yIndex = 0; yIndex < ySegments.length; yIndex += 1) {
@@ -255,11 +285,26 @@ export function createFullPageTilePlan(
 export async function captureFullPageTiles(
   options: FullPageCaptureLoopOptions
 ): Promise<FullPageCaptureLoopResult> {
+  return captureTiles(options, (metrics) => createFullPageTilePlan(metrics, options));
+}
+
+export async function capturePageRectTiles(
+  options: PageRectCaptureLoopOptions
+): Promise<FullPageCaptureLoopResult> {
+  return captureTiles(options, (metrics) =>
+    createPageRectTilePlan(metrics, options.pageRect, options)
+  );
+}
+
+async function captureTiles(
+  options: FullPageCaptureLoopOptions,
+  createTilePlan: (metrics: FullPageMetrics) => FullPageTilePlan
+): Promise<FullPageCaptureLoopResult> {
   const readMetrics = options.readMetrics ?? readFullPageMetrics;
   const scrollTo = options.scrollTo ?? defaultScrollTo;
   const waitForPaint = options.waitForPaint ?? waitForNextPaint;
   const initialMetrics = readMetrics();
-  const plan = createFullPageTilePlan(initialMetrics, options);
+  const plan = createTilePlan(initialMetrics);
   const tiles: CapturedFullPageTile[] = [];
 
   options.setScrollBehaviorDisabled?.(true);

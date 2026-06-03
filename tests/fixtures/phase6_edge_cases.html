@@ -402,6 +402,55 @@
         border: 2px dashed #26844d;
       }
 
+      .selected-scroll-capture {
+        overflow: visible;
+        background:
+          linear-gradient(180deg, rgba(184, 89, 0, 0.08), rgba(184, 89, 0, 0.02)),
+          #fff;
+      }
+
+      .selected-scroll-target {
+        position: relative;
+        width: 1520px;
+        min-height: 920px;
+        padding: 28px 32px;
+        color: #33210d;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.86), transparent 48%),
+          repeating-linear-gradient(45deg, #fff7ed 0 34px, #ffedd5 34px 68px);
+        border: 3px dashed #b85900;
+        border-radius: 12px;
+      }
+
+      .selected-scroll-target h2 {
+        max-width: 760px;
+      }
+
+      .selected-scroll-target p {
+        max-width: 820px;
+        color: #6b3c12;
+      }
+
+      .selected-scroll-marker {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 220px;
+        min-height: 78px;
+        margin-top: 18px;
+        padding: 12px 16px;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.88);
+        border: 2px solid #b85900;
+        border-radius: 10px;
+      }
+
+      .selected-scroll-marker--bottom {
+        position: absolute;
+        right: 28px;
+        bottom: 28px;
+      }
+
       .edge-scroll-horizontal {
         position: relative;
         width: 1880px;
@@ -460,6 +509,7 @@
         <a href="#full-page">Full page</a>
         <a href="#embed">iframe and shadow</a>
         <a href="#adjustment">Adjust</a>
+        <a href="#selected-scroll">Selected scroll</a>
         <a href="#edge-scroll">Edge scroll</a>
         <a href="#large-wrapper">Large wrapper</a>
         <a href="#offscreen">Large element</a>
@@ -621,6 +671,28 @@ function cropVisibleViewport(rect, viewport) {
         </div>
       </section>
 
+      <section id="selected-scroll" class="section selected-scroll-capture" data-crop-fixture="selected-scroll-capture-section">
+        <div
+          class="selected-scroll-target"
+          data-crop-fixture="selected-scroll-capture-target"
+          data-crop-expected-css-size="1520x920"
+        >
+          <h2>Selected region scroll capture smoke area</h2>
+          <p>
+            Select this whole dashed panel, scroll until the sticky header
+            overlaps the upper part of the selection, then Save. The PNG should
+            keep the full 1520 x 920 CSS pixel selection instead of clipping to
+            the current viewport intersection.
+          </p>
+          <span class="selected-scroll-marker" data-crop-fixture="selected-scroll-capture-top-marker">
+            Selected region top marker
+          </span>
+          <span class="selected-scroll-marker selected-scroll-marker--bottom" data-crop-fixture="selected-scroll-capture-bottom-marker">
+            Selected region bottom marker
+          </span>
+        </div>
+      </section>
+
       <section id="edge-scroll" class="section edge-scroll-fixture" data-crop-fixture="edge-scroll-section">
         <h2>Edge auto-scroll smoke area</h2>
         <p>
@@ -648,8 +720,9 @@ function cropVisibleViewport(rect, viewport) {
           <h2>Large element continuing outside the visible viewport</h2>
           <p>
             This element intentionally extends past the right side of the
-            viewport. MVP capture should save only the visible viewport
-            intersection even if the selection outline shows the full element.
+            viewport. Automatic element selection should reject this oversized
+            initial candidate instead of creating a clipped viewport-sized
+            fallback rectangle.
           </p>
         </div>
       </section>
