@@ -50,6 +50,7 @@ import {
 } from "../../shared/clipboard";
 import { cropPngDataUrl } from "../../shared/crop-image";
 import { createPngFilename } from "../../shared/filename";
+import { getCropMessage } from "../../shared/i18n";
 import {
   clipPageRectToViewport,
   getViewportRect,
@@ -765,7 +766,7 @@ export function mountCropOverlay(): void {
         host.dataset.cropClipboardStatus = "ok";
         showCompletionToast({
           result,
-          message: "스크린샷이 복사되었습니다!",
+          message: getCropMessage("copySuccessToast"),
           status: "copied"
         });
         removeOverlay();
@@ -798,12 +799,7 @@ export function mountCropOverlay(): void {
         }
 
         recordCaptureFailure(error, action);
-        setPreviewStatus(
-          action === "copy"
-            ? "복사 실패. Save로 저장할 수 있습니다."
-            : "저장 실패. 다시 시도하세요.",
-          action
-        );
+        setPreviewStatus(getCaptureFailureMessage(action), action);
       })
       .finally(() => {
         pendingCapture = false;
@@ -830,7 +826,7 @@ export function mountCropOverlay(): void {
       host.dataset.cropClipboardStatus = "ok";
       showCompletionToast({
         result,
-        message: "스크린샷이 복사되었습니다!",
+        message: getCropMessage("copySuccessToast"),
         status: "copied"
       });
       removeOverlay();
@@ -870,11 +866,11 @@ export function mountCropOverlay(): void {
       host.dataset.cropClipboardStatus = "error";
       delete host.dataset.cropDownloadStatus;
       delete host.dataset.cropDownloadFilename;
-      setActionStatus("복사 실패. Save로 저장할 수 있습니다.", action);
+      setActionStatus(getCaptureFailureMessage(action), action);
     } else {
       host.dataset.cropDownloadStatus = "error";
       delete host.dataset.cropClipboardStatus;
-      setActionStatus("저장 실패. 다시 시도하세요.", action);
+      setActionStatus(getCaptureFailureMessage(action), action);
     }
   };
 
@@ -1740,6 +1736,10 @@ function focusFirefoxReferenceActionButton(template: CropOverlayTemplate): void 
 
   copyButton.dataset.cropFocusVisible = "true";
   copyButton.focus({ preventScroll: true });
+}
+
+function getCaptureFailureMessage(action: CaptureAction): string {
+  return getCropMessage(action === "copy" ? "copyFailureSaveHint" : "saveFailureRetryHint");
 }
 
 interface CompletionToastOptions {

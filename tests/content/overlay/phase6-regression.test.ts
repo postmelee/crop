@@ -61,6 +61,44 @@ const manifestJson = JSON.parse(
   permissions?: string[];
   host_permissions?: string[];
 };
+const koLocaleMessages = JSON.parse(
+  readFileSync(resolve(testDir, "../../../_locales/ko/messages.json"), "utf8")
+) as Record<
+  string,
+  {
+    message?: string;
+  }
+>;
+const overlaySource = `${overlayTemplate}\n${overlayRuntime}`;
+const overlayI18nMessageKeys = [
+  "overlayCaptureModesLabel",
+  "modeVisible",
+  "modeFullPage",
+  "promptAreaSelectionLabel",
+  "promptInstructionMain",
+  "promptInstructionSub",
+  "actionCopy",
+  "actionSave",
+  "actionCancel",
+  "actionRetry",
+  "actionsToolbarLabel",
+  "previewDialogLabel",
+  "previewImageAlt",
+  "previewActionsToolbarLabel",
+  "actionTitleWithShortcut",
+  "resizeHandleLabel",
+  "resizeDirectionNorth",
+  "resizeDirectionSouth",
+  "resizeDirectionEast",
+  "resizeDirectionWest",
+  "resizeDirectionNorthEast",
+  "resizeDirectionNorthWest",
+  "resizeDirectionSouthEast",
+  "resizeDirectionSouthWest",
+  "copySuccessToast",
+  "copyFailureSaveHint",
+  "saveFailureRetryHint"
+] as const;
 
 describe("Phase 6 overlay regression coverage", () => {
   it("clips a page selection that extends outside every viewport edge before source mapping", () => {
@@ -379,12 +417,34 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("return viewportRectToPageRect(hit.rect, windowDimensions);");
   });
 
+  it("routes user-facing overlay strings through i18n message keys", () => {
+    expect(overlayTemplate).toContain('import { getCropMessage');
+    expect(overlayRuntime).toContain('import { getCropMessage }');
+
+    for (const key of overlayI18nMessageKeys) {
+      expect(overlaySource).toContain(`"${key}"`);
+    }
+
+    for (const key of [
+      "actionCopy",
+      "actionSave",
+      "actionCancel",
+      "actionRetry",
+      "copySuccessToast",
+      "promptInstructionMain"
+    ]) {
+      const koMessage = koLocaleMessages[key]?.message;
+      expect(koMessage).toBeTruthy();
+      expect(overlaySource).not.toContain(JSON.stringify(koMessage));
+    }
+  });
+
   it("keeps the copy completion notification Firefox-like and omits it for save", () => {
-    expect(overlayRuntime).toContain('message: "스크린샷이 복사되었습니다!"');
+    expect(overlayRuntime).toContain('message: getCropMessage("copySuccessToast")');
     expect(overlayRuntime).toContain('status: "copied"');
+    expect(overlayRuntime).toContain("getCaptureFailureMessage(action)");
     expect(overlayRuntime).toContain("requestAnimationFrame");
     expect(overlayRuntime).toContain('setAttribute("animate", "true")');
-    expect(overlayRuntime).not.toContain('"저장 완료"');
     expect(overlayRuntime).not.toContain('status: "saved"');
     expect(overlayTemplate).toContain('toast.id = "confirmation-hint";');
     expect(overlayTemplate).toContain(
@@ -431,16 +491,17 @@ describe("Phase 6 overlay regression coverage", () => {
   });
 
   it("wires full page mode to a Firefox-style capture preview pipeline", () => {
-    expect(overlayTemplate).toContain('label: "전체 페이지 선택"');
+    expect(overlayTemplate).toContain('label: getCropMessage("modeFullPage")');
     expect(overlayTemplate).toContain('mode: "full-page"');
     expect(overlayTemplate).not.toContain('mode: "full-page",\n    disabled: true');
     expect(overlayTemplate).toContain('container.className = "crop-preview";');
     expect(overlayTemplate).toContain('dialog.className = "crop-preview-dialog";');
-    expect(overlayTemplate).toContain('createActionButton("retry", "다시 시도", true)');
+    expect(overlayTemplate).toContain('createActionButton("retry", true)');
     expect(overlayTemplate).toContain("getActionTitle(action, label)");
-    expect(overlayTemplate).toContain('return `${label} (${getAccelShortcut("C")})`;');
-    expect(overlayTemplate).toContain('return `${label} (${getAccelShortcut("S")})`;');
-    expect(overlayTemplate).toContain('return `${label} (${isMacLikePlatform() ? "esc" : "Esc"})`;');
+    expect(overlayTemplate).toContain('getCropMessage("actionTitleWithShortcut"');
+    expect(overlayTemplate).toContain('getAccelShortcut("C")');
+    expect(overlayTemplate).toContain('getAccelShortcut("S")');
+    expect(overlayTemplate).toContain('isMacLikePlatform() ? "esc" : "Esc"');
     expect(overlayTemplate).toContain("createScreenshotsRetryIconSvg");
     expect(overlayTemplate).not.toContain("function createRetryIconSvg");
     expect(overlayTemplate).toContain('image.className = "crop-preview-image";');

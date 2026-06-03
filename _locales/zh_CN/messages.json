@@ -1,0 +1,142 @@
+{
+  "extensionName": {
+    "message": "crop",
+    "description": "Extension name."
+  },
+  "extensionDescription": {
+    "message": "捕获当前页面上的可见元素。",
+    "description": "Extension description shown by Chrome."
+  },
+  "extensionActionTitle": {
+    "message": "crop",
+    "description": "Toolbar action title."
+  },
+  "commandOpenCrop": {
+    "message": "打开 crop 覆盖层",
+    "description": "Keyboard shortcut description for opening the overlay."
+  },
+  "overlayCaptureModesLabel": {
+    "message": "crop 捕获模式",
+    "description": "Accessible label for the capture mode toolbar."
+  },
+  "modeVisible": {
+    "message": "选择可见区域",
+    "description": "Button label for visible viewport selection."
+  },
+  "modeFullPage": {
+    "message": "选择整个页面",
+    "description": "Button label for full page capture."
+  },
+  "promptAreaSelectionLabel": {
+    "message": "选择 crop 区域",
+    "description": "Accessible label for the initial selection prompt."
+  },
+  "promptInstructionMain": {
+    "message": "拖动或点击以选择区域。",
+    "description": "Primary instruction in the initial selection prompt."
+  },
+  "promptInstructionSub": {
+    "message": "按 Esc 可取消。",
+    "description": "Secondary instruction in the initial selection prompt."
+  },
+  "actionCopy": {
+    "message": "复制",
+    "description": "Copy action label."
+  },
+  "actionSave": {
+    "message": "保存",
+    "description": "Save action label."
+  },
+  "actionCancel": {
+    "message": "取消",
+    "description": "Cancel action label."
+  },
+  "actionRetry": {
+    "message": "重试",
+    "description": "Retry action label."
+  },
+  "actionsToolbarLabel": {
+    "message": "crop 操作",
+    "description": "Accessible label for selected area actions."
+  },
+  "previewDialogLabel": {
+    "message": "整页截图预览",
+    "description": "Accessible label for the full page preview dialog."
+  },
+  "previewImageAlt": {
+    "message": "整页截图预览",
+    "description": "Alt text for the full page preview image."
+  },
+  "previewActionsToolbarLabel": {
+    "message": "整页截图操作",
+    "description": "Accessible label for preview actions."
+  },
+  "actionTitleWithShortcut": {
+    "message": "$label$（$shortcut$）",
+    "description": "Action title with a keyboard shortcut hint.",
+    "placeholders": {
+      "label": {
+        "content": "$1",
+        "example": "复制"
+      },
+      "shortcut": {
+        "content": "$2",
+        "example": "Ctrl+C"
+      }
+    }
+  },
+  "resizeHandleLabel": {
+    "message": "$direction$调整大小",
+    "description": "Accessible label for a selection resize handle.",
+    "placeholders": {
+      "direction": {
+        "content": "$1",
+        "example": "右上角"
+      }
+    }
+  },
+  "resizeDirectionNorth": {
+    "message": "上方",
+    "description": "North resize handle direction."
+  },
+  "resizeDirectionSouth": {
+    "message": "下方",
+    "description": "South resize handle direction."
+  },
+  "resizeDirectionEast": {
+    "message": "右侧",
+    "description": "East resize handle direction."
+  },
+  "resizeDirectionWest": {
+    "message": "左侧",
+    "description": "West resize handle direction."
+  },
+  "resizeDirectionNorthEast": {
+    "message": "右上角",
+    "description": "North-east resize handle direction."
+  },
+  "resizeDirectionNorthWest": {
+    "message": "左上角",
+    "description": "North-west resize handle direction."
+  },
+  "resizeDirectionSouthEast": {
+    "message": "右下角",
+    "description": "South-east resize handle direction."
+  },
+  "resizeDirectionSouthWest": {
+    "message": "左下角",
+    "description": "South-west resize handle direction."
+  },
+  "copySuccessToast": {
+    "message": "截图已复制！",
+    "description": "Toast shown after copying a screenshot."
+  },
+  "copyFailureSaveHint": {
+    "message": "复制失败。你可以改为保存。",
+    "description": "Status message shown when copy fails."
+  },
+  "saveFailureRetryHint": {
+    "message": "保存失败。请重试。",
+    "description": "Status message shown when save fails."
+  }
+}
