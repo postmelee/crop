@@ -1,6 +1,6 @@
 # crop
 
-Languages: English | [Korean](README.ko.md) | [Simplified Chinese](README.zh-CN.md) | [Japanese](README.ja.md)
+Languages: English | [한국어](README.ko.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
 `crop` is a Chrome Manifest V3 extension for taking precise page screenshots.
 Open the overlay, select a page element or draw a custom region, then copy or
