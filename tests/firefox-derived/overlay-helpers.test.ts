@@ -260,12 +260,10 @@ describe("getBestRectForElement", () => {
     ).toEqual(rectFromEdges(40, 40, 160, 90));
   });
 
-  it("uses a viewport fallback when the initial element is larger than thresholds", () => {
+  it("rejects the initial element when it is larger than thresholds", () => {
     const target = fixtureElement("main", rectFromEdges(0, 0, 1600, 1200));
 
-    expect(getBestRectForElement(asElement(target), { windowDimensions: viewport })).toEqual(
-      rectFromEdges(0, 0, 800, 600)
-    );
+    expect(getBestRectForElement(asElement(target), { windowDimensions: viewport })).toBeNull();
   });
 
   it("can return page-coordinate rects without clipping visible element bounds", () => {
@@ -306,13 +304,13 @@ describe("getBestRectForElement", () => {
   it("allows max detection thresholds to be adjusted for tests and future UI tuning", () => {
     const target = fixtureElement("main", rectFromEdges(0, 0, 700, 500));
 
-    setMaxDetectWidth(600);
-    setMaxDetectHeight(400);
+    try {
+      setMaxDetectWidth(600);
+      setMaxDetectHeight(400);
 
-    expect(getBestRectForElement(asElement(target), { windowDimensions: viewport })).toEqual(
-      rectFromEdges(0, 0, 600, 400)
-    );
-
-    resetDetectThresholds();
+      expect(getBestRectForElement(asElement(target), { windowDimensions: viewport })).toBeNull();
+    } finally {
+      resetDetectThresholds();
+    }
   });
 });

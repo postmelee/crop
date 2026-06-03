@@ -13,6 +13,7 @@ GitHub Issue: [#26](https://github.com/postmelee/crop/issues/26)
 | 3 | fixture 회귀와 품질 문서 보강 | phase6 fixture/test, quality matrix | build/typecheck/test/smoke/diff |
 | 4 | 통합 검증과 최종 보고 | 최종 보고서, 오늘할일, 전체 검증 로그 | build/typecheck/test/grep/diff/status |
 | 5 | selected sticky/fixed chrome 오염 보정 | selected capture suppression, 회귀 테스트, 최종 보고서 갱신 | build/typecheck/test/grep/diff/status |
+| 6 | Firefox oversized initial 후보 차단 | `overlay-helpers.ts`, Firefox-derived/Phase 6 회귀, 품질 문서 갱신 | build/typecheck/test/grep/diff/status |
 
 ## 문서 위치 확인
 
@@ -28,8 +29,9 @@ GitHub Issue: [#26](https://github.com/postmelee/crop/issues/26)
 
 ## 수용 기준 고정
 
-- 선택 영역이 현재 viewport 안에 완전히 들어오면 기존 단일 `captureVisibleTab()` crop 경로를 유지한다.
-- 선택 영역이 현재 viewport를 벗어나면 선택 page rect 전체를 기준으로 tile capture/stitching을 수행한다.
+- 자동 요소 추천에서 처음 hit된 요소가 Firefox max detect threshold보다 크고 이전 usable rect가 없으면 후보를 만들지 않는다.
+- 유효하게 선택된 영역이 현재 viewport 안에 완전히 들어오면 기존 단일 `captureVisibleTab()` crop 경로를 유지한다.
+- 유효하게 선택된 영역이 현재 viewport를 벗어나면 선택 page rect 전체를 기준으로 tile capture/stitching을 수행한다.
 - 스크롤 후 Save/Copy해도 출력 이미지의 CSS 기준 크기는 선택 rect 크기와 일치한다.
 - 출력 픽셀 크기는 캡처 이미지 natural size와 viewport CSS size에서 계산한 scale을 따른다.
 - 선택 영역의 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다.
@@ -266,6 +268,57 @@ git status --short
 Task #26 Stage 5: selected sticky chrome 오염 보정
 ```
 
+## Stage 6 — Firefox oversized initial 후보 차단
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m020_26_stage6.md`
+- 필요 시 `mydocs/orders/20260603.md`
+
+수정:
+
+- `src/firefox-derived/overlay-helpers.ts`
+- `tests/firefox-derived/overlay-helpers.test.ts`
+- `tests/content/overlay/phase6-regression.test.ts`
+- `tests/fixtures/phase6_edge_cases.html`
+- `mydocs/tech/task_m020_8_quality_matrix.md`
+- `mydocs/report/task_m020_26_report.md`
+- `mydocs/plans/task_m020_26_impl.md`
+
+### 변경 내용
+
+- 작업지시자 수동 비교에서 Firefox는 `offscreen-large-element` 같은 첫 hit oversized element를 추천하지 않는 것으로 확인됐다.
+- 기존 local helper는 Firefox-derived임에도 첫 후보가 너무 크면 viewport fallback rect를 만들어 후보로 반환했다.
+- Firefox parity에 맞춰 이전 usable rect가 없는 oversized initial element는 `null`을 반환한다.
+- 너무 큰 parent를 만났을 때 이전 child/sibling usable rect로 되돌아가는 기존 동작은 유지한다.
+- `offscreen-large-element` fixture와 P6-13 품질 기준을 "전체 rect 저장"이 아니라 "자동 추천 차단"으로 재정의한다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm test
+rg "initial oversized|offscreen-large-element|P6-13|isTooLarge|previous usable|viewport fallback|setCapturePageChromeSuppressed" src tests mydocs
+rg "debugger|<all_urls>|host_permissions|captureVisibleTab" manifest.json src tests
+git diff --check
+git status --short
+```
+
+수동 smoke:
+
+- `offscreen-large-element`의 빈 큰 영역을 hover/click해도 Firefox처럼 자동 추천 박스가 생성되지 않는지 확인한다.
+- 작은 카드, table, selected-scroll fixture 등 정상 크기 후보는 기존처럼 선택되는지 확인한다.
+- selected-scroll Save/Copy stitching은 Stage 5 기준대로 유지되는지 확인한다.
+
+### 커밋
+
+```text
+Task #26 Stage 6: Firefox oversized 후보 차단
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -280,6 +333,7 @@ Task #26 Stage 5: selected sticky chrome 오염 보정
 - 커밋 메시지는 `Task #26 Stage {N}: {핵심 내용 요약}` 형식을 따른다.
 - 최종 보고서 커밋은 `Task #26 Stage 4 + 최종 보고서: 선택 영역 스크롤 캡처 보정 완료`를 사용했다.
 - Stage 5 보정 커밋은 `Task #26 Stage 5: selected sticky chrome 오염 보정`을 사용한다.
+- Stage 6 보정 커밋은 `Task #26 Stage 6: Firefox oversized 후보 차단`을 사용한다.
 
 ## 단계 의존성
 
@@ -287,6 +341,7 @@ Task #26 Stage 5: selected sticky chrome 오염 보정
 - Stage 3은 Stage 2의 runtime selected capture 경로가 동작한 뒤 진행한다.
 - Stage 4는 Stage 1~3 검증과 보고서 승인 후 진행한다.
 - Stage 5는 Stage 4 후 수동 검증에서 확인된 selected-only sticky/fixed page chrome 오염 보정으로 진행한다.
+- Stage 6은 Stage 5 후 Firefox 수동 비교에서 확인된 oversized initial element 후보 차단 보정으로 진행한다.
 
 ## 위험과 대응
 
@@ -295,6 +350,7 @@ Task #26 Stage 5: selected sticky chrome 오염 보정
 - **sticky/fixed 차이**: Chrome MV3 visible tab stitching은 Firefox privileged snapshot과 픽셀 단위 동일성을 보장하지 않는다. 출력 rect 크기와 offscreen clipping 방지를 우선한다.
 - **layout shift**: capture 중 문서가 움직이면 tile seam이나 픽셀 차이가 생길 수 있다. fixture smoke와 보고서 잔여 위험으로 분리한다.
 - **큰 선택 영역**: 매우 큰 rect는 기존 max canvas 제한에 걸릴 수 있다. full page capture의 제한 정책을 재사용하고 명시 오류를 유지한다.
+- **Firefox 후보 parity**: oversized initial element를 자동 추천하지 않으면 일부 큰 배너/컨테이너는 클릭 선택할 수 없다. 이는 Firefox 동작과 맞추는 제한이며, 사용자가 원하면 drag selection으로 별도 영역을 만들 수 있다.
 
 ## 승인 요청 사항
 

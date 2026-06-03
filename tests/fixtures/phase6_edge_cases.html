@@ -675,9 +675,9 @@ function cropVisibleViewport(rect, viewport) {
           <h2>Large element continuing outside the visible viewport</h2>
           <p>
             This element intentionally extends past the right side of the
-            viewport. Selected Copy/Save should preserve the full selected
-            page rect with tile stitching instead of clipping to the current
-            visible viewport intersection.
+            viewport. Automatic element selection should reject this oversized
+            initial candidate instead of creating a clipped viewport-sized
+            fallback rectangle.
           </p>
         </div>
       </section>

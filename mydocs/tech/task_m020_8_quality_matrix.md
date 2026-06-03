@@ -57,7 +57,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-10 | same-document iframe | `[data-crop-fixture="same-document-iframe"]` | iframe 내부 hover | same-origin/srcdoc iframe 내부 요소가 parent viewport 좌표로 선택된다. | 자동 OK: #14 iframe traversal 테스트, Stage 4 fixture smoke 후보 | OK | 해당 없음 | `overlay-helpers.test.ts`, Stage 4 smoke |
 | P6-11 | open shadow host | `[data-crop-fixture="open-shadow-host"]` | host hover | host 경계 선택이 안정적으로 동작한다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-12 | open shadow 내부 panel | `[data-crop-fixture="open-shadow-panel"]` | open shadow DOM | composed path 기반으로 내부 요소 rect가 잡히는지 확인한다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, 작업지시자 Stage 3 smoke |
-| P6-13 | viewport 밖 큰 요소 | `[data-crop-fixture="offscreen-large-element"]` | 우측 viewport 밖 확장 | 선택 outline은 요소 rect를 표시하고, viewport 밖 선택 rect Copy/Save는 selected rect 전체를 tile/stitching으로 저장한다. | #26 기준 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, #26 |
+| P6-13 | viewport 밖 큰 요소 | `[data-crop-fixture="offscreen-large-element"]` | 우측 viewport 밖 확장, 첫 hit 후보가 Firefox max detect threshold보다 큼 | Firefox처럼 oversized initial element는 자동 추천하지 않고, clipped viewport-sized fallback 선택 박스를 만들지 않는다. | #26 Stage 6 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `overlay-helpers.test.ts`, `phase6-regression.test.ts`, #26 |
 | P6-14 | scroll tail | `[data-crop-fixture="scroll-tail"]` | 하단 스크롤 후 hover | 스크롤 위치가 반영되어 outline이 target에 맞는다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-15 | Copy 액션 | 선택 완료 후 `Copy` | zoom 100% | overlay/prompt/buttons/toast가 결과 이미지에 포함되지 않고 clipboard paste가 가능하다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
 | P6-16 | Save 액션 | 선택 완료 후 `Save` | zoom 100% | overlay/prompt/buttons/toast가 결과 이미지에 포함되지 않고 PNG 다운로드가 시작된다. | 수동 OK | OK | 해당 없음 | 작업지시자 Stage 3 smoke |
@@ -110,6 +110,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 20. 저장 PNG 크기가 DPR 2 환경에서는 `3040 x 1840`처럼 선택 CSS 크기 x DPR과 일치하는지 확인한다.
 21. 저장 PNG에 top/bottom marker가 모두 포함되고 crop overlay, handles, action buttons, 선택 박스 밖 sticky header가 포함되지 않는지 확인한다.
 22. selected scroll Save 후 시작 scroll position으로 복구되는지 확인한다.
+23. `[data-crop-fixture="offscreen-large-element"]`의 빈 큰 영역을 hover/click해도 자동 추천 박스가 생성되지 않는지 확인한다.
 
 ## Stage별 갱신 계획
 
@@ -187,6 +188,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 |---|---|---|
 | selected page rect tile plan | OK | `tests/content/overlay/full-page-capture.test.ts` |
 | viewport 밖 selected capture runtime 분기 | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| oversized initial element auto-select rejection | OK | `src/firefox-derived/overlay-helpers.ts`, `tests/firefox-derived/overlay-helpers.test.ts`, `tests/content/overlay/phase6-regression.test.ts` |
 | selected rect capture scroll restoration | OK | `tests/content/overlay/full-page-capture.test.ts` |
 | selected scroll capture fixture marker | OK | `tests/fixtures/phase6_edge_cases.html`, `tests/content/overlay/phase6-regression.test.ts` |
 | selected scroll capture sticky/fixed page chrome suppression | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |

@@ -144,6 +144,24 @@ describe("Phase 6 overlay regression coverage", () => {
     ).toEqual(visualRect);
   });
 
+  it("does not auto-select an initial oversized element beyond Firefox thresholds", () => {
+    const viewport = new WindowDimensions({
+      clientWidth: 1341,
+      clientHeight: 900
+    });
+    const largeElement = fixtureElement("div", firefoxRectFromEdges(0, 0, 1480, 520));
+
+    expect(
+      getBestRectForElement(asElement(largeElement), {
+        windowDimensions: viewport,
+        thresholds: {
+          maxDetectWidth: viewport.clientWidth + 100,
+          maxDetectHeight: Math.max(viewport.clientHeight + 100, 700)
+        }
+      })
+    ).toBeNull();
+  });
+
   it("walks through nested open shadow roots to the deepest hit target", () => {
     const outerHost = fixtureElement("crop-outer", firefoxRectFromEdges(0, 0, 500, 400));
     const innerHost = fixtureElement("crop-inner", firefoxRectFromEdges(40, 40, 320, 260));
