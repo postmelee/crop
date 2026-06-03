@@ -15,7 +15,7 @@ Stage 5는 Stage 4 이후 수동 검증에서 확인된 selected stitching 첫 t
 | `src/content/overlay/crop-overlay.ts` | selected page rect stitching은 첫 tile부터 `setCapturePageChromeSuppressed(true)`를 적용하도록 변경했다. full page capture의 `index > 0` 정책은 유지했다. |
 | `tests/content/overlay/phase6-regression.test.ts` | selected capture block은 모든 tile suppression, full page block은 첫 tile 보존 정책을 유지하는지 회귀 테스트를 추가했다. |
 | `mydocs/plans/task_m020_26_impl.md` | Stage 5 보정 단계와 검증 명령을 추가했다. |
-| `mydocs/tech/task_m020_8_quality_matrix.md` | P6-37 기대값과 수동 smoke 절차에 선택 박스 밖 sticky/fixed page chrome 미포함 기준을 추가했다. |
+| `mydocs/tech/task_m020_8_quality_matrix.md` | P6-39 기대값과 수동 smoke 절차에 선택 박스 밖 sticky/fixed page chrome 미포함 기준을 추가했다. |
 | `mydocs/report/task_m020_26_report.md` | Stage 5 결과, 187개 테스트 통과, selected sticky/fixed suppression 기준을 최종 보고서에 반영했다. |
 | `mydocs/orders/20260602.md` | #26 완료 시간을 Stage 5 완료 시각으로 갱신했다. |
 
@@ -31,7 +31,7 @@ Stage 5는 Stage 4 이후 수동 검증에서 확인된 selected stitching 첫 t
 npm run build
 npm run typecheck
 npm test
-rg "setCapturePageChromeSuppressed\\(true\\)|setCapturePageChromeSuppressed\\(index > 0\\)|selected-scroll-capture|P6-37" src tests mydocs
+rg "setCapturePageChromeSuppressed\\(true\\)|setCapturePageChromeSuppressed\\(index > 0\\)|selected-scroll-capture|P6-39" src tests mydocs
 rg "debugger|<all_urls>|host_permissions|captureVisibleTab" manifest.json src tests
 git diff --check
 git status --short

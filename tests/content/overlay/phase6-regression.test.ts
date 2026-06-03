@@ -11,6 +11,10 @@ import {
   getEdgeScrollPagePoint
 } from "../../../src/content/overlay/edge-scroll";
 import {
+  createInitialOverlayState,
+  transitionOverlayState
+} from "../../../src/content/overlay/state-machine";
+import {
   rectFromEdges as firefoxRectFromEdges,
   WindowDimensions
 } from "../../../src/firefox-derived/window-dimensions";
@@ -162,6 +166,56 @@ describe("Phase 6 overlay regression coverage", () => {
     ).toBeNull();
   });
 
+  it("clears hover state when a too-large wrapper has no automatic candidate", () => {
+    const viewport = new WindowDimensions({
+      clientWidth: 800,
+      clientHeight: 600
+    });
+    const previousHover = firefoxRectFromEdges(40, 40, 260, 160);
+    const wrapper = fixtureElement("main", firefoxRectFromEdges(0, 0, 1600, 1200));
+    const hovering = transitionOverlayState(createInitialOverlayState(), {
+      type: "hover",
+      rect: previousHover
+    });
+
+    const wrapperCandidate = getBestRectForElement(asElement(wrapper), {
+      windowDimensions: viewport
+    });
+
+    expect(wrapperCandidate).toBeNull();
+    expect(
+      transitionOverlayState(hovering, {
+        type: "hover",
+        rect: wrapperCandidate
+      })
+    ).toEqual(createInitialOverlayState());
+  });
+
+  it("keeps table and card candidates selectable inside a too-large wrapper", () => {
+    const viewport = new WindowDimensions({
+      clientWidth: 800,
+      clientHeight: 600
+    });
+    const wrapper = fixtureElement("main", firefoxRectFromEdges(0, 0, 1600, 1200));
+    const infobox = wrapper.append(
+      fixtureElement("table", firefoxRectFromEdges(40, -80, 620, 520))
+    );
+    const card = wrapper.append(
+      fixtureElement("article", firefoxRectFromEdges(660, 120, 1040, 340))
+    );
+
+    expect(
+      getBestRectForElement(asElement(infobox), {
+        windowDimensions: viewport
+      })
+    ).toEqual(firefoxRectFromEdges(40, -80, 620, 520));
+    expect(
+      getBestRectForElement(asElement(card), {
+        windowDimensions: viewport
+      })
+    ).toEqual(firefoxRectFromEdges(660, 120, 1040, 340));
+  });
+
   it("walks through nested open shadow roots to the deepest hit target", () => {
     const outerHost = fixtureElement("crop-outer", firefoxRectFromEdges(0, 0, 500, 400));
     const innerHost = fixtureElement("crop-inner", firefoxRectFromEdges(40, 40, 320, 260));
@@ -217,7 +271,7 @@ describe("Phase 6 overlay regression coverage", () => {
     }
 
     expect(phase6FixtureHtml).toContain('data-crop-expected-css-size="1520x920"');
-    expect(qualityMatrix).toContain("P6-37");
+    expect(qualityMatrix).toContain("P6-39");
     expect(qualityMatrix).toContain("selected-scroll-capture-target");
     expect(qualityMatrix).toContain("Task #26");
   });
@@ -258,6 +312,19 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(phase6FixtureHtml).toContain("Same-origin target");
     expect(phase6FixtureHtml).toContain("crop should select this srcdoc content");
     expect(phase6FixtureHtml).not.toContain("MVP fallback");
+  });
+
+  it("keeps too-large wrapper smoke targets in the fixture", () => {
+    for (const fixtureName of [
+      "too-large-wrapper-section",
+      "too-large-wrapper",
+      "too-large-wrapper-infobox",
+      "too-large-wrapper-card"
+    ]) {
+      expect(phase6FixtureHtml).toContain(`data-crop-fixture="${fixtureName}"`);
+    }
+
+    expect(phase6FixtureHtml).toContain("Wrapper fallback should stay off");
   });
 
   it("keeps the Firefox-style crosshair cursor contract on the overlay surface", () => {

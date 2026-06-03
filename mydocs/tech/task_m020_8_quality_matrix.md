@@ -84,7 +84,9 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-34 | full page overlay 오염 방지 | full page preview Copy/Save 결과 | preview visible 상태 | crop overlay, preview, handles, action box, scrollbar가 저장 PNG에 포함되지 않는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 PNG smoke |
 | P6-35 | full page preview toolbar parity | full page preview toolbar | hover 및 keydown | Retry icon이 Firefox reload icon 크기와 맞고, Copy/Save/Cancel tooltip shortcut 및 Copy/Save shortcut 동작이 맞는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
 | P6-36 | Copy/Save 종료 flicker | selected/drag/visible/full page capture | Copy 또는 Save 직후 | 닫히기 직전 선택 박스가 재노출되거나 preview toolbar가 disabled opacity로 깜빡이지 않는다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
-| P6-37 | selected scroll capture 전체 rect 저장 | `[data-crop-fixture="selected-scroll-capture-target"]` | 선택 후 스크롤로 rect 일부가 viewport 밖에 있고 sticky header가 선택 영역 위에 겹친 상태에서 Save/Copy | 저장 PNG 크기가 선택 박스 CSS 크기 x DPR과 일치하고 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다. 선택 박스 밖 sticky/fixed page chrome도 포함되지 않는다. | #26 Stage 5 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #26 |
+| P6-37 | 너무 큰 wrapper 자동 추천 제외 | `[data-crop-fixture="too-large-wrapper"]` | wrapper 빈 영역 hover | `MAX_DETECT_WIDTH`/`MAX_DETECT_HEIGHT`를 초과하는 wrapper는 viewport/maxDetect 크기로 잘린 자동 선택 후보를 만들지 않고 hover state를 초기화한다. | 자동 OK | OK | 해당 없음 | #24 Stage 1/2 regression, `overlay-helpers.test.ts`, `phase6-regression.test.ts` |
+| P6-38 | 큰 wrapper 내부 실제 요소 선택 유지 | `[data-crop-fixture="too-large-wrapper-infobox"]`, `[data-crop-fixture="too-large-wrapper-card"]` | wrapper 내부 table/card hover | 큰 wrapper 내부의 infobox/table/card는 자동 선택 후보로 계속 유지된다. | 자동 OK, 수동 smoke 후보 | OK | 해당 없음 | #24 Stage 1/2 regression, `overlay-helpers.test.ts`, `phase6-regression.test.ts`, `phase6_edge_cases.html` |
+| P6-39 | selected scroll capture 전체 rect 저장 | `[data-crop-fixture="selected-scroll-capture-target"]` | 선택 후 스크롤로 rect 일부가 viewport 밖에 있고 sticky header가 선택 영역 위에 겹친 상태에서 Save/Copy | 저장 PNG 크기가 선택 박스 CSS 크기 x DPR과 일치하고 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다. 선택 박스 밖 sticky/fixed page chrome도 포함되지 않는다. | #26 Stage 5 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #26 |
 
 ## 수동 smoke 절차 초안
 
@@ -111,6 +113,8 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 21. 저장 PNG에 top/bottom marker가 모두 포함되고 crop overlay, handles, action buttons, 선택 박스 밖 sticky header가 포함되지 않는지 확인한다.
 22. selected scroll Save 후 시작 scroll position으로 복구되는지 확인한다.
 23. `[data-crop-fixture="offscreen-large-element"]`의 빈 큰 영역을 hover/click해도 자동 추천 박스가 생성되지 않는지 확인한다.
+24. `too-large-wrapper`의 빈 wrapper 영역을 hover해 큰 선택 박스가 생기지 않는지 확인한다.
+25. 같은 영역의 `too-large-wrapper-infobox`, `too-large-wrapper-card`를 hover해 내부 table/card가 정상 선택되는지 확인한다.
 
 ## Stage별 갱신 계획
 
@@ -194,6 +198,17 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | selected scroll capture sticky/fixed page chrome suppression | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
 | 실제 PNG dimension smoke | 수동 후보 | `[data-crop-fixture="selected-scroll-capture-target"]`, `data-crop-expected-css-size="1520x920"` |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 3/4 grep |
+
+## Task #24 갱신 결과
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| 너무 큰 wrapper 단독 hover 후보 제외 | 자동 OK | `tests/firefox-derived/overlay-helpers.test.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| 큰 wrapper 후보 없음 시 hover highlight 초기화 | 자동 OK | `tests/content/overlay/phase6-regression.test.ts`, `transitionOverlayState(..., { type: "hover", rect: null })` |
+| 큰 wrapper 내부 table/infobox/card 후보 유지 | 자동 OK | `tests/firefox-derived/overlay-helpers.test.ts`, `tests/content/overlay/phase6-regression.test.ts`, `tests/fixtures/phase6_edge_cases.html` |
+| Copy/Save rect 기준 회귀 없음 | 자동 OK | `tests/shared/crop-image.test.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 3 grep |
+| Firefox-derived MPL boundary 유지 | OK | `src/firefox-derived/overlay-helpers.ts` MPL header 유지, Stage 3 source grep |
 
 ## 신규 후속 이슈 후보
 

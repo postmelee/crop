@@ -240,12 +240,12 @@ describe("getBestRectForElement", () => {
     );
   });
 
-  it("falls back to the previous usable rect when a parent is too large", () => {
+  it("keeps the previous usable rect when a parent is too large", () => {
     const parent = fixtureElement("main", rectFromEdges(0, 0, 1600, 1200));
-    const target = parent.append(fixtureElement("div", rectFromEdges(50, 50, 240, 140)));
+    const target = parent.append(fixtureElement("div", rectFromEdges(50, 50, 240, 70)));
 
     expect(getBestRectForElement(asElement(target), { windowDimensions: viewport })).toEqual(
-      rectFromEdges(50, 50, 240, 140)
+      rectFromEdges(50, 50, 240, 70)
     );
   });
 
@@ -264,6 +264,24 @@ describe("getBestRectForElement", () => {
     const target = fixtureElement("main", rectFromEdges(0, 0, 1600, 1200));
 
     expect(getBestRectForElement(asElement(target), { windowDimensions: viewport })).toBeNull();
+  });
+
+  it("keeps a normal card candidate inside a too-large wrapper", () => {
+    const wrapper = fixtureElement("main", rectFromEdges(0, 0, 1600, 1200));
+    const card = wrapper.append(fixtureElement("section", rectFromEdges(60, 80, 460, 340)));
+
+    expect(getBestRectForElement(asElement(card), { windowDimensions: viewport })).toEqual(
+      rectFromEdges(60, 80, 460, 340)
+    );
+  });
+
+  it("keeps a table or infobox candidate inside a too-large wrapper", () => {
+    const wrapper = fixtureElement("main", rectFromEdges(0, 0, 1600, 1200));
+    const infobox = wrapper.append(fixtureElement("table", rectFromEdges(40, -80, 620, 520)));
+
+    expect(getBestRectForElement(asElement(infobox), { windowDimensions: viewport })).toEqual(
+      rectFromEdges(40, -80, 620, 520)
+    );
   });
 
   it("can return page-coordinate rects without clipping visible element bounds", () => {
