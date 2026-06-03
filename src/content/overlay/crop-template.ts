@@ -12,6 +12,7 @@ import {
   createScreenshotsRetryIconSvg,
   createScreenshotsVisibleIconSvg
 } from "../../firefox-derived/screenshots-ui-assets";
+import { getCropMessage, type CropI18nMessageName } from "../../shared/i18n";
 
 export const ROOT_ID = "__crop_root__";
 export const ROOT_ATTRIBUTE = "data-crop-root";
@@ -60,22 +61,22 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   panel.className = "crop-mode-toolbar";
   panel.setAttribute(PANEL_ATTRIBUTE, "true");
   panel.setAttribute("role", "toolbar");
-  panel.setAttribute("aria-label", "crop capture modes");
+  panel.setAttribute("aria-label", getCropMessage("overlayCaptureModesLabel"));
 
   const visibleModeButton = createModeButton({
-    label: "보이는 영역 선택",
+    label: getCropMessage("modeVisible"),
     mode: "visible",
     active: true
   });
   const fullPageModeButton = createModeButton({
-    label: "전체 페이지 선택",
+    label: getCropMessage("modeFullPage"),
     mode: "full-page"
   });
 
   const prompt = document.createElement("div");
   prompt.className = "crop-prompt";
   prompt.setAttribute("role", "dialog");
-  prompt.setAttribute("aria-label", "crop 영역 선택");
+  prompt.setAttribute("aria-label", getCropMessage("promptAreaSelectionLabel"));
 
   const face = createPromptFace();
 
@@ -83,26 +84,26 @@ export function createCropOverlayTemplate(shadowRoot: ShadowRoot): CropOverlayTe
   instructions.className = "crop-prompt-instructions";
 
   const instructionMain = document.createElement("span");
-  instructionMain.textContent = "드래그하거나 클릭해서 영역을 선택하세요.";
+  instructionMain.textContent = getCropMessage("promptInstructionMain");
 
   const instructionSub = document.createElement("span");
-  instructionSub.textContent = "ESC 키를 누르면 취소됩니다.";
+  instructionSub.textContent = getCropMessage("promptInstructionSub");
 
   const promptCancelButton = document.createElement("button");
   promptCancelButton.className = "crop-prompt-cancel";
   promptCancelButton.type = "button";
-  promptCancelButton.textContent = "취소";
+  promptCancelButton.textContent = getCropMessage("actionCancel");
   promptCancelButton.setAttribute("data-crop-action", "cancel");
 
   const actions = document.createElement("div");
   actions.className = "crop-actions";
   actions.hidden = true;
   actions.setAttribute("role", "toolbar");
-  actions.setAttribute("aria-label", "Crop actions");
+  actions.setAttribute("aria-label", getCropMessage("actionsToolbarLabel"));
 
-  const copyButton = createActionButton("copy", "복사");
-  const saveButton = createActionButton("save", "저장");
-  const cancelButton = createActionButton("cancel", "취소", true);
+  const copyButton = createActionButton("copy");
+  const saveButton = createActionButton("save");
+  const cancelButton = createActionButton("cancel", true);
   const primaryActionGroup = createActionGroup("primary");
   const secondaryActionGroup = createActionGroup("secondary");
   const actionStatus = document.createElement("div");
@@ -265,7 +266,7 @@ function createPreviewTemplate(): CropPreviewTemplate {
   container.className = "crop-preview";
   container.hidden = true;
   container.setAttribute("role", "dialog");
-  container.setAttribute("aria-label", "전체 페이지 스크린샷 미리보기");
+  container.setAttribute("aria-label", getCropMessage("previewDialogLabel"));
 
   const dialog = document.createElement("div");
   dialog.className = "crop-preview-dialog";
@@ -275,7 +276,7 @@ function createPreviewTemplate(): CropPreviewTemplate {
 
   const image = document.createElement("img");
   image.className = "crop-preview-image";
-  image.alt = "전체 페이지 스크린샷 미리보기";
+  image.alt = getCropMessage("previewImageAlt");
 
   const footer = document.createElement("div");
   footer.className = "crop-preview-footer";
@@ -283,12 +284,12 @@ function createPreviewTemplate(): CropPreviewTemplate {
   const actions = document.createElement("div");
   actions.className = "crop-preview-actions";
   actions.setAttribute("role", "toolbar");
-  actions.setAttribute("aria-label", "Full page screenshot actions");
+  actions.setAttribute("aria-label", getCropMessage("previewActionsToolbarLabel"));
 
-  const retryButton = createActionButton("retry", "다시 시도", true);
-  const cancelButton = createActionButton("cancel", "취소", true);
-  const copyButton = createActionButton("copy", "복사");
-  const saveButton = createActionButton("save", "저장");
+  const retryButton = createActionButton("retry", true);
+  const cancelButton = createActionButton("cancel", true);
+  const copyButton = createActionButton("copy");
+  const saveButton = createActionButton("save");
   const secondaryActionGroup = createActionGroup("secondary");
   const primaryActionGroup = createActionGroup("primary");
   const status = document.createElement("div");
@@ -316,10 +317,10 @@ function createPreviewTemplate(): CropPreviewTemplate {
 
 function createActionButton(
   action: CropActionName,
-  label: string,
   iconOnly = false
 ): HTMLButtonElement {
   const button = document.createElement("button");
+  const label = getActionLabel(action);
 
   button.className = `crop-action crop-action--${action}`;
   button.type = "button";
@@ -368,13 +369,29 @@ function createActionGroup(kind: "primary" | "secondary"): HTMLElement {
 function getActionTitle(action: CropActionName, label: string): string {
   switch (action) {
     case "cancel":
-      return `${label} (${isMacLikePlatform() ? "esc" : "Esc"})`;
+      return getCropMessage("actionTitleWithShortcut", [
+        label,
+        isMacLikePlatform() ? "esc" : "Esc"
+      ]);
     case "copy":
-      return `${label} (${getAccelShortcut("C")})`;
+      return getCropMessage("actionTitleWithShortcut", [label, getAccelShortcut("C")]);
     case "save":
-      return `${label} (${getAccelShortcut("S")})`;
+      return getCropMessage("actionTitleWithShortcut", [label, getAccelShortcut("S")]);
     case "retry":
       return label;
+  }
+}
+
+function getActionLabel(action: CropActionName): string {
+  switch (action) {
+    case "cancel":
+      return getCropMessage("actionCancel");
+    case "retry":
+      return getCropMessage("actionRetry");
+    case "copy":
+      return getCropMessage("actionCopy");
+    case "save":
+      return getCropMessage("actionSave");
   }
 }
 
@@ -456,29 +473,36 @@ function createResizeHandle(handle: SelectionResizeHandle): HTMLButtonElement {
   button.className = `crop-resize-handle crop-resize-handle--${handle}`;
   button.type = "button";
   button.setAttribute("data-crop-resize-handle", handle);
-  button.setAttribute("aria-label", `${getResizeHandleLabel(handle)} 크기 조절`);
-  button.title = `${getResizeHandleLabel(handle)} 크기 조절`;
+  const label = getResizeHandleLabel(handle);
+  button.setAttribute("aria-label", label);
+  button.title = label;
 
   return button;
 }
 
 function getResizeHandleLabel(handle: SelectionResizeHandle): string {
+  const direction = getCropMessage(getResizeHandleDirectionMessageName(handle));
+
+  return getCropMessage("resizeHandleLabel", direction);
+}
+
+function getResizeHandleDirectionMessageName(handle: SelectionResizeHandle): CropI18nMessageName {
   switch (handle) {
     case "north":
-      return "위쪽";
+      return "resizeDirectionNorth";
     case "south":
-      return "아래쪽";
+      return "resizeDirectionSouth";
     case "east":
-      return "오른쪽";
+      return "resizeDirectionEast";
     case "west":
-      return "왼쪽";
+      return "resizeDirectionWest";
     case "north-east":
-      return "오른쪽 위";
+      return "resizeDirectionNorthEast";
     case "north-west":
-      return "왼쪽 위";
+      return "resizeDirectionNorthWest";
     case "south-east":
-      return "오른쪽 아래";
+      return "resizeDirectionSouthEast";
     case "south-west":
-      return "왼쪽 아래";
+      return "resizeDirectionSouthWest";
   }
 }
