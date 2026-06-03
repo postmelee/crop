@@ -1,0 +1,142 @@
+{
+  "extensionName": {
+    "message": "crop",
+    "description": "Extension name."
+  },
+  "extensionDescription": {
+    "message": "현재 페이지의 보이는 요소를 캡처합니다.",
+    "description": "Extension description shown by Chrome."
+  },
+  "extensionActionTitle": {
+    "message": "crop",
+    "description": "Toolbar action title."
+  },
+  "commandOpenCrop": {
+    "message": "crop 오버레이 열기",
+    "description": "Keyboard shortcut description for opening the overlay."
+  },
+  "overlayCaptureModesLabel": {
+    "message": "crop 캡처 모드",
+    "description": "Accessible label for the capture mode toolbar."
+  },
+  "modeVisible": {
+    "message": "보이는 영역 선택",
+    "description": "Button label for visible viewport selection."
+  },
+  "modeFullPage": {
+    "message": "전체 페이지 선택",
+    "description": "Button label for full page capture."
+  },
+  "promptAreaSelectionLabel": {
+    "message": "crop 영역 선택",
+    "description": "Accessible label for the initial selection prompt."
+  },
+  "promptInstructionMain": {
+    "message": "드래그하거나 클릭해서 영역을 선택하세요.",
+    "description": "Primary instruction in the initial selection prompt."
+  },
+  "promptInstructionSub": {
+    "message": "Esc 키를 누르면 취소됩니다.",
+    "description": "Secondary instruction in the initial selection prompt."
+  },
+  "actionCopy": {
+    "message": "복사",
+    "description": "Copy action label."
+  },
+  "actionSave": {
+    "message": "저장",
+    "description": "Save action label."
+  },
+  "actionCancel": {
+    "message": "취소",
+    "description": "Cancel action label."
+  },
+  "actionRetry": {
+    "message": "다시 시도",
+    "description": "Retry action label."
+  },
+  "actionsToolbarLabel": {
+    "message": "crop 작업",
+    "description": "Accessible label for selected area actions."
+  },
+  "previewDialogLabel": {
+    "message": "전체 페이지 스크린샷 미리보기",
+    "description": "Accessible label for the full page preview dialog."
+  },
+  "previewImageAlt": {
+    "message": "전체 페이지 스크린샷 미리보기",
+    "description": "Alt text for the full page preview image."
+  },
+  "previewActionsToolbarLabel": {
+    "message": "전체 페이지 스크린샷 작업",
+    "description": "Accessible label for preview actions."
+  },
+  "actionTitleWithShortcut": {
+    "message": "$label$ ($shortcut$)",
+    "description": "Action title with a keyboard shortcut hint.",
+    "placeholders": {
+      "label": {
+        "content": "$1",
+        "example": "복사"
+      },
+      "shortcut": {
+        "content": "$2",
+        "example": "Ctrl+C"
+      }
+    }
+  },
+  "resizeHandleLabel": {
+    "message": "$direction$ 크기 조절",
+    "description": "Accessible label for a selection resize handle.",
+    "placeholders": {
+      "direction": {
+        "content": "$1",
+        "example": "오른쪽 위"
+      }
+    }
+  },
+  "resizeDirectionNorth": {
+    "message": "위쪽",
+    "description": "North resize handle direction."
+  },
+  "resizeDirectionSouth": {
+    "message": "아래쪽",
+    "description": "South resize handle direction."
+  },
+  "resizeDirectionEast": {
+    "message": "오른쪽",
+    "description": "East resize handle direction."
+  },
+  "resizeDirectionWest": {
+    "message": "왼쪽",
+    "description": "West resize handle direction."
+  },
+  "resizeDirectionNorthEast": {
+    "message": "오른쪽 위",
+    "description": "North-east resize handle direction."
+  },
+  "resizeDirectionNorthWest": {
+    "message": "왼쪽 위",
+    "description": "North-west resize handle direction."
+  },
+  "resizeDirectionSouthEast": {
+    "message": "오른쪽 아래",
+    "description": "South-east resize handle direction."
+  },
+  "resizeDirectionSouthWest": {
+    "message": "왼쪽 아래",
+    "description": "South-west resize handle direction."
+  },
+  "copySuccessToast": {
+    "message": "스크린샷이 복사되었습니다!",
+    "description": "Toast shown after copying a screenshot."
+  },
+  "copyFailureSaveHint": {
+    "message": "복사 실패. 대신 저장할 수 있습니다.",
+    "description": "Status message shown when copy fails."
+  },
+  "saveFailureRetryHint": {
+    "message": "저장 실패. 다시 시도하세요.",
+    "description": "Status message shown when save fails."
+  }
+}

@@ -1,15 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "crop",
+  "name": "__MSG_extensionName__",
   "version": "0.1.0",
-  "description": "Capture visible elements on the current page.",
+  "default_locale": "en",
+  "description": "__MSG_extensionDescription__",
   "permissions": ["activeTab", "scripting", "clipboardWrite", "downloads"],
   "background": {
     "service_worker": "background/service-worker.js",
     "type": "module"
   },
   "action": {
-    "default_title": "crop"
+    "default_title": "__MSG_extensionActionTitle__"
   },
   "commands": {
     "open-crop": {
@@ -17,7 +18,7 @@
         "default": "Ctrl+Shift+S",
         "mac": "Command+Shift+S"
       },
-      "description": "Open crop overlay"
+      "description": "__MSG_commandOpenCrop__"
     }
   }
 }

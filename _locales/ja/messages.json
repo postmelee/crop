@@ -1,0 +1,142 @@
+{
+  "extensionName": {
+    "message": "crop",
+    "description": "Extension name."
+  },
+  "extensionDescription": {
+    "message": "現在のページで表示されている要素をキャプチャします。",
+    "description": "Extension description shown by Chrome."
+  },
+  "extensionActionTitle": {
+    "message": "crop",
+    "description": "Toolbar action title."
+  },
+  "commandOpenCrop": {
+    "message": "crop オーバーレイを開く",
+    "description": "Keyboard shortcut description for opening the overlay."
+  },
+  "overlayCaptureModesLabel": {
+    "message": "crop キャプチャモード",
+    "description": "Accessible label for the capture mode toolbar."
+  },
+  "modeVisible": {
+    "message": "表示中の領域を選択",
+    "description": "Button label for visible viewport selection."
+  },
+  "modeFullPage": {
+    "message": "ページ全体を選択",
+    "description": "Button label for full page capture."
+  },
+  "promptAreaSelectionLabel": {
+    "message": "crop 領域を選択",
+    "description": "Accessible label for the initial selection prompt."
+  },
+  "promptInstructionMain": {
+    "message": "ドラッグまたはクリックして領域を選択してください。",
+    "description": "Primary instruction in the initial selection prompt."
+  },
+  "promptInstructionSub": {
+    "message": "Esc キーでキャンセルできます。",
+    "description": "Secondary instruction in the initial selection prompt."
+  },
+  "actionCopy": {
+    "message": "コピー",
+    "description": "Copy action label."
+  },
+  "actionSave": {
+    "message": "保存",
+    "description": "Save action label."
+  },
+  "actionCancel": {
+    "message": "キャンセル",
+    "description": "Cancel action label."
+  },
+  "actionRetry": {
+    "message": "再試行",
+    "description": "Retry action label."
+  },
+  "actionsToolbarLabel": {
+    "message": "crop の操作",
+    "description": "Accessible label for selected area actions."
+  },
+  "previewDialogLabel": {
+    "message": "ページ全体のスクリーンショットプレビュー",
+    "description": "Accessible label for the full page preview dialog."
+  },
+  "previewImageAlt": {
+    "message": "ページ全体のスクリーンショットプレビュー",
+    "description": "Alt text for the full page preview image."
+  },
+  "previewActionsToolbarLabel": {
+    "message": "ページ全体のスクリーンショット操作",
+    "description": "Accessible label for preview actions."
+  },
+  "actionTitleWithShortcut": {
+    "message": "$label$（$shortcut$）",
+    "description": "Action title with a keyboard shortcut hint.",
+    "placeholders": {
+      "label": {
+        "content": "$1",
+        "example": "コピー"
+      },
+      "shortcut": {
+        "content": "$2",
+        "example": "Ctrl+C"
+      }
+    }
+  },
+  "resizeHandleLabel": {
+    "message": "$direction$のサイズを調整",
+    "description": "Accessible label for a selection resize handle.",
+    "placeholders": {
+      "direction": {
+        "content": "$1",
+        "example": "右上"
+      }
+    }
+  },
+  "resizeDirectionNorth": {
+    "message": "上",
+    "description": "North resize handle direction."
+  },
+  "resizeDirectionSouth": {
+    "message": "下",
+    "description": "South resize handle direction."
+  },
+  "resizeDirectionEast": {
+    "message": "右",
+    "description": "East resize handle direction."
+  },
+  "resizeDirectionWest": {
+    "message": "左",
+    "description": "West resize handle direction."
+  },
+  "resizeDirectionNorthEast": {
+    "message": "右上",
+    "description": "North-east resize handle direction."
+  },
+  "resizeDirectionNorthWest": {
+    "message": "左上",
+    "description": "North-west resize handle direction."
+  },
+  "resizeDirectionSouthEast": {
+    "message": "右下",
+    "description": "South-east resize handle direction."
+  },
+  "resizeDirectionSouthWest": {
+    "message": "左下",
+    "description": "South-west resize handle direction."
+  },
+  "copySuccessToast": {
+    "message": "スクリーンショットをコピーしました！",
+    "description": "Toast shown after copying a screenshot."
+  },
+  "copyFailureSaveHint": {
+    "message": "コピーに失敗しました。代わりに保存できます。",
+    "description": "Status message shown when copy fails."
+  },
+  "saveFailureRetryHint": {
+    "message": "保存に失敗しました。もう一度お試しください。",
+    "description": "Status message shown when save fails."
+  }
+}

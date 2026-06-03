@@ -1,0 +1,142 @@
+{
+  "extensionName": {
+    "message": "crop",
+    "description": "Extension name."
+  },
+  "extensionDescription": {
+    "message": "Capture visible elements on the current page.",
+    "description": "Extension description shown by Chrome."
+  },
+  "extensionActionTitle": {
+    "message": "crop",
+    "description": "Toolbar action title."
+  },
+  "commandOpenCrop": {
+    "message": "Open crop overlay",
+    "description": "Keyboard shortcut description for opening the overlay."
+  },
+  "overlayCaptureModesLabel": {
+    "message": "crop capture modes",
+    "description": "Accessible label for the capture mode toolbar."
+  },
+  "modeVisible": {
+    "message": "Select visible area",
+    "description": "Button label for visible viewport selection."
+  },
+  "modeFullPage": {
+    "message": "Select full page",
+    "description": "Button label for full page capture."
+  },
+  "promptAreaSelectionLabel": {
+    "message": "Select crop area",
+    "description": "Accessible label for the initial selection prompt."
+  },
+  "promptInstructionMain": {
+    "message": "Drag or click to select an area.",
+    "description": "Primary instruction in the initial selection prompt."
+  },
+  "promptInstructionSub": {
+    "message": "Press Esc to cancel.",
+    "description": "Secondary instruction in the initial selection prompt."
+  },
+  "actionCopy": {
+    "message": "Copy",
+    "description": "Copy action label."
+  },
+  "actionSave": {
+    "message": "Save",
+    "description": "Save action label."
+  },
+  "actionCancel": {
+    "message": "Cancel",
+    "description": "Cancel action label."
+  },
+  "actionRetry": {
+    "message": "Try again",
+    "description": "Retry action label."
+  },
+  "actionsToolbarLabel": {
+    "message": "Crop actions",
+    "description": "Accessible label for selected area actions."
+  },
+  "previewDialogLabel": {
+    "message": "Full page screenshot preview",
+    "description": "Accessible label for the full page preview dialog."
+  },
+  "previewImageAlt": {
+    "message": "Full page screenshot preview",
+    "description": "Alt text for the full page preview image."
+  },
+  "previewActionsToolbarLabel": {
+    "message": "Full page screenshot actions",
+    "description": "Accessible label for preview actions."
+  },
+  "actionTitleWithShortcut": {
+    "message": "$label$ ($shortcut$)",
+    "description": "Action title with a keyboard shortcut hint.",
+    "placeholders": {
+      "label": {
+        "content": "$1",
+        "example": "Copy"
+      },
+      "shortcut": {
+        "content": "$2",
+        "example": "Ctrl+C"
+      }
+    }
+  },
+  "resizeHandleLabel": {
+    "message": "$direction$ resize handle",
+    "description": "Accessible label for a selection resize handle.",
+    "placeholders": {
+      "direction": {
+        "content": "$1",
+        "example": "Top right"
+      }
+    }
+  },
+  "resizeDirectionNorth": {
+    "message": "Top",
+    "description": "North resize handle direction."
+  },
+  "resizeDirectionSouth": {
+    "message": "Bottom",
+    "description": "South resize handle direction."
+  },
+  "resizeDirectionEast": {
+    "message": "Right",
+    "description": "East resize handle direction."
+  },
+  "resizeDirectionWest": {
+    "message": "Left",
+    "description": "West resize handle direction."
+  },
+  "resizeDirectionNorthEast": {
+    "message": "Top right",
+    "description": "North-east resize handle direction."
+  },
+  "resizeDirectionNorthWest": {
+    "message": "Top left",
+    "description": "North-west resize handle direction."
+  },
+  "resizeDirectionSouthEast": {
+    "message": "Bottom right",
+    "description": "South-east resize handle direction."
+  },
+  "resizeDirectionSouthWest": {
+    "message": "Bottom left",
+    "description": "South-west resize handle direction."
+  },
+  "copySuccessToast": {
+    "message": "Screenshot copied!",
+    "description": "Toast shown after copying a screenshot."
+  },
+  "copyFailureSaveHint": {
+    "message": "Copy failed. You can save instead.",
+    "description": "Status message shown when copy fails."
+  },
+  "saveFailureRetryHint": {
+    "message": "Save failed. Try again.",
+    "description": "Status message shown when save fails."
+  }
+}
