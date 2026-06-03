@@ -1,16 +1,17 @@
 # crop
 
-`crop` is a Chrome Manifest V3 extension for taking precise screenshots from
-the page you are viewing. Open the overlay, point at a page element or draw a
-custom region, then copy or save the resulting PNG.
+`crop` is a Chrome Manifest V3 extension for taking precise page screenshots.
+Open the overlay, select a page element or draw a custom region, then copy or
+save the resulting PNG.
 
-Release status: `crop` is preparing for Chrome Web Store release and is not yet
-published there. For now, build the extension locally and load the generated
-`dist/` folder as an unpacked extension.
+Release status: `crop` is in Chrome Web Store release preparation. It is not
+listed in the Chrome Web Store yet. For now, build the extension locally and
+load the generated `dist/` folder as an unpacked extension.
 
-Translations planned in this task: Korean, Simplified Chinese, Japanese.
+Translations planned for Stage 3 of this task: Korean, Simplified Chinese,
+Japanese.
 
-## What crop Does
+## What crop does
 
 - Opens from the extension action icon or the `Ctrl+Shift+S` shortcut
   (`Command+Shift+S` on macOS).
@@ -23,10 +24,12 @@ Translations planned in this task: Korean, Simplified Chinese, Japanese.
 - Captures the visible viewport directly.
 - Captures the current top-level document as a full-page PNG by stitching
   visible viewport captures.
+- Captures selected areas that extend outside the current viewport by scrolling
+  and stitching the selected page rectangle.
 - Supports same-origin and `srcdoc` iframe element selection when Chrome allows
   the content script to inspect the iframe document.
 
-## Install From Source
+## Load from source
 
 Requirements:
 
@@ -49,9 +52,9 @@ Load it in Chrome:
 4. Select this repository's `dist/` folder.
 5. Open a normal web page and click the `crop` action icon.
 
-Chrome may not register the suggested shortcut if it conflicts with an existing
-browser or operating system shortcut. You can review extension shortcuts in
-`chrome://extensions/shortcuts`.
+Chrome may leave the suggested shortcut unassigned if it conflicts with an
+existing browser or operating system shortcut. You can review extension
+shortcuts in `chrome://extensions/shortcuts`.
 
 ## Basic Usage
 
@@ -69,11 +72,11 @@ browser or operating system shortcut. You can review extension shortcuts in
 
 ## Permissions
 
-`crop` keeps its Chrome extension permissions narrow:
+`crop` uses the following Chrome extension permissions:
 
 | Permission | Why it is needed |
 |---|---|
-| `activeTab` | Grants temporary access to the tab after you invoke the extension. |
+| `activeTab` | Grants temporary access to the current tab after you invoke the extension. |
 | `scripting` | Injects the overlay content script into the active tab. |
 | `clipboardWrite` | Allows Copy to write the generated PNG to the clipboard. |
 | `downloads` | Allows Save to download the generated PNG file. |
@@ -94,7 +97,7 @@ The image leaves the page only when you explicitly use Copy or Save:
 ## Current Limits
 
 - Chrome blocks extension injection on restricted pages such as `chrome://`
-  pages and the Chrome Web Store.
+  pages and Chrome Web Store pages.
 - Cross-origin iframe contents cannot be inspected from the content script.
   `crop` can handle same-origin and `srcdoc` iframe documents, but it cannot
   select inside cross-origin iframe documents.
@@ -107,8 +110,7 @@ The image leaves the page only when you explicitly use Copy or Save:
   errors.
 - Fixed and sticky page chrome may need special handling during stitched
   captures. `crop` reduces repeated fixed/sticky elements where possible, but it
-  does not have the same privileged rendering API as a browser-native screenshot
-  tool.
+  does not use privileged browser-native screenshot APIs.
 
 ## Development
 
@@ -137,10 +139,10 @@ Repository layout:
   history.
 
 This repository follows the Hyper-Waterfall workflow. Tracked work starts from
-a GitHub Issue and proceeds through task branch, daily order, plan,
+a GitHub Issue and proceeds through a task branch, daily order, plan,
 implementation plan, stage report, final report, and pull request.
 
-## Attribution And License
+## Attribution and license
 
 The product name is `crop`.
 
