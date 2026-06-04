@@ -419,12 +419,18 @@
 }
 
 .crop-preview {
+  --crop-preview-backdrop-block-end: 56px;
+  --crop-preview-backdrop-block-start: 32px;
+  --crop-preview-backdrop-inline: clamp(64px, 10vw, 144px);
+  --crop-preview-dialog-max-height: 820px;
+  --crop-preview-dialog-max-width: 1280px;
   position: fixed;
   inset: 0;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 24px 52px 44px;
+  padding: var(--crop-preview-backdrop-block-start) var(--crop-preview-backdrop-inline)
+    var(--crop-preview-backdrop-block-end);
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.58);
   overscroll-behavior: contain;
@@ -441,8 +447,17 @@
   --crop-preview-inline-padding: 24px;
   display: flex;
   flex-direction: column;
-  width: min(1480px, calc(100vw - 104px));
-  height: min(860px, calc(100vh - 68px));
+  width: min(
+    var(--crop-preview-dialog-max-width),
+    calc(100vw - var(--crop-preview-backdrop-inline) - var(--crop-preview-backdrop-inline))
+  );
+  height: min(
+    var(--crop-preview-dialog-max-height),
+    calc(
+      100vh - var(--crop-preview-backdrop-block-start) -
+        var(--crop-preview-backdrop-block-end)
+    )
+  );
   overflow: hidden;
   border-radius: 6px;
   background: #44414f;
@@ -852,12 +867,9 @@
 
 @media (max-width: 520px) {
   .crop-preview {
-    padding: 16px;
-  }
-
-  .crop-preview-dialog {
-    width: calc(100vw - 32px);
-    height: calc(100vh - 32px);
+    --crop-preview-backdrop-block-end: 16px;
+    --crop-preview-backdrop-block-start: 16px;
+    --crop-preview-backdrop-inline: 16px;
   }
 
   .crop-mode-toolbar {

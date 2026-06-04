@@ -516,12 +516,27 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toContain(".crop-preview");
     expect(overlayCss).toContain(".crop-preview-dialog");
     expect(overlayCss).toContain("align-items: flex-start;");
-    expect(overlayCss).toContain("padding: 24px 52px 44px;");
-    expect(overlayCss).toContain("width: min(1480px, calc(100vw - 104px));");
-    expect(overlayCss).toContain("height: min(860px, calc(100vh - 68px));");
+    expect(overlayCss).toContain("--crop-preview-backdrop-inline: clamp(64px, 10vw, 144px);");
+    expect(overlayCss).toContain("--crop-preview-backdrop-block-start: 32px;");
+    expect(overlayCss).toContain("--crop-preview-backdrop-block-end: 56px;");
+    expect(overlayCss).toContain("--crop-preview-dialog-max-width: 1280px;");
+    expect(overlayCss).toContain("--crop-preview-dialog-max-height: 820px;");
+    expect(overlayCss).toContain(
+      "padding: var(--crop-preview-backdrop-block-start) var(--crop-preview-backdrop-inline)"
+    );
+    expect(overlayCss).toContain("var(--crop-preview-backdrop-block-end);");
+    expect(overlayCss).toContain("var(--crop-preview-dialog-max-width)");
+    expect(overlayCss).toContain(
+      "calc(100vw - var(--crop-preview-backdrop-inline) - var(--crop-preview-backdrop-inline))"
+    );
+    expect(overlayCss).toContain("var(--crop-preview-dialog-max-height)");
+    expect(overlayCss).toContain(
+      "100vh - var(--crop-preview-backdrop-block-start) -"
+    );
     expect(overlayCss).toContain("--crop-preview-inline-padding: 24px;");
     expect(overlayCss).toContain("padding: 0 var(--crop-preview-inline-padding) 24px;");
     expect(overlayCss).toContain("padding: 8px var(--crop-preview-inline-padding) 6px;");
+    expect(overlayCss).toContain("--crop-preview-backdrop-inline: 16px;");
     expect(overlayCss).toContain("background: #44414f;");
     expect(overlayCss).toContain(':host([data-crop-capture-mode="visible"]) .crop-preview-surface');
     expect(overlayCss).toContain("overflow: hidden;");
