@@ -78,6 +78,8 @@ npm run build
 - Copy 会将 PNG 写入系统剪贴板。
 - Save 会请求 Chrome 下载 PNG 文件。
 
+完整政策请参阅 [Privacy Policy](PRIVACY.md)。
+
 ## 当前限制
 
 - Chrome 会阻止扩展注入受限制页面，例如 `chrome://` 页面和 Chrome Web Store 页面。

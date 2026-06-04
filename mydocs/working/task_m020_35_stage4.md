@@ -38,11 +38,12 @@ git status --short
 
 - `npm run build`: OK. Vite build 완료, `dist/` 확장 산출물 생성.
 - `npm run typecheck`: OK. `tsc --noEmit` 통과.
-- `npm test`: OK. 17개 파일, 207개 테스트 통과.
+- `npm test`: OK. PR 게시 중 `origin/devel` 병합 후 17개 파일, 208개 테스트 통과.
 - 권한 경계 grep: OK. `captureVisibleTab` 기반 경로와 권한 회귀 테스트만 확인되며 `debugger`, `<all_urls>`, broad host permission 추가 없음.
 - #35 핵심 키워드 grep: OK. downscale helper, full page fallback, README 계열, 품질 매트릭스, 단계 보고서에 반영됨.
 - `git diff --check`: OK. whitespace 오류 없음.
 - `git status --short`: OK. 보고서 작성 전 변경 없음.
+- PR 게시 중 `origin/devel` 병합: OK. `mydocs/orders/20260604.md`의 날짜별 작업 보드 충돌만 발생했고, M020 #35 완료 행과 M030 #9 완료 행을 모두 보존해 해결했다.
 
 ## 잔여 위험
 

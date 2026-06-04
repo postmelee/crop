@@ -60,7 +60,7 @@ GitHub Issue: [#35](https://github.com/postmelee/crop/issues/35)
 | scale metadata | 단일 `scale` 중심 | `sourceScale`, `outputScale`, `downscaleRatio`, `downscaled` 추가 |
 | 제한 이하 stitching | source scale 기준 출력 | 기존 출력 크기 유지 |
 | oversized fallback 전용 자동 테스트 | 없음 | stitch helper, full page planning, Phase 6 품질 기준 테스트 추가 |
-| 전체 자동 테스트 | 해당 없음 | 최종 17개 파일, 207개 테스트 통과 |
+| 전체 자동 테스트 | 해당 없음 | PR 게시 중 `origin/devel` 병합 후 17개 파일, 208개 테스트 통과 |
 | MV3 권한 | `activeTab`, `scripting`, `clipboardWrite` 중심 | 동일, `debugger`/`<all_urls>` 미추가 |
 
 ## 단계 산출물
@@ -103,10 +103,11 @@ git status --short
 
 - OK: `npm run build` 통과. Vite build가 `dist/` 확장 산출물을 생성했다.
 - OK: `npm run typecheck` 통과.
-- OK: `npm test` 17개 파일, 207개 테스트 통과.
+- OK: `npm test` 17개 파일, 208개 테스트 통과. PR 게시 중 `origin/devel` 병합 후 재검증했다.
 - OK: 권한 경계 grep 통과. `debugger`, `<all_urls>`, broad host permission 추가 없음.
 - OK: #35 핵심 키워드 grep 통과. downscale helper, full page fallback, README 계열, 품질 매트릭스, 단계 보고서 반영 확인.
 - OK: `git diff --check` 통과.
+- OK: PR 게시 중 `origin/devel` 병합 충돌 해결. `mydocs/orders/20260604.md`의 M020 #35 완료 행과 M030 #9 완료 행을 모두 보존했다.
 
 ### 단계별 검증 결과
 

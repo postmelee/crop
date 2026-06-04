@@ -78,6 +78,8 @@ Chrome に読み込む:
 - Copy は PNG をシステムクリップボードに書き込みます。
 - Save は Chrome に PNG ファイルのダウンロードを依頼します。
 
+全文は [Privacy Policy](PRIVACY.md) を参照してください。
+
 ## 現在の制限
 
 - Chrome は `chrome://` ページや Chrome Web Store ページなどの制限ページへの拡張機能の注入をブロックします。

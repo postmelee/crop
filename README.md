@@ -93,6 +93,8 @@ The image leaves the page only when you explicitly use Copy or Save:
 - Copy writes the PNG to your system clipboard.
 - Save asks Chrome to download the PNG file.
 
+See [Privacy Policy](PRIVACY.md) for the full policy.
+
 ## Current Limits
 
 - Chrome blocks extension injection on restricted pages such as `chrome://`
