@@ -84,7 +84,7 @@ npm run build
 - 内容脚本无法检查 cross-origin iframe 内容。`crop` 可以处理同源(same-origin)和 `srcdoc` iframe 文档，但不能选择 cross-origin iframe 文档内部内容。
 - 无法访问 closed shadow DOM 内部。
 - 整页捕获覆盖当前顶层文档。它不会把 cross-origin iframe 文档作为独立整页进行 stitching。
-- 整页捕获使用 `chrome.tabs.captureVisibleTab()` 加 scroll stitching。带有 lazy loading、animation、sticky layout 变化或超大 canvas 尺寸的动态页面，可能生成不完美的截图或明确的尺寸错误。
+- 整页捕获使用 `chrome.tabs.captureVisibleTab()` 加 scroll stitching。当 stitched output 超出浏览器 canvas 限制时，`crop` 会自动缩小 PNG，以保持单个图片输出。带有 lazy loading、animation 或 sticky layout 变化的动态页面，仍可能生成不完美的截图。
 - fixed/sticky page chrome 在 stitched capture 中可能需要特殊处理。`crop` 会尽量减少重复的 fixed/sticky 元素，但不使用 privileged browser-native screenshot API。
 
 ## 开发

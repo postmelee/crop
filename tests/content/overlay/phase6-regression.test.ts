@@ -314,6 +314,14 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(qualityMatrix).toContain("Task #26");
   });
 
+  it("keeps oversized full page downscale fallback quality criteria", () => {
+    expect(qualityMatrix).toContain("P6-40");
+    expect(qualityMatrix).toContain("full page oversized downscale fallback");
+    expect(qualityMatrix).toContain("Task #35");
+    expect(qualityMatrix).toContain("getStitchOutputPixelPlan()");
+    expect(qualityMatrix).toContain("maximum canvas size");
+  });
+
   it("suppresses sticky and fixed page chrome for every selected stitching tile", () => {
     const selectedCaptureStart = overlayRuntime.indexOf("const captureSelectedPageRectRegion");
     const visibleViewportStart = overlayRuntime.indexOf("const captureVisibleViewportRegion");

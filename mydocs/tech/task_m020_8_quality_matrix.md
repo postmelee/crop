@@ -87,6 +87,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-37 | 너무 큰 wrapper 자동 추천 제외 | `[data-crop-fixture="too-large-wrapper"]` | wrapper 빈 영역 hover | `MAX_DETECT_WIDTH`/`MAX_DETECT_HEIGHT`를 초과하는 wrapper는 viewport/maxDetect 크기로 잘린 자동 선택 후보를 만들지 않고 hover state를 초기화한다. | 자동 OK | OK | 해당 없음 | #24 Stage 1/2 regression, `overlay-helpers.test.ts`, `phase6-regression.test.ts` |
 | P6-38 | 큰 wrapper 내부 실제 요소 선택 유지 | `[data-crop-fixture="too-large-wrapper-infobox"]`, `[data-crop-fixture="too-large-wrapper-card"]` | wrapper 내부 table/card hover | 큰 wrapper 내부의 infobox/table/card는 자동 선택 후보로 계속 유지된다. | 자동 OK, 수동 smoke 후보 | OK | 해당 없음 | #24 Stage 1/2 regression, `overlay-helpers.test.ts`, `phase6-regression.test.ts`, `phase6_edge_cases.html` |
 | P6-39 | selected scroll capture 전체 rect 저장 | `[data-crop-fixture="selected-scroll-capture-target"]` | 선택 후 스크롤로 rect 일부가 viewport 밖에 있고 sticky header가 선택 영역 위에 겹친 상태에서 Save/Copy | 저장 PNG 크기가 선택 박스 CSS 크기 x DPR과 일치하고 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다. 선택 박스 밖 sticky/fixed page chrome도 포함되지 않는다. | #26 Stage 5 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #26 |
+| P6-40 | full page oversized downscale fallback | `[data-crop-fixture="full-page-capture-section"]` 또는 실제 긴 문서 | 전체 페이지 stitched output이 `MAX_CAPTURE_DIMENSION`/`MAX_CAPTURE_AREA`를 넘는 조건 | 전체 페이지 캡처가 계획 단계에서 실패하지 않고, stitching 단계에서 종횡비 유지 downscale을 적용해 단일 PNG를 만든다. 출력 pixel dimension은 max canvas 제한 이하이며 overlay/preview/action UI가 포함되지 않는다. | #35 Stage 1/2 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `stitch-image.test.ts`, `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #35 |
 
 ## 수동 smoke 절차 초안
 
@@ -115,6 +116,10 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 23. `[data-crop-fixture="offscreen-large-element"]`의 빈 큰 영역을 hover/click해도 자동 추천 박스가 생성되지 않는지 확인한다.
 24. `too-large-wrapper`의 빈 wrapper 영역을 hover해 큰 선택 박스가 생기지 않는지 확인한다.
 25. 같은 영역의 `too-large-wrapper-infobox`, `too-large-wrapper-card`를 hover해 내부 table/card가 정상 선택되는지 확인한다.
+26. 매우 긴 실제 문서 또는 oversized test page에서 `전체 페이지 선택`을 실행한다.
+27. preview 또는 Save 결과가 단일 PNG로 생성되고 Chrome 확장 오류 페이지에 `maximum canvas size` 오류가 남지 않는지 확인한다.
+28. 저장 PNG의 pixel dimension이 `MAX_CAPTURE_DIMENSION`과 `MAX_CAPTURE_AREA` 한도 아래인지 확인한다.
+29. downscale 때문에 원본 DPR 해상도보다 낮아질 수 있음을 기록하고, overlay/preview/action UI가 결과에 포함되지 않는지 확인한다.
 
 ## Stage별 갱신 계획
 
@@ -198,6 +203,17 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | selected scroll capture sticky/fixed page chrome suppression | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
 | 실제 PNG dimension smoke | 수동 후보 | `[data-crop-fixture="selected-scroll-capture-target"]`, `data-crop-expected-css-size="1520x920"` |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 3/4 grep |
+
+## Task #35 갱신 결과
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| stitch output downscale helper | OK | `src/shared/stitch-image.ts`, `tests/shared/stitch-image.test.ts` |
+| dimension/area 초과 output fallback | OK | `getStitchOutputPixelPlan()` dimension/area focused tests |
+| oversized full page tile plan preflight 제거 | OK | `src/content/overlay/full-page-capture.ts`, `tests/content/overlay/full-page-capture.test.ts` |
+| selected/full page stitch metadata 유지 | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| 실제 oversized full page PNG smoke | 수동 후보 | P6-40 수동 smoke 절차 |
+| `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 4 grep 예정 |
 
 ## Task #24 갱신 결과
 

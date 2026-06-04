@@ -84,7 +84,7 @@ Chrome에 로드:
 - cross-origin iframe 내용은 콘텐츠 스크립트에서 검사할 수 없습니다. `crop`은 동일 출처(same-origin) 및 `srcdoc` iframe 문서를 처리할 수 있지만, cross-origin iframe 문서 내부 선택은 지원하지 않습니다.
 - closed shadow DOM 내부에는 접근할 수 없습니다.
 - 전체 페이지 캡처는 현재 최상위 문서를 대상으로 합니다. cross-origin iframe 문서를 별도의 전체 페이지로 stitching하지 않습니다.
-- 전체 페이지 캡처는 `chrome.tabs.captureVisibleTab()`과 scroll stitching을 사용합니다. lazy loading, animation, sticky layout 변화, 큰 canvas 크기가 있는 동적 페이지에서는 결과가 불완전하거나 명시적인 크기 오류가 날 수 있습니다.
+- 전체 페이지 캡처는 `chrome.tabs.captureVisibleTab()`과 scroll stitching을 사용합니다. stitched output이 브라우저 canvas 한도를 넘으면 `crop`은 단일 이미지로 유지하기 위해 PNG를 자동 축소합니다. lazy loading, animation, sticky layout 변화가 있는 동적 페이지에서는 여전히 결과가 불완전할 수 있습니다.
 - fixed/sticky page chrome은 stitched capture 중 별도 처리가 필요할 수 있습니다. `crop`은 반복되는 fixed/sticky 요소를 가능한 한 줄이지만 privileged browser-native screenshot API는 사용하지 않습니다.
 
 ## 개발

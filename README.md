@@ -104,9 +104,10 @@ The image leaves the page only when you explicitly use Copy or Save:
 - Full-page capture covers the current top-level document. It does not stitch
   cross-origin iframe documents as separate full pages.
 - Full-page capture uses `chrome.tabs.captureVisibleTab()` plus scroll
-  stitching. Dynamic pages with lazy loading, animations, sticky layout changes,
-  or large canvas dimensions can produce imperfect captures or explicit size
-  errors.
+  stitching. If the stitched output would exceed browser canvas limits, `crop`
+  downscales the PNG to keep it as a single image. Dynamic pages with lazy
+  loading, animations, or sticky layout changes can still produce imperfect
+  captures.
 - Fixed and sticky page chrome may need special handling during stitched
   captures. `crop` reduces repeated fixed/sticky elements where possible, but it
   does not use privileged browser-native screenshot APIs.
