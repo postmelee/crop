@@ -559,6 +559,10 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("captureFullPageTiles");
     expect(overlayRuntime).toContain("stitchCapturedTiles");
     expect(overlayRuntime).toContain("captureFullPageRegion");
+    expect(overlayRuntime).toContain("downscaled: stitchResult.downscaled");
+    expect(overlayRuntime).toContain("downscaleRatio: stitchResult.downscaleRatio");
+    expect(overlayRuntime).toContain("outputScale: stitchResult.outputScale");
+    expect(overlayRuntime).toContain("sourceScale: stitchResult.sourceScale");
     expect(overlayRuntime).toContain("setCaptureDocumentChromeSuppressed");
     expect(overlayRuntime).toContain("setCaptureScrollBehaviorDisabled");
     expect(overlayRuntime).toContain("beforeCaptureTile");
@@ -568,6 +572,8 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain('style.position !== "fixed" && style.position !== "sticky"');
     expect(overlayRuntime).toContain("host.dataset.cropCaptureMode = result.mode;");
     expect(overlayRuntime).toContain("host.dataset.cropCaptureTileCount");
+    expect(overlayRuntime).toContain("host.dataset.cropCaptureDownscaled");
+    expect(overlayRuntime).toContain("host.dataset.cropCaptureDownscaleRatio");
     expect(overlayRuntime).not.toContain("getFullPageBounds");
 
     const previewPendingStart = overlayRuntime.indexOf("const setPreviewPending");

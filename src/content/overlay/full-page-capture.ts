@@ -1,9 +1,4 @@
-import {
-  MAX_CAPTURE_AREA,
-  MAX_CAPTURE_DIMENSION,
-  type OutputCssSize,
-  type StitchImageScale
-} from "../../shared/stitch-image";
+import { type OutputCssSize } from "../../shared/stitch-image";
 import {
   normalizeRect,
   rectFromEdges,
@@ -63,11 +58,6 @@ export interface FullPageTilePlan {
   readonly tiles: readonly FullPageTile[];
 }
 
-export interface FullPageTilePlanOptions {
-  readonly maxOutputDimension?: number;
-  readonly maxOutputArea?: number;
-}
-
 export interface CapturedFullPageTile {
   readonly tile: FullPageTile;
   readonly dataUrl: string;
@@ -82,7 +72,7 @@ export interface FullPageCaptureLoopResult {
   readonly tiles: readonly CapturedFullPageTile[];
 }
 
-export interface FullPageCaptureLoopOptions extends FullPageTilePlanOptions {
+export interface FullPageCaptureLoopOptions {
   readonly captureVisibleTab: () => Promise<string>;
   readonly readMetrics?: () => FullPageMetrics;
   readonly scrollTo?: (x: number, y: number) => void | Promise<void>;
@@ -197,16 +187,14 @@ export function getFullPageBounds(metrics: FullPageMetrics): FullPageBounds {
 }
 
 export function createFullPageTilePlan(
-  metrics: FullPageMetrics,
-  options: FullPageTilePlanOptions = {}
+  metrics: FullPageMetrics
 ): FullPageTilePlan {
-  return createPageRectTilePlan(metrics, getFullPageBounds(metrics), options);
+  return createPageRectTilePlan(metrics, getFullPageBounds(metrics));
 }
 
 export function createPageRectTilePlan(
   metrics: FullPageMetrics,
-  pageRect: CropRectLike,
-  options: FullPageTilePlanOptions = {}
+  pageRect: CropRectLike
 ): FullPageTilePlan {
   if (metrics.viewportWidth <= 0 || metrics.viewportHeight <= 0) {
     throw new Error("Full page capture requires a non-empty viewport.");
@@ -218,7 +206,7 @@ export function createPageRectTilePlan(
     devicePixelRatio: metrics.devicePixelRatio
   };
 
-  validateEstimatedOutputSize(bounds, metrics.devicePixelRatio, options);
+  validateCaptureBounds(bounds);
 
   const xSegments = createSegments(
     normalizedBounds.left,
@@ -285,15 +273,13 @@ export function createPageRectTilePlan(
 export async function captureFullPageTiles(
   options: FullPageCaptureLoopOptions
 ): Promise<FullPageCaptureLoopResult> {
-  return captureTiles(options, (metrics) => createFullPageTilePlan(metrics, options));
+  return captureTiles(options, (metrics) => createFullPageTilePlan(metrics));
 }
 
 export async function capturePageRectTiles(
   options: PageRectCaptureLoopOptions
 ): Promise<FullPageCaptureLoopResult> {
-  return captureTiles(options, (metrics) =>
-    createPageRectTilePlan(metrics, options.pageRect, options)
-  );
+  return captureTiles(options, (metrics) => createPageRectTilePlan(metrics, options.pageRect));
 }
 
 async function captureTiles(
@@ -394,26 +380,9 @@ export function createCapturedFullPageTile(input: {
   };
 }
 
-function validateEstimatedOutputSize(
-  bounds: FullPageBounds,
-  devicePixelRatio: number,
-  options: FullPageTilePlanOptions
-): void {
-  const scale: StitchImageScale = {
-    scaleX: devicePixelRatio,
-    scaleY: devicePixelRatio
-  };
-  const width = Math.round(bounds.width * scale.scaleX);
-  const height = Math.round(bounds.height * scale.scaleY);
-  const maxDimension = options.maxOutputDimension ?? MAX_CAPTURE_DIMENSION;
-  const maxArea = options.maxOutputArea ?? MAX_CAPTURE_AREA;
-
-  if (width <= 0 || height <= 0) {
+function validateCaptureBounds(bounds: CropRect): void {
+  if (bounds.width <= 0 || bounds.height <= 0) {
     throw new Error("Full page capture requires a non-empty document.");
-  }
-
-  if (width > maxDimension || height > maxDimension || width * height > maxArea) {
-    throw new Error("Full page capture exceeds the maximum canvas size.");
   }
 }
 

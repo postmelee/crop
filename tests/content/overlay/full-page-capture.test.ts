@@ -11,6 +11,11 @@ import {
   type FullPageMetrics
 } from "../../../src/content/overlay/full-page-capture";
 import { rectFromEdges } from "../../../src/shared/rect";
+import {
+  getStitchOutputPixelPlan,
+  MAX_CAPTURE_AREA,
+  MAX_CAPTURE_DIMENSION
+} from "../../../src/shared/stitch-image";
 
 describe("full page capture helpers", () => {
   it("reads full page metrics from document and body dimensions", () => {
@@ -507,7 +512,7 @@ describe("full page capture helpers", () => {
     expect(events.at(-1)).toBe("hidden:false");
   });
 
-  it("rejects empty viewports and oversized estimated output", () => {
+  it("rejects empty viewports and empty capture bounds", () => {
     expect(() =>
       createFullPageTilePlan(
         createFullPageMetrics({
@@ -520,18 +525,38 @@ describe("full page capture helpers", () => {
     ).toThrow("non-empty viewport");
 
     expect(() =>
-      createFullPageTilePlan(
+      createPageRectTilePlan(
         createFullPageMetrics({
           viewportWidth: 500,
           viewportHeight: 400,
-          scrollWidth: 1200,
-          scrollHeight: 900,
-          devicePixelRatio: 2
+          scrollWidth: 800,
+          scrollHeight: 900
         }),
-        {
-          maxOutputDimension: 1000
-        }
+        rectFromEdges(100, 100, 100, 240)
       )
-    ).toThrow("maximum canvas size");
+    ).toThrow("non-empty document");
+  });
+
+  it("plans oversized full page output for stitch-time downscaling", () => {
+    const plan = createFullPageTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 1000,
+        viewportHeight: 800,
+        scrollWidth: 1000,
+        scrollHeight: 20_000,
+        devicePixelRatio: 2
+      })
+    );
+    const outputPlan = getStitchOutputPixelPlan(plan.outputCssSize, {
+      scaleX: 2,
+      scaleY: 2
+    });
+
+    expect(plan.outputCssSize).toEqual({ width: 1000, height: 20_000 });
+    expect(plan.tiles.length).toBeGreaterThan(1);
+    expect(outputPlan.downscaled).toBe(true);
+    expect(outputPlan.width).toBeLessThanOrEqual(MAX_CAPTURE_DIMENSION);
+    expect(outputPlan.height).toBeLessThanOrEqual(MAX_CAPTURE_DIMENSION);
+    expect(outputPlan.width * outputPlan.height).toBeLessThanOrEqual(MAX_CAPTURE_AREA);
   });
 });
