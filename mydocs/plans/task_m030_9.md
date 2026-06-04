@@ -132,7 +132,7 @@ Chrome Web Store 제출 전에는 Store listing과 Developer Dashboard privacy f
   - `npm run build`
   - `find dist -maxdepth 3 -type f | sort`
   - `sed -n '1,220p' dist/manifest.json`
-  - `(cd dist && zip -qr /tmp/crop-0.1.0-cws.zip .)`
+  - `python3 -c 'from pathlib import Path; from zipfile import ZipFile, ZIP_DEFLATED; root=Path("dist"); z=ZipFile("/tmp/crop-0.1.0-cws.zip","w",ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()'`
   - `unzip -l /tmp/crop-0.1.0-cws.zip`
   - `git diff --check`
 - Stage 4

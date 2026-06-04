@@ -12,11 +12,10 @@ Stage 4에서 Chrome Web Store 제출 전 blocker로 남긴 manifest icon과 Sto
 
 | 파일 | 변경 요약 |
 |---|---|
-| `public/icons/crop.svg` | crop mark 기반 브랜드 아이콘 SVG 원본을 추가했다. |
-| `public/icons/crop-16.png` | Chrome action small icon용 16x16 PNG를 추가했다. |
-| `public/icons/crop-32.png` | Chrome extension icon variant용 32x32 PNG를 추가했다. |
-| `public/icons/crop-48.png` | Chrome extension management icon variant용 48x48 PNG를 추가했다. |
-| `public/icons/crop-128.png` | Chrome extension metadata와 Store icon 후보용 128x128 PNG를 추가했다. |
+| `public/icons/crop-16.png` | Chrome action small icon용 16x16 PNG를 추가했다. Stage 5.1에서 사용자 제공 PNG 기반으로 재생성했다. |
+| `public/icons/crop-32.png` | Chrome extension icon variant용 32x32 PNG를 추가했다. Stage 5.1에서 사용자 제공 PNG 기반으로 재생성했다. |
+| `public/icons/crop-48.png` | Chrome extension management icon variant용 48x48 PNG를 추가했다. Stage 5.1에서 사용자 제공 PNG 기반으로 재생성했다. |
+| `public/icons/crop-128.png` | Chrome extension metadata와 Store icon 후보용 128x128 PNG를 추가했다. Stage 5.1에서 사용자 제공 PNG 기반으로 재생성했다. |
 | `manifest.json` | `icons`와 `action.default_icon`에 `16`, `32`, `48`, `128` icon path를 연결했다. |
 | `tests/manifest.test.ts` | manifest icon metadata와 실제 `public/icons/*` 파일 존재를 검증하는 테스트를 추가했다. |
 | `mydocs/plans/task_m030_9_impl.md` | Stage 5 절차, 산출물, 검증 명령, 잔여 blocker 기준을 추가했다. |
@@ -33,13 +32,21 @@ Source 동작과 확장 권한은 변경하지 않았다. `manifest.json`에는 
 실행 명령:
 
 ```bash
-file public/icons/crop-16.png public/icons/crop-32.png public/icons/crop-48.png public/icons/crop-128.png public/icons/crop.svg
+file public/icons/crop-16.png public/icons/crop-32.png public/icons/crop-48.png public/icons/crop-128.png
 npm run typecheck
 npm test
 npm run build
 find dist -maxdepth 3 -type f | sort
 sed -n '1,240p' dist/manifest.json
-zip -qr /tmp/crop-0.1.0-cws.zip .  # workdir: dist
+python3 - <<'PY'
+from pathlib import Path
+from zipfile import ZipFile, ZIP_DEFLATED
+root = Path("dist")
+with ZipFile("/tmp/crop-0.1.0-cws.zip", "w", ZIP_DEFLATED) as zf:
+    for path in sorted(root.rglob("*")):
+        if path.is_file():
+            zf.write(path, path.relative_to(root).as_posix())
+PY
 unzip -l /tmp/crop-0.1.0-cws.zip
 git diff --check
 git status --short
@@ -47,14 +54,14 @@ git status --short
 
 결과:
 
-- OK: `file` 확인에서 16/32/48/128 PNG는 각 크기의 8-bit RGBA PNG로 식별됐고, `crop.svg`는 SVG로 식별됐다.
+- OK: `file` 확인에서 16/32/48/128 PNG는 각 크기의 8-bit RGBA PNG로 식별됐다.
 - OK: `npm run typecheck` 통과.
 - OK: `npm test` 통과. 17 files, 202 tests passed.
 - OK: `npm run build` 통과.
-- OK: `find dist -maxdepth 3 -type f | sort`에서 14개 파일을 확인했고 `dist/icons/crop.svg`, `dist/icons/crop-{16,32,48,128}.png`가 포함됐다.
+- OK: `find dist -maxdepth 3 -type f | sort`에서 13개 파일을 확인했고 `dist/icons/crop-{16,32,48,128}.png`가 포함됐다.
 - OK: `dist/manifest.json`에 `icons`와 `action.default_icon`이 모두 `icons/crop-{16,32,48,128}.png`를 가리키는 것을 확인했다.
 - OK: `/tmp/crop-0.1.0-cws.zip` 재생성 완료.
-- OK: `unzip -l /tmp/crop-0.1.0-cws.zip`에서 `icons/` directory와 5개 icon 파일 포함을 확인했다. Zip contents는 22 entries, uncompressed total 408,804 bytes.
+- OK: fresh write 방식으로 `/tmp/crop-0.1.0-cws.zip`를 재생성했고, `unzip -l /tmp/crop-0.1.0-cws.zip`에서 4개 icon 파일 포함과 SVG 제외를 확인했다.
 - OK: `git diff --check`가 경고 없이 통과했다.
 - OK: `git status --short`는 커밋 전 예상 변경인 manifest, tests, docs, `public/` icon files, Stage 5 보고서만 표시했다.
 

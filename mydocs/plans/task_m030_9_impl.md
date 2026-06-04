@@ -169,7 +169,7 @@ Task #9 Stage 2: Privacy policy와 Store copy 작성
 npm run build
 find dist -maxdepth 3 -type f | sort
 sed -n '1,220p' dist/manifest.json
-(cd dist && zip -qr /tmp/crop-0.1.0-cws.zip .)
+python3 -c 'from pathlib import Path; from zipfile import ZipFile, ZIP_DEFLATED; root=Path("dist"); z=ZipFile("/tmp/crop-0.1.0-cws.zip","w",ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()'
 unzip -l /tmp/crop-0.1.0-cws.zip
 rg -n "MPL|Mozilla|Firefox|source|LICENSE-MPL-2.0|NOTICE|THIRD_PARTY|affiliated|endorsed|sponsored" README.md PRIVACY.md NOTICE THIRD_PARTY.md mydocs/tech/task_m030_9_chrome_web_store.md
 git diff --check
@@ -215,7 +215,7 @@ npm test
 npm run build
 find dist -maxdepth 3 -type f | sort
 sed -n '1,220p' dist/manifest.json
-(cd dist && zip -qr /tmp/crop-0.1.0-cws.zip .)
+python3 -c 'from pathlib import Path; from zipfile import ZipFile, ZIP_DEFLATED; root=Path("dist"); z=ZipFile("/tmp/crop-0.1.0-cws.zip","w",ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()'
 unzip -l /tmp/crop-0.1.0-cws.zip
 rg -n "activeTab|scripting|clipboardWrite|downloads|debugger|<all_urls>|host_permissions" manifest.json dist/manifest.json README.md README.ko.md README.zh-CN.md README.ja.md PRIVACY.md mydocs/tech/task_m030_9_chrome_web_store.md src tests
 rg -n "server|telemetry|analytics|local|privacy|clipboard|download|Mozilla|Firefox|official|affiliated|endorsed|sponsored" README.md README.ko.md README.zh-CN.md README.ja.md PRIVACY.md NOTICE THIRD_PARTY.md mydocs/tech/task_m030_9_chrome_web_store.md
@@ -235,7 +235,6 @@ Task #9 Stage 4: 제출 전 blocker와 통합 검증 정리
 
 신규:
 
-- `public/icons/crop.svg`
 - `public/icons/crop-16.png`
 - `public/icons/crop-32.png`
 - `public/icons/crop-48.png`
@@ -253,7 +252,7 @@ Task #9 Stage 4: 제출 전 blocker와 통합 검증 정리
 
 - 제품명과 사용자-facing 브랜딩은 `crop`만 사용한다.
 - Mozilla, Firefox, Screenshots를 아이콘/브랜딩 요소로 사용하지 않는다.
-- 간단한 crop mark 기반 브랜드 아이콘을 SVG 원본으로 작성한다.
+- 사용자 제공 PNG 아이콘을 기준으로 Chrome extension icon set을 생성한다.
 - Chrome extension metadata와 action icon에 필요한 `16`, `32`, `48`, `128` PNG를 생성한다.
 - `manifest.json`에 `icons`와 `action.default_icon`을 추가한다.
 - Vite build의 기본 `public/` copy 동작으로 `dist/icons/*`가 package에 포함되는지 확인한다.
@@ -262,13 +261,21 @@ Task #9 Stage 4: 제출 전 blocker와 통합 검증 정리
 ### 검증
 
 ```bash
-file public/icons/crop-16.png public/icons/crop-32.png public/icons/crop-48.png public/icons/crop-128.png public/icons/crop.svg
+file public/icons/crop-16.png public/icons/crop-32.png public/icons/crop-48.png public/icons/crop-128.png
 npm run typecheck
 npm test
 npm run build
 find dist -maxdepth 3 -type f | sort
 sed -n '1,240p' dist/manifest.json
-(cd dist && zip -qr /tmp/crop-0.1.0-cws.zip .)
+python3 - <<'PY'
+from pathlib import Path
+from zipfile import ZipFile, ZIP_DEFLATED
+root = Path("dist")
+with ZipFile("/tmp/crop-0.1.0-cws.zip", "w", ZIP_DEFLATED) as zf:
+    for path in sorted(root.rglob("*")):
+        if path.is_file():
+            zf.write(path, path.relative_to(root).as_posix())
+PY
 unzip -l /tmp/crop-0.1.0-cws.zip
 git diff --check
 ```

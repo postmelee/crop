@@ -85,7 +85,7 @@ Stage 1 범위는 정책·현행 산출물·gap 매핑이다. 최종 Store listi
 | Copy | `navigator.clipboard.write()` + `ClipboardItem` | `src/shared/clipboard.ts` |
 | Save | `chrome.downloads.download()` | `src/background/service-worker.ts` |
 | remote logic fetch/eval | 없음 | `rg "fetch|XMLHttpRequest|sendBeacon|WebSocket|eval|new Function"` |
-| image asset files | `public/icons/crop.svg`, `public/icons/crop-{16,32,48,128}.png` | Stage 5 |
+| image asset files | `public/icons/crop-{16,32,48,128}.png` | Stage 5.1 |
 | manifest `icons` | `icons/crop-{16,32,48,128}.png` | `manifest.json` |
 | public privacy policy | `PRIVACY.md` | repository root |
 | license/source notice | 존재 | `LICENSE`, `LICENSE-MPL-2.0`, `NOTICE`, `THIRD_PARTY.md` |
@@ -265,8 +265,8 @@ crop provides one purpose: selecting and capturing screenshots from the current 
 
 | 자산 | 공식 기준 | 현재 상태 | 판단 |
 |---|---|---|---|
-| Manifest icon | prepare guide에서 `icons` 점검 대상 | `manifest.json`에 `icons`와 `action.default_icon` 정의. `public/icons/crop-{16,32,48,128}.png` 존재 | Stage 5에서 해소 |
-| Store icon | 128x128 PNG, extension ZIP에 포함 | `public/icons/crop-128.png` 존재, build 후 `dist/icons/crop-128.png` 포함 | Stage 5에서 해소 |
+| Manifest icon | prepare guide에서 `icons` 점검 대상 | `manifest.json`에 `icons`와 `action.default_icon` 정의. 사용자 제공 아이콘 기반 `public/icons/crop-{16,32,48,128}.png` 존재 | Stage 5.1에서 해소 상태 유지 |
+| Store icon | 128x128 PNG, extension ZIP에 포함 | 사용자 제공 아이콘 기반 `public/icons/crop-128.png` 존재, build 후 `dist/icons/crop-128.png` 포함 | Stage 5.1에서 해소 상태 유지 |
 | Screenshot | 최소 1개, 1280x800 또는 640x400 | 이미지 파일 없음 | 제출 전 blocker |
 | Small promo image | 440x280 PNG/JPEG | 이미지 파일 없음 | 제출 전 blocker |
 | Marquee promo image | 1400x560 optional | 이미지 파일 없음 | optional 후속 |
@@ -287,14 +287,14 @@ crop provides one purpose: selecting and capturing screenshots from the current 
 - `vite.config.ts`의 `build.sourcemap`은 `true`다.
 - `dist/`는 git ignore 대상이다.
 - 2026-06-04 KST Stage 3 검증에서 `npm run build`가 통과했다.
-- `/tmp/crop-0.1.0-cws.zip`는 `dist/` 내부를 ZIP root로 압축해 생성했다.
-- zip size: 95,172 bytes.
+- Stage 3 당시 `/tmp/crop-0.1.0-cws.zip`는 `dist/` 내부를 ZIP root로 압축해 생성했다.
+- Stage 5.1 이후 최신 zip은 fresh write 방식으로 재생성한다. 기존 zip update 방식은 제거된 file entry를 보존할 수 있으므로 사용하지 않는다.
 
 Chrome Web Store upload zip 생성 절차:
 
 ```bash
 npm run build
-(cd dist && zip -qr /tmp/crop-0.1.0-cws.zip .)
+python3 -c 'from pathlib import Path; from zipfile import ZipFile, ZIP_DEFLATED; root=Path("dist"); z=ZipFile("/tmp/crop-0.1.0-cws.zip","w",ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()'
 unzip -l /tmp/crop-0.1.0-cws.zip
 ```
 
@@ -355,7 +355,7 @@ Source map 포함 정책:
 | 항목 | 상태 | 이유 | 처리 방향 |
 |---|---|---|---|
 | Manifest icon | Stage 5 해소 | `manifest.json`에 `icons`와 `action.default_icon`을 추가했고 package에도 icon file이 포함된다. | 제출 전 package contents 재확인 |
-| Store icon | Stage 5 해소 | 128x128 PNG인 `public/icons/crop-128.png`를 제작했고 build 후 `dist/icons/crop-128.png`로 포함된다. | 제출 전 Dashboard upload/preview 확인 |
+| Store icon | Stage 5.1 해소 | 사용자 제공 아이콘 기반 128x128 PNG인 `public/icons/crop-128.png`를 제작했고 build 후 `dist/icons/crop-128.png`로 포함된다. | 제출 전 Dashboard upload/preview 확인 |
 | Store screenshot | 없음 | Store listing에 최소 1개 screenshot이 필요하다. | 1280x800 또는 640x400 screenshot 제작 |
 | Small promotional image | 없음 | Chrome Web Store image guide에서 mandatory image로 정리된다. | 440x280 PNG/JPEG 제작 |
 
@@ -413,17 +413,16 @@ Source map 포함 정책:
 
 ## Stage 5 브랜드 아이콘 제작 결과
 
-Stage 5에서는 실제 Store 제출 blocker 중 브랜드 아이콘과 manifest icon을 해소했다. 아이콘은 `crop` 제품명만 전제로 한 crop mark 기반 심볼이며, Mozilla/Firefox/Screenshots 명칭이나 제휴를 암시하는 시각 요소를 사용하지 않는다.
+Stage 5에서는 실제 Store 제출 blocker 중 브랜드 아이콘과 manifest icon을 해소했다. Stage 5.1에서는 작업지시자가 제공한 PNG 아이콘을 기준으로 같은 path의 extension icon set을 다시 생성했다. 아이콘은 `crop` 제품명만 전제로 한 crop mark 기반 심볼이며, Mozilla/Firefox/Screenshots 명칭이나 제휴를 암시하는 시각 요소를 사용하지 않는다.
 
 ### 산출물
 
 | 자산 | 경로 | 용도 |
 |---|---|---|
-| SVG 원본 | `public/icons/crop.svg` | 브랜드 아이콘 원본 |
-| 16 PNG | `public/icons/crop-16.png` | toolbar/action small icon |
-| 32 PNG | `public/icons/crop-32.png` | Chrome extension icon variant |
-| 48 PNG | `public/icons/crop-48.png` | Chrome extension management icon variant |
-| 128 PNG | `public/icons/crop-128.png` | Chrome extension metadata와 Store icon 후보 |
+| 16 PNG | `public/icons/crop-16.png` | 사용자 제공 PNG 기반 toolbar/action small icon |
+| 32 PNG | `public/icons/crop-32.png` | 사용자 제공 PNG 기반 Chrome extension icon variant |
+| 48 PNG | `public/icons/crop-48.png` | 사용자 제공 PNG 기반 Chrome extension management icon variant |
+| 128 PNG | `public/icons/crop-128.png` | 사용자 제공 PNG 기반 Chrome extension metadata와 Store icon 후보 |
 
 ### Manifest 연결
 
@@ -443,9 +442,10 @@ Stage 5에서는 실제 Store 제출 blocker 중 브랜드 아이콘과 manifest
 
 ### Package 영향
 
-- Vite의 기본 `public/` copy 동작으로 `dist/icons/crop.svg`와 `dist/icons/crop-{16,32,48,128}.png`가 포함된다.
+- Vite의 기본 `public/` copy 동작으로 `dist/icons/crop-{16,32,48,128}.png`가 포함된다.
 - Store upload zip에는 `icons/` directory가 root 기준으로 들어간다.
-- 아이콘 source SVG는 runtime에 참조되지는 않지만, package 안에서 브랜드 원본 확인용으로 함께 포함된다.
+- Stage 5의 이전 SVG 원본은 사용자 제공 PNG 기반 asset과 맞지 않아 제거했다.
+- `/tmp/crop-0.1.0-cws.zip`는 기존 zip update가 제거된 file entry를 보존하지 않도록 fresh write 방식으로 생성한다.
 
 ## 발견 내용
 
