@@ -541,6 +541,7 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("getCropModeFromEvent");
     expect(overlayRuntime).toContain("handleWheel");
     expect(overlayRuntime).toContain("isPreviewScrollableEvent");
+    expect(overlayRuntime).toContain("isPreviewBackdropEvent");
     expect(overlayRuntime).toContain("getPreviewKeyboardAction");
     expect(overlayRuntime).toContain("getCaptureKeyboardAction");
     expect(overlayRuntime).toContain("selectedShortcutAction");
@@ -590,6 +591,46 @@ describe("Phase 6 overlay regression coverage", () => {
 
     expect(previewPendingBlock).toContain('setAttribute("aria-busy", "true")');
     expect(previewPendingBlock).not.toContain("button.disabled");
+  });
+
+  it("dismisses preview only from direct backdrop clicks", () => {
+    const actionIndex = overlayRuntime.indexOf("const action = getCropActionFromEvent(event);");
+    const modeIndex = overlayRuntime.indexOf("const mode = getCropModeFromEvent(event);");
+    const backdropIndex = overlayRuntime.indexOf(
+      "if (previewCaptureResult && !pendingCapture && isPreviewBackdropEvent(event))"
+    );
+    const overlayEventIndex = overlayRuntime.indexOf(
+      "if (isCropOverlayEvent(event, host))",
+      backdropIndex
+    );
+    const documentClickIndex = overlayRuntime.indexOf(
+      "if (suppressNextDocumentClick)",
+      backdropIndex
+    );
+
+    expect(actionIndex).toBeGreaterThanOrEqual(0);
+    expect(modeIndex).toBeGreaterThan(actionIndex);
+    expect(backdropIndex).toBeGreaterThan(modeIndex);
+    expect(overlayEventIndex).toBeGreaterThan(backdropIndex);
+    expect(documentClickIndex).toBeGreaterThan(overlayEventIndex);
+
+    const backdropBlock = overlayRuntime.slice(backdropIndex, overlayEventIndex);
+    expect(backdropBlock).toContain("event.preventDefault();");
+    expect(backdropBlock).toContain("event.stopPropagation();");
+    expect(backdropBlock).toContain("requestClose();");
+
+    const backdropHelperStart = overlayRuntime.indexOf("function isPreviewBackdropEvent");
+    const backdropHelperEnd = overlayRuntime.indexOf(
+      "function isCropOverlayElement",
+      backdropHelperStart
+    );
+    const backdropHelper = overlayRuntime.slice(backdropHelperStart, backdropHelperEnd);
+
+    expect(backdropHelper).toContain("const [eventTarget] = event.composedPath();");
+    expect(backdropHelper).toContain('eventTarget.classList.contains("crop-preview")');
+    expect(backdropHelper).not.toContain("some(");
+    expect(overlayRuntime).toContain("startPreviewAction(action)");
+    expect(overlayRuntime).toContain("isPreviewScrollableEvent");
   });
 
   it("keeps the mode toolbar inside the page viewport below browser chrome", () => {
