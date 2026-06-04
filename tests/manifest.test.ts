@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -6,12 +6,15 @@ import { describe, expect, it } from "vitest";
 const testDir = fileURLToPath(new URL(".", import.meta.url));
 const manifestPath = resolve(testDir, "../manifest.json");
 const defaultLocaleMessagesPath = resolve(testDir, "../_locales/en/messages.json");
+const projectRoot = resolve(testDir, "..");
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
   name?: string;
   description?: string;
   default_locale?: string;
+  icons?: Record<string, string>;
   action?: {
     default_title?: string;
+    default_icon?: Record<string, string>;
   };
   commands?: Record<
     string,
@@ -38,6 +41,22 @@ describe("extension manifest", () => {
     expect(manifest.description).toBe("__MSG_extensionDescription__");
     expect(manifest.action?.default_title).toBe("__MSG_extensionActionTitle__");
     expect(manifest.commands?.["open-crop"]?.description).toBe("__MSG_commandOpenCrop__");
+  });
+
+  it("defines the crop icon set for extension metadata and action", () => {
+    const expectedIcons = {
+      "16": "icons/crop-16.png",
+      "32": "icons/crop-32.png",
+      "48": "icons/crop-48.png",
+      "128": "icons/crop-128.png"
+    };
+
+    expect(manifest.icons).toEqual(expectedIcons);
+    expect(manifest.action?.default_icon).toEqual(expectedIcons);
+
+    for (const iconPath of Object.values(expectedIcons)) {
+      expect(existsSync(resolve(projectRoot, "public", iconPath))).toBe(true);
+    }
   });
 
   it("defines every manifest i18n key in the default locale", () => {
