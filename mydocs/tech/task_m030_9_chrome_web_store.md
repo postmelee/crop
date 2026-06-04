@@ -87,7 +87,7 @@ Stage 1 범위는 정책·현행 산출물·gap 매핑이다. 최종 Store listi
 | remote logic fetch/eval | 없음 | `rg "fetch|XMLHttpRequest|sendBeacon|WebSocket|eval|new Function"` |
 | image asset files | 없음 | `find . -maxdepth 3 -type f ...` |
 | manifest `icons` | 없음 | `manifest.json` |
-| public privacy policy | 없음 | repository root |
+| public privacy policy | `PRIVACY.md` | repository root |
 | license/source notice | 존재 | `LICENSE`, `LICENSE-MPL-2.0`, `NOTICE`, `THIRD_PARTY.md` |
 
 ## 기능·제한사항 매핑
@@ -279,32 +279,85 @@ crop provides one purpose: selecting and capturing screenshots from the current 
 - Supplying Images guide는 mandatory image를 extension icon, small promotional image, screenshot으로 정리한다.
 - 따라서 Stage 1에서는 video를 "Dashboard 입력 확인 항목"으로 두고, 실제 제출 blocker 판정은 Dashboard 확인 또는 Stage 4 최종 검토에서 확정한다.
 
-## Package/release gap
+## Stage 3 Release package checklist
 
-현재 build 설정:
+현재 build 설정과 검증 결과:
 
 - `npm run build`는 `dist/manifest.json`, `dist/background/service-worker.js`, `dist/content/inject.js`, source maps, `_locales/*/messages.json`를 생성한다.
 - `vite.config.ts`의 `build.sourcemap`은 `true`다.
 - `dist/`는 git ignore 대상이다.
+- 2026-06-04 KST Stage 3 검증에서 `npm run build`가 통과했다.
+- `/tmp/crop-0.1.0-cws.zip`는 `dist/` 내부를 ZIP root로 압축해 생성했다.
+- zip size: 95,172 bytes.
 
-Stage 3에서 확정할 항목:
+Chrome Web Store upload zip 생성 절차:
 
-- `dist/` 내부를 ZIP root로 압축한다.
-- ZIP root에 `manifest.json`이 있는지 확인한다.
-- `_locales/{en,ko,ja,zh_CN}/messages.json` 포함을 확인한다.
-- `node_modules/`, `mydocs/`, repository root 개발 파일이 들어가지 않는지 확인한다.
-- source map 포함 여부를 Store review/code readability/source exposure 관점에서 기록한다.
+```bash
+npm run build
+(cd dist && zip -qr /tmp/crop-0.1.0-cws.zip .)
+unzip -l /tmp/crop-0.1.0-cws.zip
+```
+
+확인된 zip root contents:
+
+| Path | 판단 |
+|---|---|
+| `manifest.json` | OK: zip root에 존재 |
+| `background/service-worker.js` | OK: background service worker bundle |
+| `background/service-worker.js.map` | OK: source map 포함 |
+| `content/inject.js` | OK: content script bundle |
+| `content/inject.js.map` | OK: source map 포함 |
+| `_locales/en/messages.json` | OK: default locale 포함 |
+| `_locales/ko/messages.json` | OK: Korean locale 포함 |
+| `_locales/ja/messages.json` | OK: Japanese locale 포함 |
+| `_locales/zh_CN/messages.json` | OK: Simplified Chinese locale 포함 |
+
+제외 확인:
+
+- `node_modules/` 없음.
+- `mydocs/` 없음.
+- repository root의 `README*`, `PRIVACY.md`, `NOTICE`, `THIRD_PARTY.md`, `LICENSE*`, `package*.json`, `vite.config.ts`, `tsconfig.json` 없음.
+- Store upload zip은 extension runtime package만 담는다. 사용자-facing policy/source availability는 Store listing URL과 public repository로 제공한다.
+
+Source map 포함 정책:
+
+- 현재 0.1.0 제출 후보 package는 source map을 포함한 상태로 문서화한다.
+- 이유: source map은 Store review와 debugging에 도움이 되고, source code 자체도 public repository에서 공개될 예정이며, 현재 source map에 secret이나 credential을 포함하지 않는다.
+- tradeoff: source map은 bundled source를 더 쉽게 읽게 하므로 package 노출면을 넓힌다.
+- source map 제외가 필요하면 Stage 3 범위를 넘어 build policy 변경이 필요하므로 별도 승인 task 또는 구현계획서 갱신 후 처리한다.
+
+## Stage 3 Source availability checklist
+
+| 항목 | 현재 상태 | 판단 |
+|---|---|---|
+| public source repository | `https://github.com/postmelee/crop` | OK: `PRIVACY.md` contact와 README에서 repository 기준 사용 |
+| MIT license | `LICENSE` | OK |
+| MPL 2.0 license text | `LICENSE-MPL-2.0` | OK |
+| project notice | `NOTICE` | OK: non-affiliation, upstream source, local derived files, MPL link 기록 |
+| third-party notice | `THIRD_PARTY.md` | OK: upstream repository/commit/source path/local path/modification summary 기록 |
+| derived source boundary | `src/firefox-derived/` | OK |
+| derived file headers | `overlay-helpers.ts`, `region.ts`, `window-dimensions.ts`, `screenshots-ui-assets.ts` | OK: MPL header 유지 |
+| README attribution | `README.md` | OK: MIT/MPL/NOTICE/THIRD_PARTY and non-affiliation 문구 유지 |
+| Privacy/source contact | `PRIVACY.md` | OK: public repository 링크 포함 |
+| Store listing source URL | `Homepage URL` 후보: GitHub repository | 제출 승인 단계에서 Dashboard URL로 확정 필요 |
+
+배포 package 관점 판단:
+
+- Chrome Web Store upload zip에는 runtime files만 포함한다.
+- MPL/license/source availability는 public repository, README, `NOTICE`, `THIRD_PARTY.md`, `LICENSE-MPL-2.0`, `src/firefox-derived/` headers로 제공한다.
+- Store listing의 Homepage URL 또는 Support URL을 public repository로 연결하면 Web Store 사용자와 reviewer가 source와 notices에 접근할 수 있다.
+- 현 Stage에서는 `NOTICE`와 `THIRD_PARTY.md` 본문 보강이 필요하지 않다고 판단했다.
 
 ## 발견 내용
 
 - 현재 code/manifest 권한은 Store minimum permission 설명이 가능하다.
 - `activeTab`과 `scripting` 조합은 현재 tab user gesture injection 모델과 맞다.
 - `captureVisibleTab()`은 `activeTab` 또는 `<all_urls>`가 필요한 API이며, `crop`은 broad `<all_urls>` 대신 `activeTab`을 사용한다.
-- privacy policy 전문은 아직 없다. Store privacy policy URL 후보로 루트 `PRIVACY.md`가 필요하다.
+- privacy policy 전문은 Stage 2에서 `PRIVACY.md`로 작성했다. Store privacy policy URL은 PR merge 후 stable URL로 확정해야 한다.
 - image asset은 현재 없다. official image requirements 기준으로 manifest icon, Store icon, screenshot, small promo image는 실제 제출 전 blocker다.
 - README는 Store 미게시 상태, permission, privacy, limitation, Mozilla/Firefox disclaimer를 이미 담고 있다.
 - `_locales` 4개 resource가 있으므로 localized Store listing을 제공할 수 있다. 다만 locale 간 기능 설명 일관성이 필요하다.
-- `NOTICE`, `THIRD_PARTY.md`, `LICENSE-MPL-2.0`은 Firefox-derived source boundary와 affiliation disclaimer를 담고 있다. Stage 3에서 배포 package/source availability 관점으로 한 번 더 확인한다.
+- `NOTICE`, `THIRD_PARTY.md`, `LICENSE-MPL-2.0`은 Firefox-derived source boundary와 affiliation disclaimer를 담고 있고, Stage 3에서 배포 package/source availability 관점으로도 충분하다고 확인했다.
 - remote code/eval/fetch 사용은 발견되지 않았다. Mozilla URL은 MPL header와 source attribution 문서 링크로만 존재한다.
 
 ## 결정
@@ -313,7 +366,8 @@ Stage 3에서 확정할 항목:
 - Stage 2는 English Store copy를 우선 작성한다. ko/ja/zh-CN localized Store copy는 이번 task에서 필수로 만들지 않고 후속 후보로 둘 수 있다.
 - Stage 2 permission justification은 현재 manifest 권한 4개만 대상으로 한다.
 - Stage 3은 `dist/` zip root packaging을 기준으로 release checklist를 작성한다.
-- Stage 3은 source map 포함 정책을 별도 판단 항목으로 남긴다.
+- Stage 3은 현재 0.1.0 제출 후보 package에서 source map을 포함하는 정책으로 문서화한다.
+- Stage 3은 `NOTICE`, `THIRD_PARTY.md`, `LICENSE-MPL-2.0` 본문을 보강하지 않고 기존 source availability 체계를 유지한다.
 - Stage 4는 asset blocker를 최종 보고서에 명확히 남기고, 실제 Store submit은 별도 승인 단계로 유지한다.
 
 ## 비결정 또는 보류
