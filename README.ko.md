@@ -78,6 +78,8 @@ Chrome에 로드:
 - Copy는 PNG를 시스템 클립보드에 씁니다.
 - Save는 Chrome에 PNG 파일 다운로드를 요청합니다.
 
+전체 정책은 [Privacy Policy](PRIVACY.md)를 참고하세요.
+
 ## 현재 제한사항
 
 - Chrome은 `chrome://` 페이지와 Chrome Web Store 페이지 같은 제한 페이지에서 확장 주입을 막습니다.

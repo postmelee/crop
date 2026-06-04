@@ -164,6 +164,103 @@ Privacy policy에 넣을 문장 방향:
 | Support URL | 미정 | GitHub issues/discussions 또는 별도 support URL 선택 필요 |
 | Privacy policy URL | 없음 | Stage 2 `PRIVACY.md`, PR merge 후 GitHub URL 후보 |
 
+## Stage 2 Store copy 초안
+
+Stage 2에서 작성한 copy는 English Store listing과 Developer Dashboard 입력의 초안이다. 실제 Dashboard 입력, localized listing 작성, review submit은 별도 승인 단계에서 수행한다.
+
+### Short description
+
+```text
+Select, copy, and save precise screenshots from the current page.
+```
+
+판단:
+
+- 132자 제한 안에 들어간다.
+- current page screenshot selection/capture single purpose와 일치한다.
+- full-page capture를 별도 목적처럼 보이게 하지 않는다.
+
+### Detailed description
+
+```text
+crop lets you capture precise screenshots from the page you are viewing.
+Open the overlay from the extension icon or keyboard shortcut, select a page
+element or draw a custom region, then copy or save the resulting PNG.
+
+Main features:
+- Select a visible page element by hovering and clicking.
+- Draw a custom capture region.
+- Move or resize the selected region before capture.
+- Capture the visible viewport.
+- Capture the current top-level document as a full-page PNG by scrolling and stitching visible-tab captures.
+- Capture selected page regions that extend outside the current viewport.
+- Copy the generated PNG to the system clipboard or save it as a downloaded file.
+
+Privacy:
+Screenshots are processed locally in your browser. crop does not upload
+screenshots or page data to a server and does not include telemetry or
+analytics. The image leaves the page only when you explicitly choose Copy or
+Save.
+
+Current limits:
+- Chrome blocks extension injection on restricted pages such as chrome:// pages and Chrome Web Store pages.
+- Cross-origin iframe contents and closed shadow DOM internals cannot be inspected from the content script.
+- Full-page capture covers the current top-level document. Dynamic pages with lazy loading, animations, sticky layout changes, or large canvas dimensions can produce imperfect captures or explicit size errors.
+```
+
+판단:
+
+- 첫 문장에서 기능을 직접 설명한다.
+- 권한과 privacy disclosure가 Store listing에서도 드러난다.
+- Mozilla/Firefox를 Store listing copy에서 언급하지 않는다.
+- keyword spam을 피하기 위해 불필요한 반복 keyword 목록을 넣지 않는다.
+
+### Single purpose statement
+
+```text
+crop provides one purpose: selecting and capturing screenshots from the current page. Users invoke the extension on the active tab, choose a page element, custom region, visible viewport, or current top-level full page, and then copy or save the generated PNG.
+```
+
+판단:
+
+- "current page screenshot selection and capture" 범위로 좁다.
+- visible/full-page/custom region은 같은 single purpose 안의 capture modes로 설명한다.
+- background browsing collection, analytics, account, server feature를 암시하지 않는다.
+
+### Permission justification
+
+| Permission | Dashboard justification draft |
+|---|---|
+| `activeTab` | Required to access the current tab only after the user invokes crop from the extension icon or keyboard shortcut, so the extension can display the screenshot overlay and capture the active page. |
+| `scripting` | Required to inject the screenshot selection overlay content script into the active tab after the user invokes the extension. |
+| `clipboardWrite` | Required only when the user clicks Copy, to write the generated PNG screenshot to the system clipboard. |
+| `downloads` | Required only when the user clicks Save, to save the generated PNG screenshot as a downloaded file. |
+
+### Privacy fields draft
+
+| Dashboard/privacy 항목 | 입력 초안 |
+|---|---|
+| Privacy policy URL | PR merge 후 `https://github.com/postmelee/crop/blob/devel/PRIVACY.md` 또는 release branch의 stable URL 후보 |
+| Data collection disclosure | `crop` processes screenshot pixels, page geometry, and generated PNG data locally in the browser to provide screenshot selection and capture. It does not transmit, sell, or share this data. |
+| Limited use certification | `crop` uses information accessed through Chrome extension APIs only to provide or improve its single purpose: selecting and capturing screenshots from the current page. |
+| Remote transfer | 없음. server upload, telemetry, analytics, advertising, account, payment 기능 없음 |
+| User action disclosure | Copy writes the generated PNG to the system clipboard. Save asks Chrome to download the generated PNG file. |
+
+### Category와 URL 후보
+
+| 항목 | 후보 | 판단 |
+|---|---|---|
+| Category | Productivity 또는 Tools 계열 | 실제 Dashboard category 목록을 제출 단계에서 확인 후 선택 |
+| Homepage URL | `https://github.com/postmelee/crop` | 현재 별도 product site가 없으므로 repository가 가장 정확한 공개 entrypoint |
+| Support URL | `https://github.com/postmelee/crop/issues` | 별도 support site가 없으므로 GitHub Issues가 현실적인 후보 |
+| Official URL | 미정 | verified publisher/site 상태가 필요하므로 제출 승인 단계에서 확인 |
+
+### Localization scope
+
+- 이번 task에서는 English Store copy를 기준 초안으로 확정한다.
+- `_locales/en`, `_locales/ko`, `_locales/ja`, `_locales/zh_CN`와 README family가 있으므로 localized listing은 가능하다.
+- localized Store detailed description과 localized screenshots는 asset/copy 범위가 커지므로 후속 후보로 둔다.
+
 ## Asset inventory
 
 | 자산 | 공식 기준 | 현재 상태 | 판단 |
