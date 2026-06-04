@@ -85,7 +85,7 @@ Stage 1 범위는 정책·현행 산출물·gap 매핑이다. 최종 Store listi
 | Copy | `navigator.clipboard.write()` + `ClipboardItem` | `src/shared/clipboard.ts` |
 | Save | `chrome.downloads.download()` | `src/background/service-worker.ts` |
 | remote logic fetch/eval | 없음 | `rg "fetch|XMLHttpRequest|sendBeacon|WebSocket|eval|new Function"` |
-| image asset files | `public/icons/crop-{16,32,48,128}.png` | Stage 5.1 |
+| image asset files | `public/icons/crop-{16,32,48,128}.png` | Stage 5.2 |
 | manifest `icons` | `icons/crop-{16,32,48,128}.png` | `manifest.json` |
 | public privacy policy | `PRIVACY.md` | repository root |
 | license/source notice | 존재 | `LICENSE`, `LICENSE-MPL-2.0`, `NOTICE`, `THIRD_PARTY.md` |
@@ -265,8 +265,8 @@ crop provides one purpose: selecting and capturing screenshots from the current 
 
 | 자산 | 공식 기준 | 현재 상태 | 판단 |
 |---|---|---|---|
-| Manifest icon | prepare guide에서 `icons` 점검 대상 | `manifest.json`에 `icons`와 `action.default_icon` 정의. 사용자 제공 아이콘 기반 `public/icons/crop-{16,32,48,128}.png` 존재 | Stage 5.1에서 해소 상태 유지 |
-| Store icon | 128x128 PNG, extension ZIP에 포함 | 사용자 제공 아이콘 기반 `public/icons/crop-128.png` 존재, build 후 `dist/icons/crop-128.png` 포함 | Stage 5.1에서 해소 상태 유지 |
+| Manifest icon | prepare guide에서 `icons` 점검 대상 | `manifest.json`에 `icons`와 `action.default_icon` 정의. 사용자 제공 dark icon 기반 `public/icons/crop-{16,32,48,128}.png` 존재 | Stage 5.2에서 해소 상태 유지 |
+| Store icon | 128x128 PNG, extension ZIP에 포함 | 사용자 제공 dark icon 기반 `public/icons/crop-128.png` 존재, build 후 `dist/icons/crop-128.png` 포함 | Stage 5.2에서 해소 상태 유지 |
 | Screenshot | 최소 1개, 1280x800 또는 640x400 | 이미지 파일 없음 | 제출 전 blocker |
 | Small promo image | 440x280 PNG/JPEG | 이미지 파일 없음 | 제출 전 blocker |
 | Marquee promo image | 1400x560 optional | 이미지 파일 없음 | optional 후속 |
@@ -355,7 +355,7 @@ Source map 포함 정책:
 | 항목 | 상태 | 이유 | 처리 방향 |
 |---|---|---|---|
 | Manifest icon | Stage 5 해소 | `manifest.json`에 `icons`와 `action.default_icon`을 추가했고 package에도 icon file이 포함된다. | 제출 전 package contents 재확인 |
-| Store icon | Stage 5.1 해소 | 사용자 제공 아이콘 기반 128x128 PNG인 `public/icons/crop-128.png`를 제작했고 build 후 `dist/icons/crop-128.png`로 포함된다. | 제출 전 Dashboard upload/preview 확인 |
+| Store icon | Stage 5.2 해소 | 사용자 제공 dark icon 기반 128x128 PNG인 `public/icons/crop-128.png`를 제작했고 build 후 `dist/icons/crop-128.png`로 포함된다. | 제출 전 Dashboard upload/preview 확인 |
 | Store screenshot | 없음 | Store listing에 최소 1개 screenshot이 필요하다. | 1280x800 또는 640x400 screenshot 제작 |
 | Small promotional image | 없음 | Chrome Web Store image guide에서 mandatory image로 정리된다. | 440x280 PNG/JPEG 제작 |
 
@@ -413,16 +413,16 @@ Source map 포함 정책:
 
 ## Stage 5 브랜드 아이콘 제작 결과
 
-Stage 5에서는 실제 Store 제출 blocker 중 브랜드 아이콘과 manifest icon을 해소했다. Stage 5.1에서는 작업지시자가 제공한 PNG 아이콘을 기준으로 같은 path의 extension icon set을 다시 생성했다. 아이콘은 `crop` 제품명만 전제로 한 crop mark 기반 심볼이며, Mozilla/Firefox/Screenshots 명칭이나 제휴를 암시하는 시각 요소를 사용하지 않는다.
+Stage 5에서는 실제 Store 제출 blocker 중 브랜드 아이콘과 manifest icon을 해소했다. Stage 5.1에서는 작업지시자가 제공한 PNG 아이콘을 기준으로 같은 path의 extension icon set을 다시 생성했다. Stage 5.2에서는 작업지시자가 새로 제공한 `/Users/melee/Documents/projects/crop.png` dark icon을 기준으로 같은 path의 extension icon set을 다시 생성했다. 아이콘은 `crop` 제품명만 전제로 한 crop mark 기반 심볼이며, Mozilla/Firefox/Screenshots 명칭이나 제휴를 암시하는 시각 요소를 사용하지 않는다.
 
 ### 산출물
 
 | 자산 | 경로 | 용도 |
 |---|---|---|
-| 16 PNG | `public/icons/crop-16.png` | 사용자 제공 PNG 기반 toolbar/action small icon |
-| 32 PNG | `public/icons/crop-32.png` | 사용자 제공 PNG 기반 Chrome extension icon variant |
-| 48 PNG | `public/icons/crop-48.png` | 사용자 제공 PNG 기반 Chrome extension management icon variant |
-| 128 PNG | `public/icons/crop-128.png` | 사용자 제공 PNG 기반 Chrome extension metadata와 Store icon 후보 |
+| 16 PNG | `public/icons/crop-16.png` | 사용자 제공 dark PNG 기반 toolbar/action small icon |
+| 32 PNG | `public/icons/crop-32.png` | 사용자 제공 dark PNG 기반 Chrome extension icon variant |
+| 48 PNG | `public/icons/crop-48.png` | 사용자 제공 dark PNG 기반 Chrome extension management icon variant |
+| 128 PNG | `public/icons/crop-128.png` | 사용자 제공 dark PNG 기반 Chrome extension metadata와 Store icon 후보 |
 
 ### Manifest 연결
 
@@ -453,7 +453,7 @@ Stage 5에서는 실제 Store 제출 blocker 중 브랜드 아이콘과 manifest
 - `activeTab`과 `scripting` 조합은 현재 tab user gesture injection 모델과 맞다.
 - `captureVisibleTab()`은 `activeTab` 또는 `<all_urls>`가 필요한 API이며, `crop`은 broad `<all_urls>` 대신 `activeTab`을 사용한다.
 - privacy policy 전문은 Stage 2에서 `PRIVACY.md`로 작성했다. Store privacy policy URL은 PR merge 후 stable URL로 확정해야 한다.
-- image asset 중 manifest icon과 Store icon은 Stage 5에서 해소했다. screenshot과 small promo image는 실제 제출 전 blocker로 남아 있다.
+- image asset 중 manifest icon과 Store icon은 Stage 5에서 해소했고 Stage 5.2에서 사용자 제공 dark icon 기준으로 교체했다. screenshot과 small promo image는 실제 제출 전 blocker로 남아 있다.
 - README는 Store 미게시 상태, permission, privacy, limitation, Mozilla/Firefox disclaimer를 이미 담고 있다.
 - `_locales` 4개 resource가 있으므로 localized Store listing을 제공할 수 있다. 다만 locale 간 기능 설명 일관성이 필요하다.
 - `NOTICE`, `THIRD_PARTY.md`, `LICENSE-MPL-2.0`은 Firefox-derived source boundary와 affiliation disclaimer를 담고 있고, Stage 3에서 배포 package/source availability 관점으로도 충분하다고 확인했다.
