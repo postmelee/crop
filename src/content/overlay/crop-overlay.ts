@@ -58,7 +58,11 @@ import {
   type CropRect,
   type ViewportMetrics
 } from "../../shared/rect";
-import { stitchCapturedTiles, type StitchCapturedTilesResult } from "../../shared/stitch-image";
+import {
+  stitchCapturedTiles,
+  type StitchCapturedTilesResult,
+  type StitchImageScale
+} from "../../shared/stitch-image";
 
 interface PointerPosition {
   readonly x: number;
@@ -122,6 +126,10 @@ interface CropCapturePipelineResult {
   readonly outputWidth: number;
   readonly outputHeight: number;
   readonly tileCount?: number;
+  readonly sourceScale?: StitchImageScale;
+  readonly outputScale?: StitchImageScale;
+  readonly downscaleRatio?: number;
+  readonly downscaled?: boolean;
 }
 
 interface CaptureOverlayVisibilityOptions {
@@ -851,6 +859,16 @@ export function mountCropOverlay(): void {
     } else {
       delete host.dataset.cropCaptureTileCount;
     }
+    if (result.downscaled != null) {
+      host.dataset.cropCaptureDownscaled = String(result.downscaled);
+    } else {
+      delete host.dataset.cropCaptureDownscaled;
+    }
+    if (result.downscaleRatio != null) {
+      host.dataset.cropCaptureDownscaleRatio = String(result.downscaleRatio);
+    } else {
+      delete host.dataset.cropCaptureDownscaleRatio;
+    }
     delete host.dataset.cropCaptureError;
     delete host.dataset.cropClipboardStatus;
     delete host.dataset.cropDownloadStatus;
@@ -980,7 +998,11 @@ export function mountCropOverlay(): void {
       dataUrl: stitchResult.dataUrl,
       outputWidth: stitchResult.outputWidth,
       outputHeight: stitchResult.outputHeight,
-      tileCount: stitchResult.drawnTiles
+      tileCount: stitchResult.drawnTiles,
+      sourceScale: stitchResult.sourceScale,
+      outputScale: stitchResult.outputScale,
+      downscaleRatio: stitchResult.downscaleRatio,
+      downscaled: stitchResult.downscaled
     };
   };
 
@@ -1062,7 +1084,11 @@ export function mountCropOverlay(): void {
       dataUrl: stitchResult.dataUrl,
       outputWidth: stitchResult.outputWidth,
       outputHeight: stitchResult.outputHeight,
-      tileCount: stitchResult.drawnTiles
+      tileCount: stitchResult.drawnTiles,
+      sourceScale: stitchResult.sourceScale,
+      outputScale: stitchResult.outputScale,
+      downscaleRatio: stitchResult.downscaleRatio,
+      downscaled: stitchResult.downscaled
     };
   };
 

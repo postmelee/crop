@@ -314,6 +314,14 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(qualityMatrix).toContain("Task #26");
   });
 
+  it("keeps oversized full page downscale fallback quality criteria", () => {
+    expect(qualityMatrix).toContain("P6-40");
+    expect(qualityMatrix).toContain("full page oversized downscale fallback");
+    expect(qualityMatrix).toContain("Task #35");
+    expect(qualityMatrix).toContain("getStitchOutputPixelPlan()");
+    expect(qualityMatrix).toContain("maximum canvas size");
+  });
+
   it("suppresses sticky and fixed page chrome for every selected stitching tile", () => {
     const selectedCaptureStart = overlayRuntime.indexOf("const captureSelectedPageRectRegion");
     const visibleViewportStart = overlayRuntime.indexOf("const captureVisibleViewportRegion");
@@ -559,6 +567,10 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("captureFullPageTiles");
     expect(overlayRuntime).toContain("stitchCapturedTiles");
     expect(overlayRuntime).toContain("captureFullPageRegion");
+    expect(overlayRuntime).toContain("downscaled: stitchResult.downscaled");
+    expect(overlayRuntime).toContain("downscaleRatio: stitchResult.downscaleRatio");
+    expect(overlayRuntime).toContain("outputScale: stitchResult.outputScale");
+    expect(overlayRuntime).toContain("sourceScale: stitchResult.sourceScale");
     expect(overlayRuntime).toContain("setCaptureDocumentChromeSuppressed");
     expect(overlayRuntime).toContain("setCaptureScrollBehaviorDisabled");
     expect(overlayRuntime).toContain("beforeCaptureTile");
@@ -568,6 +580,8 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain('style.position !== "fixed" && style.position !== "sticky"');
     expect(overlayRuntime).toContain("host.dataset.cropCaptureMode = result.mode;");
     expect(overlayRuntime).toContain("host.dataset.cropCaptureTileCount");
+    expect(overlayRuntime).toContain("host.dataset.cropCaptureDownscaled");
+    expect(overlayRuntime).toContain("host.dataset.cropCaptureDownscaleRatio");
     expect(overlayRuntime).not.toContain("getFullPageBounds");
 
     const previewPendingStart = overlayRuntime.indexOf("const setPreviewPending");
