@@ -348,6 +348,69 @@ Source map 포함 정책:
 - Store listing의 Homepage URL 또는 Support URL을 public repository로 연결하면 Web Store 사용자와 reviewer가 source와 notices에 접근할 수 있다.
 - 현 Stage에서는 `NOTICE`와 `THIRD_PARTY.md` 본문 보강이 필요하지 않다고 판단했다.
 
+## Stage 4 제출 전 blocker 정리
+
+### 제출 차단 blocker
+
+| 항목 | 상태 | 이유 | 처리 방향 |
+|---|---|---|---|
+| Manifest icon | 없음 | `manifest.json`에 `icons` 정의가 없고 package에도 icon file이 없다. Store upload 전 manifest metadata와 package asset 정리가 필요하다. | 별도 asset task 또는 제출 승인 단계에서 128x128 포함한 extension icon set 제작·manifest 연결 |
+| Store icon | 없음 | Chrome Web Store image guide의 mandatory asset이며 128x128 PNG가 필요하다. | icon asset 제작 후 package 포함 |
+| Store screenshot | 없음 | Store listing에 최소 1개 screenshot이 필요하다. | 1280x800 또는 640x400 screenshot 제작 |
+| Small promotional image | 없음 | Chrome Web Store image guide에서 mandatory image로 정리된다. | 440x280 PNG/JPEG 제작 |
+
+### 제출 전 승인 필요 항목
+
+| 항목 | 현재 후보 | 승인 필요 이유 |
+|---|---|---|
+| Store Dashboard 입력 | Stage 2 Store copy와 permission/privacy draft | 실제 Dashboard 입력은 이번 task 범위에서 제외했으므로 작업지시자 승인 필요 |
+| Upload package | `/tmp/crop-0.1.0-cws.zip` 생성 절차 검증 완료 | 실제 upload와 review submit은 별도 승인 필요 |
+| Privacy policy URL | PR merge 후 GitHub stable URL | URL은 merge 대상 branch 또는 release URL이 확정된 뒤 입력해야 한다 |
+| Category | Productivity 또는 Tools 계열 후보 | 실제 Dashboard category 목록과 작업지시자 의도 확인 필요 |
+| Homepage URL | `https://github.com/postmelee/crop` 후보 | public source availability와 연결되지만, 별도 product site를 만들지 않을지 승인 필요 |
+| Support URL | `https://github.com/postmelee/crop/issues` 후보 | GitHub Issues를 public support channel로 사용할지 승인 필요 |
+| Source map 포함 | 현재 package에 `.map` 포함 | 포함 정책은 Stage 3에서 문서화했지만, 제출 직전 최종 승인 대상 |
+
+### 후속 개선 후보
+
+| 항목 | 판단 |
+|---|---|
+| Localized Store listing copy | README와 extension locale resource가 있으므로 가능하지만 이번 task에서는 English 기준 초안만 작성했다. |
+| Localized screenshots | Store listing localization과 함께 진행하면 좋지만 screenshot asset이 먼저 필요하다. |
+| Marquee promotional image | optional asset으로 분류했다. |
+| Promo video | Dashboard 입력 가능 항목으로 보류했다. image guide mandatory 항목으로는 분류하지 않았다. |
+| Icon polishing/branding guide | 제품명 `crop` 기준으로 별도 brand asset task에서 정리하는 편이 안전하다. |
+
+## Stage 4 수동 smoke checklist
+
+아래 항목은 실제 Chrome Web Store 제출 전 수동 확인 대상이다. Stage 4에서는 자동 검증과 문서 정리를 수행하고, 실제 Chrome extension load/smoke는 제출 승인 또는 asset task 이후 최종 제출 전 확인으로 남긴다.
+
+| 구분 | 체크 항목 | 상태 |
+|---|---|---|
+| Load | `npm run build` 후 Chrome `chrome://extensions`에서 `dist/` unpacked load | 제출 전 수동 확인 필요 |
+| Launch | action icon으로 overlay 실행 | 제출 전 수동 확인 필요 |
+| Shortcut | `Ctrl+Shift+S` / macOS `Command+Shift+S` shortcut 확인 | 제출 전 수동 확인 필요 |
+| Element selection | hover highlight와 click selection | 제출 전 수동 확인 필요 |
+| Custom region | drag custom region, move, resize | 제출 전 수동 확인 필요 |
+| Copy | selected/visible/full-page PNG clipboard write | 제출 전 수동 확인 필요 |
+| Save | selected/visible/full-page PNG download | 제출 전 수동 확인 필요 |
+| Full page | top-level document stitching 결과와 scroll 복구 | 제출 전 수동 확인 필요 |
+| Selected out-of-viewport | viewport 밖 selected page rectangle stitching | 제출 전 수동 확인 필요 |
+| Restricted page | `chrome://` 및 Chrome Web Store page 제한 동작 | 제출 전 수동 확인 필요 |
+| iframe limit | cross-origin iframe 내부 selection 제한 | 제출 전 수동 확인 필요 |
+| Policy copy | Store listing/privacy/permission copy와 실제 동작 일치 | Stage 4 문서 검증 완료, 제출 전 수동 review 필요 |
+| Package | upload zip contents review | Stage 3/4 자동 확인 완료, 제출 전 재확인 필요 |
+
+## Stage 4 통합 결론
+
+- Store copy, privacy policy, permission justification, release package checklist, source availability 문서는 현재 `crop` 0.1.0 동작과 충돌하지 않는다.
+- 실제 Chrome Web Store submit은 아직 수행하면 안 된다. icon/screenshot/small promo image blocker가 남아 있고 Dashboard 입력·upload·review submit은 별도 승인 대상이다.
+- 현재 자동 검증 기준에서 source/manifest 권한은 `activeTab`, `scripting`, `clipboardWrite`, `downloads`를 유지한다.
+- `debugger`, `<all_urls>`, broad `host_permissions`는 추가하지 않았다.
+- `PRIVACY.md`는 PR merge 후 stable GitHub URL로 Store privacy policy URL 후보가 된다.
+- Homepage/Support URL을 GitHub repository/issues로 두면 source availability와 support channel을 동시에 제공할 수 있다.
+- Stage 4 이후 최종 보고서는 위 blocker와 승인 필요 항목을 그대로 PR 본문과 최종 보고서에 반영한다.
+
 ## 발견 내용
 
 - 현재 code/manifest 권한은 Store minimum permission 설명이 가능하다.
@@ -368,7 +431,7 @@ Source map 포함 정책:
 - Stage 3은 `dist/` zip root packaging을 기준으로 release checklist를 작성한다.
 - Stage 3은 현재 0.1.0 제출 후보 package에서 source map을 포함하는 정책으로 문서화한다.
 - Stage 3은 `NOTICE`, `THIRD_PARTY.md`, `LICENSE-MPL-2.0` 본문을 보강하지 않고 기존 source availability 체계를 유지한다.
-- Stage 4는 asset blocker를 최종 보고서에 명확히 남기고, 실제 Store submit은 별도 승인 단계로 유지한다.
+- Stage 4는 icon/screenshot/small promo image를 실제 제출 차단 blocker로 분류하고, Dashboard 입력/upload/review submit을 별도 승인 단계로 유지한다.
 
 ## 비결정 또는 보류
 
