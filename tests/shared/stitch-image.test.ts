@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getStitchDestinationPixelRect,
+  getStitchOutputPixelPlan,
   getStitchOutputPixelSize,
   getStitchSourcePixelRect,
   MAX_CAPTURE_AREA,
@@ -26,6 +27,75 @@ describe("stitch image helpers", () => {
       width: 1476,
       height: 1188
     });
+  });
+
+  it("keeps the source scale when output fits within canvas limits", () => {
+    expect(
+      getStitchOutputPixelPlan(
+        {
+          width: 1180.4,
+          height: 950.5
+        },
+        {
+          scaleX: 1.25,
+          scaleY: 1.25
+        }
+      )
+    ).toEqual({
+      width: 1476,
+      height: 1188,
+      sourceScale: {
+        scaleX: 1.25,
+        scaleY: 1.25
+      },
+      outputScale: {
+        scaleX: 1.25,
+        scaleY: 1.25
+      },
+      downscaleRatio: 1,
+      downscaled: false
+    });
+  });
+
+  it("downscales oversized output dimensions while preserving aspect ratio", () => {
+    const plan = getStitchOutputPixelPlan(
+      {
+        width: 1000,
+        height: 20000
+      },
+      {
+        scaleX: 2,
+        scaleY: 2
+      }
+    );
+
+    expect(plan.downscaled).toBe(true);
+    expect(plan.downscaleRatio).toBeLessThan(1);
+    expect(plan.width).toBeLessThanOrEqual(MAX_CAPTURE_DIMENSION);
+    expect(plan.height).toBeLessThanOrEqual(MAX_CAPTURE_DIMENSION);
+    expect(plan.width * plan.height).toBeLessThanOrEqual(MAX_CAPTURE_AREA);
+    expect(plan.outputScale.scaleX / plan.sourceScale.scaleX).toBeCloseTo(
+      plan.outputScale.scaleY / plan.sourceScale.scaleY
+    );
+  });
+
+  it("downscales oversized output area while preserving aspect ratio", () => {
+    const plan = getStitchOutputPixelPlan(
+      {
+        width: 20000,
+        height: 20000
+      },
+      {
+        scaleX: 1,
+        scaleY: 1
+      }
+    );
+
+    expect(plan.downscaled).toBe(true);
+    expect(plan.width).toBeLessThanOrEqual(MAX_CAPTURE_DIMENSION);
+    expect(plan.height).toBeLessThanOrEqual(MAX_CAPTURE_DIMENSION);
+    expect(plan.width * plan.height).toBeLessThanOrEqual(MAX_CAPTURE_AREA);
+    expect(plan.outputScale.scaleX).toBeCloseTo(plan.outputScale.scaleY);
   });
 
   it("uses nearest source pixels for fractional viewport crop edges", () => {
@@ -71,8 +141,51 @@ describe("stitch image helpers", () => {
     expect(firstTile.bottom).toBe(secondTile.bottom);
   });
 
+  it("keeps adjacent destination tiles edge-aligned after downscaling", () => {
+    const plan = getStitchOutputPixelPlan(
+      {
+        width: 1000,
+        height: 1000
+      },
+      {
+        scaleX: 1,
+        scaleY: 1
+      },
+      {
+        maxOutputArea: 250_000
+      }
+    );
+    const firstTile = getStitchDestinationPixelRect(
+      rectFromEdges(0, 0, 500, 1000),
+      plan.outputScale
+    );
+    const secondTile = getStitchDestinationPixelRect(
+      rectFromEdges(500, 0, 1000, 1000),
+      plan.outputScale
+    );
+
+    expect(plan.downscaled).toBe(true);
+    expect(plan.width * plan.height).toBeLessThanOrEqual(250_000);
+    expect(firstTile.right).toBe(secondTile.left);
+    expect(secondTile.right).toBe(plan.width);
+    expect(firstTile.bottom).toBe(plan.height);
+    expect(secondTile.bottom).toBe(plan.height);
+  });
+
   it("rejects empty and over-limit output sizes", () => {
     expect(() => validateOutputPixelSize({ width: 0, height: 10 })).toThrow("non-empty");
+    expect(() =>
+      getStitchOutputPixelPlan(
+        {
+          width: 0,
+          height: 10
+        },
+        {
+          scaleX: 1,
+          scaleY: 1
+        }
+      )
+    ).toThrow("non-empty");
     expect(() =>
       validateOutputPixelSize({
         width: MAX_CAPTURE_DIMENSION + 1,

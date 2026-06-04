@@ -22,6 +22,18 @@ export interface OutputPixelSize {
   readonly height: number;
 }
 
+export interface StitchOutputLimitOptions {
+  readonly maxOutputDimension?: number;
+  readonly maxOutputArea?: number;
+}
+
+export interface StitchOutputPixelPlan extends OutputPixelSize {
+  readonly sourceScale: StitchImageScale;
+  readonly outputScale: StitchImageScale;
+  readonly downscaleRatio: number;
+  readonly downscaled: boolean;
+}
+
 export interface StitchCapturedTileInput {
   readonly dataUrl: string;
   readonly viewportCropRect: CropRectLike;
@@ -40,20 +52,75 @@ export interface StitchCapturedTilesResult {
   readonly outputHeight: number;
   readonly drawnTiles: number;
   readonly scale: StitchImageScale;
+  readonly sourceScale: StitchImageScale;
+  readonly outputScale: StitchImageScale;
+  readonly downscaleRatio: number;
+  readonly downscaled: boolean;
 }
 
 export function getStitchOutputPixelSize(
   outputCssSize: OutputCssSize,
   scale: StitchImageScale
 ): OutputPixelSize {
-  const width = Math.round(outputCssSize.width * scale.scaleX);
-  const height = Math.round(outputCssSize.height * scale.scaleY);
-
-  validateOutputPixelSize({ width, height });
+  const outputPlan = getStitchOutputPixelPlan(outputCssSize, scale);
 
   return {
-    width,
-    height
+    width: outputPlan.width,
+    height: outputPlan.height
+  };
+}
+
+export function getStitchOutputPixelPlan(
+  outputCssSize: OutputCssSize,
+  sourceScale: StitchImageScale,
+  options: StitchOutputLimitOptions = {}
+): StitchOutputPixelPlan {
+  const estimatedWidth = Math.round(outputCssSize.width * sourceScale.scaleX);
+  const estimatedHeight = Math.round(outputCssSize.height * sourceScale.scaleY);
+
+  if (estimatedWidth <= 0 || estimatedHeight <= 0) {
+    throw new Error("Stitched screenshot output must be non-empty.");
+  }
+
+  const maxDimension = getPositiveLimit(
+    options.maxOutputDimension,
+    MAX_CAPTURE_DIMENSION,
+    "maximum canvas dimension"
+  );
+  const maxArea = getPositiveLimit(options.maxOutputArea, MAX_CAPTURE_AREA, "maximum canvas area");
+  const downscaleRatio = getOutputDownscaleRatio(
+    {
+      width: estimatedWidth,
+      height: estimatedHeight
+    },
+    {
+      maxDimension,
+      maxArea
+    }
+  );
+  const outputScale = {
+    scaleX: sourceScale.scaleX * downscaleRatio,
+    scaleY: sourceScale.scaleY * downscaleRatio
+  };
+  const outputSize = getRoundedOutputSize(outputCssSize, outputScale);
+
+  if (outputSize.width <= 0 || outputSize.height <= 0) {
+    throw new Error("Stitched screenshot output must be non-empty.");
+  }
+
+  if (exceedsOutputLimits(outputSize, maxDimension, maxArea)) {
+    throw new Error("Stitched screenshot exceeds the maximum canvas size.");
+  }
+
+  return {
+    ...outputSize,
+    sourceScale: {
+      scaleX: sourceScale.scaleX,
+      scaleY: sourceScale.scaleY
+    },
+    outputScale,
+    downscaleRatio,
+    downscaled: downscaleRatio < 1
   };
 }
 
@@ -99,11 +166,11 @@ export async function stitchCapturedTiles(
   }
 
   const firstImage = await loadImage(input.tiles[0].dataUrl);
-  const scale = getScaleFromImage(firstImage, input.tiles[0].viewportCssSize);
-  const outputSize = getStitchOutputPixelSize(input.outputCssSize, scale);
+  const sourceScale = getScaleFromImage(firstImage, input.tiles[0].viewportCssSize);
+  const outputPlan = getStitchOutputPixelPlan(input.outputCssSize, sourceScale);
   const canvas = document.createElement("canvas");
-  canvas.width = outputSize.width;
-  canvas.height = outputSize.height;
+  canvas.width = outputPlan.width;
+  canvas.height = outputPlan.height;
 
   const context = canvas.getContext("2d");
 
@@ -129,7 +196,10 @@ export async function stitchCapturedTiles(
       throw new Error("Captured tile source rect is outside the viewport image.");
     }
 
-    const destinationRect = getStitchDestinationPixelRect(tile.destinationCssRect, scale);
+    const destinationRect = getStitchDestinationPixelRect(
+      tile.destinationCssRect,
+      outputPlan.outputScale
+    );
 
     context.drawImage(
       image,
@@ -147,11 +217,75 @@ export async function stitchCapturedTiles(
 
   return {
     dataUrl: canvas.toDataURL("image/png"),
-    outputWidth: outputSize.width,
-    outputHeight: outputSize.height,
+    outputWidth: outputPlan.width,
+    outputHeight: outputPlan.height,
     drawnTiles,
-    scale
+    scale: outputPlan.sourceScale,
+    sourceScale: outputPlan.sourceScale,
+    outputScale: outputPlan.outputScale,
+    downscaleRatio: outputPlan.downscaleRatio,
+    downscaled: outputPlan.downscaled
   };
+}
+
+function getOutputDownscaleRatio(
+  size: OutputPixelSize,
+  limits: {
+    readonly maxDimension: number;
+    readonly maxArea: number;
+  }
+): number {
+  const dimensionRatio = Math.min(
+    1,
+    limits.maxDimension / size.width,
+    limits.maxDimension / size.height
+  );
+  const area = size.width * size.height;
+  const areaRatio = area > limits.maxArea ? Math.sqrt(limits.maxArea / area) : 1;
+  let ratio = Math.min(dimensionRatio, areaRatio);
+
+  if (ratio >= 1) {
+    return 1;
+  }
+
+  // Leave a tiny margin so integer rounding cannot push the canvas back over the limit.
+  ratio *= 0.999999;
+
+  return Math.max(Number.EPSILON, ratio);
+}
+
+function getRoundedOutputSize(
+  outputCssSize: OutputCssSize,
+  scale: StitchImageScale
+): OutputPixelSize {
+  return {
+    width: Math.round(outputCssSize.width * scale.scaleX),
+    height: Math.round(outputCssSize.height * scale.scaleY)
+  };
+}
+
+function exceedsOutputLimits(
+  size: OutputPixelSize,
+  maxDimension: number,
+  maxArea: number
+): boolean {
+  return (
+    size.width > maxDimension ||
+    size.height > maxDimension ||
+    size.width * size.height > maxArea
+  );
+}
+
+function getPositiveLimit(value: number | undefined, fallback: number, label: string): number {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`Stitched screenshot ${label} must be positive.`);
+  }
+
+  return value;
 }
 
 function getScaleFromImage(
