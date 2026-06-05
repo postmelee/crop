@@ -75,7 +75,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-28 | Firefox식 선택 후 편집 UI parity | 실제 웹 대표 페이지 | 요소 클릭 후 selected 상태 | resize handle, 점선 표시, 이미지 사이즈 badge, Firefox식 Copy/Save 버튼을 제공한다. | 현재 MVP 미구현, 일부는 #13과 연결, size badge/button parity는 신규 후속 후보 | 후속 | 기존 후속 + 신규 후속 후보 | 작업지시자 첨부 이미지, #13 |
 | P6-29 | full page mode 진입 | `[data-crop-fixture="full-page-capture-section"]` | `전체 페이지 선택` 클릭 | Firefox처럼 거대한 selected rectangle을 만들지 않고 full page capture preview가 표시된다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
 | P6-29a | visible viewport mode 진입 | 현재 visible viewport | `보이는 영역 선택` 클릭 | Firefox처럼 같은 preview modal에 visible viewport capture가 표시된다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
-| P6-29b | visible preview no-scroll와 backdrop target | visible preview modal | `보이는 영역 선택` 클릭 후 preview | preview dialog가 상단에 가깝게 표시되고 화면을 과도하게 채우지 않아 모달 밖 backdrop click 영역을 남기며, visible viewport 이미지는 내부 스크롤 없이 맞춰진다. 이미지 아래 내부 여백은 양옆 inline padding과 같은 기준으로 보인다. | 자동 OK / 수동 smoke 후보 | OK | 해당 없음 | #15 Stage 5 regression, #39 Stage 2/4 regression |
+| P6-29b | visible preview no-scroll와 backdrop target | visible preview modal | `보이는 영역 선택` 클릭 후 preview | preview dialog가 화면 중앙에 표시되고 화면을 과도하게 채우지 않아 모달 밖 backdrop click 영역을 남기며, visible viewport 이미지는 내부 스크롤 없이 맞춰진다. 이미지 아래 내부 여백은 양옆 inline padding과 같은 기준으로 보존된다. | 자동 OK / 수동 smoke 후보 | OK | 해당 없음 | #15 Stage 5 regression, #39 Stage 2/4/5 regression |
 | P6-29c | preview toolbar/image right alignment | visible/full page preview modal | preview 표시 | Save button 오른쪽 끝과 image 오른쪽 끝이 같은 shared inline padding 기준으로 정렬된다. | 자동 OK / 수동 smoke 후보 | OK | 해당 없음 | #15 Stage 5 regression, #39 Stage 2 regression |
 | P6-29d | preview backdrop dismiss | visible/full page preview modal | preview 표시 후 모달 밖 어두운 backdrop 직접 클릭 | preview backdrop 직접 클릭은 `Esc`/Cancel과 같은 cleanup 경로로 overlay를 제거하고, dialog 내부 click과 Copy/Save/Retry/Cancel action은 dismiss와 충돌하지 않는다. | 자동 OK / 수동 smoke 후보 | OK | 해당 없음 | #39 Stage 1 regression |
 | P6-30 | full page stitching top/mid/bottom | `[data-crop-fixture="full-page-top-marker"]`, `[data-crop-fixture="full-page-mid-seam-marker"]`, `[data-crop-fixture="full-page-bottom-marker"]` | full page Save | 저장 PNG에 상단, 중간 seam marker, 하단 partial tile marker가 포함된다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, `stitch-image.test.ts`, 작업지시자 PNG smoke |
@@ -107,7 +107,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 12. 다시 `전체 페이지 선택` 후 preview에서 `Copy`를 눌러 clipboard 이미지 paste가 가능한지 확인한다.
 13. preview toolbar hover title에 Copy/Save/Cancel shortcut이 표시되고 `Command+C`/`Command+S` 또는 `Ctrl+C`/`Ctrl+S`가 동작하는지 확인한다.
 14. `보이는 영역 선택` 후 Firefox식 preview modal이 열리고 visible viewport Copy/Save가 동작하는지 확인한다.
-15. visible preview가 내부 스크롤 없이 한 화면에 맞춰지고 modal 위치가 과도하게 낮지 않으며, 모달 밖 어두운 backdrop 영역이 클릭 가능하게 남고 이미지 아래 padding이 양옆 padding과 같은 기준으로 보이는지 확인한다.
+15. visible preview가 내부 스크롤 없이 한 화면에 맞춰지고 modal이 화면 중앙에 있으며, 모달 밖 어두운 backdrop 영역이 클릭 가능하게 남고 이미지 아래 padding이 양옆 padding과 같은 기준으로 보존되는지 확인한다.
 16. visible/full page preview의 modal 크기가 동일하고 Save button 오른쪽 끝이 image 오른쪽 끝과 같은 inline padding 기준으로 맞는지 확인한다.
 17. visible/full page preview에서 dialog 내부를 클릭해도 닫히지 않고, 모달 밖 어두운 backdrop 직접 클릭은 preview와 overlay를 함께 닫는지 확인한다.
 18. preview Copy/Save/Retry/Cancel button과 `Command+C`/`Command+S` 또는 `Ctrl+C`/`Ctrl+S`, `Esc`가 backdrop dismiss와 충돌하지 않는지 확인한다.
@@ -230,7 +230,8 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | preview dialog 내부 click과 action path 충돌 방지 | 자동 OK / 수동 후보 | action/mode 처리 이후 backdrop 분기, direct `.crop-preview` target helper, `phase6-regression.test.ts` |
 | preview dialog backdrop target 유지 | 자동 OK / 수동 후보 | `crop-overlay.css`의 `--crop-preview-backdrop-*` 변수와 dialog max size regression |
 | Save button/image shared inline padding 유지 | 자동 OK / 수동 후보 | `--crop-preview-inline-padding`을 surface/footer가 공유하는 CSS regression |
-| visible preview 하단 padding 보정 | 자동 OK / 수동 후보 | visible mode dialog `height: auto`, surface bottom `--crop-preview-inline-padding`, backdrop block-end/inline 공유 regression |
+| visible preview 하단 padding 보정 | 자동 OK / 수동 후보 | visible mode dialog `height: auto`, image max-height에서 footer/bottom padding 제외, surface bottom `--crop-preview-inline-padding` regression |
+| preview modal 중앙 정렬 | 자동 OK / 수동 후보 | backdrop block start/end 공유 변수, `.crop-preview` center alignment regression |
 | visible preview no-scroll와 full page preview scroll 유지 | 자동 OK / 수동 후보 | visible mode `overflow: hidden`, `object-fit: contain`, full page surface `overflow: auto` regression |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, `phase6-regression.test.ts`, Task #39 Stage 3 grep |
 

@@ -515,14 +515,19 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayTemplate).toContain('image.className = "crop-preview-image";');
     expect(overlayCss).toContain(".crop-preview");
     expect(overlayCss).toContain(".crop-preview-dialog");
-    expect(overlayCss).toContain("align-items: flex-start;");
+    expect(overlayCss).toContain("--crop-preview-backdrop-block: clamp(32px, 6vh, 72px);");
+    expect(overlayCss).toContain("align-items: center;");
     expect(overlayCss).toContain("--crop-preview-backdrop-inline: clamp(64px, 10vw, 144px);");
-    expect(overlayCss).toContain("--crop-preview-backdrop-block-start: 32px;");
     expect(overlayCss).toContain(
-      "--crop-preview-backdrop-block-end: var(--crop-preview-backdrop-inline);"
+      "--crop-preview-backdrop-block-start: var(--crop-preview-backdrop-block);"
+    );
+    expect(overlayCss).toContain(
+      "--crop-preview-backdrop-block-end: var(--crop-preview-backdrop-block);"
     );
     expect(overlayCss).toContain("--crop-preview-dialog-max-width: 1280px;");
     expect(overlayCss).toContain("--crop-preview-dialog-max-height: 820px;");
+    expect(overlayCss).toContain("--crop-preview-dialog-available-height: min(");
+    expect(overlayCss).toContain("--crop-preview-footer-block-size: 46px;");
     expect(overlayCss).toContain(
       "padding: var(--crop-preview-backdrop-block-start) var(--crop-preview-backdrop-inline)"
     );
@@ -539,17 +544,26 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toContain(
       "padding: 0 var(--crop-preview-inline-padding) var(--crop-preview-inline-padding);"
     );
+    expect(overlayCss).toContain("min-height: var(--crop-preview-footer-block-size);");
     expect(overlayCss).toContain("padding: 8px var(--crop-preview-inline-padding) 6px;");
     expect(overlayCss).toContain(
       ':host([data-crop-capture-mode="visible"]) .crop-preview-dialog'
     );
     expect(overlayCss).toContain("height: auto;");
+    expect(overlayCss).toContain("max-height: var(--crop-preview-dialog-available-height);");
     expect(overlayCss).toContain("flex: 0 1 auto;");
+    expect(overlayCss).toContain(
+      "var(--crop-preview-dialog-available-height) - var(--crop-preview-footer-block-size)"
+    );
+    expect(overlayCss).toContain(
+      "var(--crop-preview-dialog-available-height) - var(--crop-preview-footer-block-size) -"
+    );
+    expect(overlayCss).toContain("var(--crop-preview-inline-padding)");
     expect(overlayCss).toContain("--crop-preview-backdrop-inline: 16px;");
+    expect(overlayCss).toContain("--crop-preview-backdrop-block: 16px;");
     expect(overlayCss).toContain("background: #44414f;");
     expect(overlayCss).toContain(':host([data-crop-capture-mode="visible"]) .crop-preview-surface');
     expect(overlayCss).toContain("overflow: hidden;");
-    expect(overlayCss).toContain("max-height: 100%;");
     expect(overlayCss).toContain("object-fit: contain;");
     expect(overlayCss).toMatch(/\.crop-preview \{[\s\S]*?cursor: auto;/);
     expect(overlayCss).toContain(".crop-preview-image");

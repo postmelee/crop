@@ -12,6 +12,7 @@ GitHub Issue: [#39](https://github.com/postmelee/crop/issues/39)
 | 2 | preview dialog 크기와 inline padding 보정 | `crop-overlay.css`, CSS regression test | phase6 regression, CSS grep, diff |
 | 3 | 품질 기준 갱신과 통합 검증 | quality matrix, 최종 보고서, 오늘할일 | build, typecheck, test, grep, status |
 | 4 | 수동 확인 후 visible preview 하단 padding 보정 | `crop-overlay.css`, CSS regression test, Stage/최종 보고서 갱신 | phase6 regression, CSS grep, diff |
+| 5 | 수동 확인 후 visible preview padding reserve와 modal 중앙 정렬 | `crop-overlay.css`, CSS regression test, Stage/최종 보고서 갱신 | phase6 regression, build, typecheck, diff |
 
 ## 문서 위치 확인
 
@@ -36,6 +37,7 @@ GitHub Issue: [#39](https://github.com/postmelee/crop/issues/39)
 - preview dialog는 desktop/mobile viewport에서 화면을 과도하게 채우지 않고 backdrop click 영역을 남긴다.
 - preview image edge와 toolbar Save button edge는 같은 inline padding 기준으로 정렬된다.
 - visible preview는 이미지 아래 내부 여백이 양옆 inline padding과 같은 기준으로 보이고, 남는 dialog 높이로 아래 여백이 과도하게 커지지 않는다.
+- visible preview는 이미지가 surface를 꽉 채워도 bottom padding을 침범하지 않고, preview modal은 viewport 중앙에 배치된다.
 - `debugger`, `<all_urls>`, broad `host_permissions`는 추가하지 않는다.
 
 ## Stage 1 — preview backdrop dismiss 계약 고정
@@ -222,6 +224,46 @@ git diff --check
 Task #39 Stage 4: visible preview 하단 padding 보정
 ```
 
+## Stage 5 — 수동 확인 후 visible preview padding reserve와 modal 중앙 정렬
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m020_39_stage5.md`
+
+수정:
+
+- `src/content/overlay/crop-overlay.css`
+- `tests/content/overlay/phase6-regression.test.ts`
+- `mydocs/plans/task_m020_39_impl.md`
+- `mydocs/tech/task_m020_8_quality_matrix.md`
+- `mydocs/report/task_m020_39_report.md`
+- `mydocs/orders/20260605.md`
+
+### 변경 내용
+
+- 작업지시자 수동 확인 결과, scroll이 없는 visible/current-page preview에서 이미지가 surface 하단 padding을 침범하지 않도록 이미지 max-height 계산에서 footer height와 bottom padding을 제외한다.
+- full-page preview는 기존 고정 dialog height와 surface scroll 계약을 유지해, scroll 가능한 이미지가 하단까지 붙어 보이는 상태를 그대로 둔다.
+- preview modal을 viewport 중앙에 배치하도록 backdrop block padding을 위/아래 동일 변수로 통일하고 `.crop-preview`를 center 정렬한다.
+- phase6 regression test에 centered preview, visible image max-height padding reserve, full-page scroll 계약 유지 조건을 추가한다.
+
+### 검증
+
+```bash
+npm test -- tests/content/overlay/phase6-regression.test.ts
+rg -n "align-items: center|crop-preview-dialog-available-height|footer-block-size|crop-preview-inline-padding|object-fit|overflow: auto|overflow: hidden" src/content/overlay/crop-overlay.css tests/content/overlay/phase6-regression.test.ts
+npm run typecheck
+npm run build
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #39 Stage 5: visible preview padding reserve와 중앙 정렬
+```
+
 ## 검증 운영
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -237,12 +279,13 @@ Task #39 Stage 4: visible preview 하단 padding 보정
 - Stage 1~2 커밋 메시지는 `Task #39 Stage {N}: {핵심 내용 요약}` 형식을 따른다.
 - Stage 3은 최종 보고서를 포함하므로 `Task #39 Stage 3 + 최종 보고서: preview dismiss와 padding 보정 완료` 형식을 사용한다.
 - Stage 4는 수동 확인 후 레이아웃 보정과 보고서 갱신을 묶어 `Task #39 Stage 4: visible preview 하단 padding 보정` 형식을 사용한다.
+- Stage 5는 PR 수동 확인 후 레이아웃 보정과 보고서 갱신을 묶어 `Task #39 Stage 5: visible preview padding reserve와 중앙 정렬` 형식을 사용한다.
 
 ## 단계 의존성
 
 - Stage 2는 Stage 1의 backdrop dismiss event contract가 확정된 뒤 진행한다.
 - Stage 3은 Stage 2의 CSS layout contract가 확정된 뒤 품질 매트릭스와 최종 검증만 수행한다.
-- 최종 결과보고서와 PR 게시 절차는 Stage 4 완료보고서 승인 후 진행한다.
+- 최종 결과보고서와 PR 게시 절차는 Stage 5 완료보고서 승인 후 진행한다.
 
 ## 위험과 대응
 
