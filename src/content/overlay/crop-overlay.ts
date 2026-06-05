@@ -63,7 +63,7 @@ import {
   type ViewportMetrics
 } from "../../shared/rect";
 import {
-  getStitchDestinationPixelRect,
+  getStitchPreviewTileLayout,
   stitchCapturedTiles,
   type StitchCapturedTilesResult,
   type StitchImageScale
@@ -975,10 +975,6 @@ export function mountCropOverlay(): void {
       action,
       mode: "visible",
       dataUrl: cropResult.cropResult.dataUrl,
-      previewModel: {
-        kind: "single-image",
-        dataUrl: cropResult.cropResult.dataUrl
-      },
       viewportRect: cropResult.viewportRect,
       sourceRect: cropResult.cropResult.sourceRect,
       outputWidth: cropResult.cropResult.outputWidth,
@@ -1389,16 +1385,18 @@ export function mountCropOverlay(): void {
     const fragment = document.createDocumentFragment();
 
     for (const tile of model.tiles) {
-      const tileRect = getStitchDestinationPixelRect(
-        tile.destinationCssRect,
-        model.outputScale
-      );
+      const tileLayout = getStitchPreviewTileLayout({
+        viewportCropRect: tile.viewportCropRect,
+        destinationCssRect: tile.destinationCssRect,
+        viewportCssSize: tile.viewportCssSize,
+        outputScale: model.outputScale
+      });
       const tileElement = document.createElement("div");
       tileElement.className = "crop-preview-tile";
-      tileElement.style.left = toCssPixel(tileRect.left);
-      tileElement.style.top = toCssPixel(tileRect.top);
-      tileElement.style.width = toCssPixel(tileRect.width);
-      tileElement.style.height = toCssPixel(tileRect.height);
+      tileElement.style.left = toCssPixel(tileLayout.tileRect.left);
+      tileElement.style.top = toCssPixel(tileLayout.tileRect.top);
+      tileElement.style.width = toCssPixel(tileLayout.tileRect.width);
+      tileElement.style.height = toCssPixel(tileLayout.tileRect.height);
 
       const tileImage = document.createElement("img");
       tileImage.className = "crop-preview-tile-image";
@@ -1406,14 +1404,10 @@ export function mountCropOverlay(): void {
       tileImage.decoding = "async";
       tileImage.draggable = false;
       tileImage.src = tile.dataUrl;
-      tileImage.style.left = toCssPixel(-tile.viewportCropRect.left * model.outputScale.scaleX);
-      tileImage.style.top = toCssPixel(-tile.viewportCropRect.top * model.outputScale.scaleY);
-      tileImage.style.width = toCssPixel(
-        tile.viewportCssSize.clientWidth * model.outputScale.scaleX
-      );
-      tileImage.style.height = toCssPixel(
-        tile.viewportCssSize.clientHeight * model.outputScale.scaleY
-      );
+      tileImage.style.left = toCssPixel(tileLayout.imageRect.left);
+      tileImage.style.top = toCssPixel(tileLayout.imageRect.top);
+      tileImage.style.width = toCssPixel(tileLayout.imageRect.width);
+      tileImage.style.height = toCssPixel(tileLayout.imageRect.height);
 
       tileElement.append(tileImage);
       fragment.append(tileElement);

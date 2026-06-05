@@ -58,6 +58,18 @@ export interface StitchCapturedTilesResult {
   readonly downscaled: boolean;
 }
 
+export interface StitchPreviewTileLayoutInput {
+  readonly viewportCropRect: CropRectLike;
+  readonly destinationCssRect: CropRectLike;
+  readonly viewportCssSize: ViewportCssSize;
+  readonly outputScale: StitchImageScale;
+}
+
+export interface StitchPreviewTileLayout {
+  readonly tileRect: CropRect;
+  readonly imageRect: CropRect;
+}
+
 export function getStitchOutputPixelSize(
   outputCssSize: OutputCssSize,
   scale: StitchImageScale
@@ -156,6 +168,37 @@ export function getStitchDestinationPixelRect(
     Math.round(destinationCssRect.right * scale.scaleX),
     Math.round(destinationCssRect.bottom * scale.scaleY)
   );
+}
+
+export function getStitchPreviewTileLayout(
+  input: StitchPreviewTileLayoutInput
+): StitchPreviewTileLayout {
+  const tileRect = getStitchDestinationPixelRect(
+    input.destinationCssRect,
+    input.outputScale
+  );
+  const sourceDisplayRect = getStitchDestinationPixelRect(
+    input.viewportCropRect,
+    input.outputScale
+  );
+  const imageLeft = normalizeSignedZero(-sourceDisplayRect.left);
+  const imageTop = normalizeSignedZero(-sourceDisplayRect.top);
+  const imageWidth = Math.round(input.viewportCssSize.clientWidth * input.outputScale.scaleX);
+  const imageHeight = Math.round(input.viewportCssSize.clientHeight * input.outputScale.scaleY);
+
+  return {
+    tileRect,
+    imageRect: rectFromEdges(
+      imageLeft,
+      imageTop,
+      imageLeft + imageWidth,
+      imageTop + imageHeight
+    )
+  };
+}
+
+function normalizeSignedZero(value: number): number {
+  return Object.is(value, -0) ? 0 : value;
 }
 
 export async function stitchCapturedTiles(

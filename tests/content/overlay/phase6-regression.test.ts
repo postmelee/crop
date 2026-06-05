@@ -576,12 +576,12 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain('kind: "single-image"');
     expect(overlayRuntime).toContain('kind: "tiled"');
     expect(overlayRuntime).toContain("renderTiledPreviewModel");
-    expect(overlayRuntime).toContain("getStitchDestinationPixelRect");
+    expect(overlayRuntime).toContain("getStitchPreviewTileLayout");
     expect(overlayRuntime).toContain('host.dataset.cropPreviewRenderer = "tiled";');
     expect(overlayRuntime).toContain('host.dataset.cropPreviewRenderer = "image";');
     expect(overlayRuntime).toContain("template.preview.image.hidden = true");
     expect(overlayRuntime).toContain("template.preview.tiled.dataset.cropTileCount");
-    expect(overlayRuntime).toContain("tile.viewportCssSize.clientWidth * model.outputScale.scaleX");
+    expect(overlayRuntime).toContain("tileLayout.imageRect.width");
     expect(overlayRuntime).toContain("downscaled: stitchResult.downscaled");
     expect(overlayRuntime).toContain("downscaleRatio: stitchResult.downscaleRatio");
     expect(overlayRuntime).toContain("outputScale: stitchResult.outputScale");
@@ -605,6 +605,31 @@ describe("Phase 6 overlay regression coverage", () => {
 
     expect(previewPendingBlock).toContain('setAttribute("aria-busy", "true")');
     expect(previewPendingBlock).not.toContain("button.disabled");
+  });
+
+  it("keeps preview Copy and Save actions tied to the stitched PNG dataUrl", () => {
+    const previewActionStart = overlayRuntime.indexOf("const performPreviewAction");
+    const previewActionEnd = overlayRuntime.indexOf("const recordCaptureSuccess");
+    const previewActionBlock = overlayRuntime.slice(previewActionStart, previewActionEnd);
+
+    expect(previewActionBlock).toContain("writePngDataUrlToClipboard(result.dataUrl)");
+    expect(previewActionBlock).toContain("requestPngDownload(result.dataUrl, document.title)");
+    expect(previewActionBlock).not.toContain("previewModel");
+    expect(previewActionBlock).not.toContain("template.preview");
+  });
+
+  it("keeps tiled preview model out of selected visible capture actions", () => {
+    const selectedCaptureStart = overlayRuntime.indexOf("const captureVisibleSelectedRegion");
+    const selectedCaptureEnd = overlayRuntime.indexOf("const captureSelectedPageRectRegion");
+    const selectedCaptureBlock = overlayRuntime.slice(selectedCaptureStart, selectedCaptureEnd);
+    const pageRectCaptureStart = overlayRuntime.indexOf("const captureSelectedPageRectRegion");
+    const pageRectCaptureEnd = overlayRuntime.indexOf("const captureVisibleViewportRegion");
+    const pageRectCaptureBlock = overlayRuntime.slice(pageRectCaptureStart, pageRectCaptureEnd);
+
+    expect(selectedCaptureBlock).not.toContain("previewModel");
+    expect(pageRectCaptureBlock).not.toContain("previewModel");
+    expect(selectedCaptureBlock).not.toContain('kind: "tiled"');
+    expect(pageRectCaptureBlock).not.toContain('kind: "tiled"');
   });
 
   it("keeps the mode toolbar inside the page viewport below browser chrome", () => {
