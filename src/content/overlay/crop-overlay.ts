@@ -29,7 +29,11 @@ import {
   getBestRectForElement,
   getElementFromPoint
 } from "../../firefox-derived/overlay-helpers";
-import { captureFullPageTiles, capturePageRectTiles } from "./full-page-capture";
+import {
+  captureFullPageTiles,
+  capturePageRectTiles,
+  type FullPageCaptureLoopResult
+} from "./full-page-capture";
 import {
   intersectRects,
   pageRectToViewportRect,
@@ -59,6 +63,7 @@ import {
   type ViewportMetrics
 } from "../../shared/rect";
 import {
+  getStitchDestinationPixelRect,
   stitchCapturedTiles,
   type StitchCapturedTilesResult,
   type StitchImageScale
@@ -117,10 +122,36 @@ interface CropContentChromeApi {
   };
 }
 
+interface CropSingleImagePreviewModel {
+  readonly kind: "single-image";
+  readonly dataUrl: string;
+}
+
+interface CropTiledPreviewTile {
+  readonly dataUrl: string;
+  readonly viewportCropRect: CropRect;
+  readonly destinationCssRect: CropRect;
+  readonly viewportCssSize: {
+    readonly clientWidth: number;
+    readonly clientHeight: number;
+  };
+}
+
+interface CropTiledPreviewModel {
+  readonly kind: "tiled";
+  readonly outputWidth: number;
+  readonly outputHeight: number;
+  readonly outputScale: StitchImageScale;
+  readonly tiles: readonly CropTiledPreviewTile[];
+}
+
+type CropPreviewModel = CropSingleImagePreviewModel | CropTiledPreviewModel;
+
 interface CropCapturePipelineResult {
   readonly action: CaptureAction;
   readonly mode: CaptureMode;
   readonly dataUrl: string;
+  readonly previewModel?: CropPreviewModel;
   readonly viewportRect?: CropRect;
   readonly sourceRect?: CropRect;
   readonly outputWidth: number;
@@ -944,6 +975,10 @@ export function mountCropOverlay(): void {
       action,
       mode: "visible",
       dataUrl: cropResult.cropResult.dataUrl,
+      previewModel: {
+        kind: "single-image",
+        dataUrl: cropResult.cropResult.dataUrl
+      },
       viewportRect: cropResult.viewportRect,
       sourceRect: cropResult.cropResult.sourceRect,
       outputWidth: cropResult.cropResult.outputWidth,
@@ -1037,6 +1072,10 @@ export function mountCropOverlay(): void {
       action,
       mode: "visible",
       dataUrl: captureResult.cropResult.dataUrl,
+      previewModel: {
+        kind: "single-image",
+        dataUrl: captureResult.cropResult.dataUrl
+      },
       viewportRect: captureResult.viewportRect,
       sourceRect: captureResult.cropResult.sourceRect,
       outputWidth: captureResult.cropResult.outputWidth,
@@ -1047,12 +1086,13 @@ export function mountCropOverlay(): void {
   const captureFullPageRegion = async (
     action: CaptureAction
   ): Promise<CropCapturePipelineResult> => {
+    let captureResult: FullPageCaptureLoopResult;
     let stitchResult: StitchCapturedTilesResult;
 
     try {
       setCaptureDocumentChromeSuppressed(true);
 
-      const captureResult = await captureFullPageTiles({
+      captureResult = await captureFullPageTiles({
         captureVisibleTab: captureVisibleTabDataUrl,
         setOverlayHidden: setCaptureOverlayHidden,
         setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled,
@@ -1082,6 +1122,18 @@ export function mountCropOverlay(): void {
       action,
       mode: "full-page",
       dataUrl: stitchResult.dataUrl,
+      previewModel: {
+        kind: "tiled",
+        outputWidth: stitchResult.outputWidth,
+        outputHeight: stitchResult.outputHeight,
+        outputScale: stitchResult.outputScale,
+        tiles: captureResult.tiles.map((tile) => ({
+          dataUrl: tile.dataUrl,
+          viewportCropRect: tile.viewportCropRect,
+          destinationCssRect: tile.destinationCssRect,
+          viewportCssSize: captureResult.plan.viewportCssSize
+        }))
+      },
       outputWidth: stitchResult.outputWidth,
       outputHeight: stitchResult.outputHeight,
       tileCount: stitchResult.drawnTiles,
@@ -1278,16 +1330,96 @@ export function mountCropOverlay(): void {
 
     if (!result) {
       delete host.dataset.cropPreview;
+      delete host.dataset.cropPreviewRenderer;
       template.preview.container.hidden = true;
       template.preview.image.removeAttribute("src");
+      template.preview.image.hidden = false;
+      clearPreviewTiledLayer();
       setPreviewStatus(null);
       return;
     }
 
     host.dataset.cropPreview = "true";
-    template.preview.image.src = result.dataUrl;
+    renderPreviewModel(result.previewModel ?? { kind: "single-image", dataUrl: result.dataUrl });
     template.preview.container.hidden = false;
     setPreviewStatus(null);
+  };
+
+  const clearPreviewTiledLayer = (): void => {
+    if (!template) {
+      return;
+    }
+
+    template.preview.tiled.hidden = true;
+    template.preview.tiled.replaceChildren();
+    template.preview.tiled.removeAttribute("style");
+    delete template.preview.tiled.dataset.cropTileCount;
+  };
+
+  const renderPreviewModel = (model: CropPreviewModel): void => {
+    if (!template) {
+      return;
+    }
+
+    if (model.kind === "tiled") {
+      renderTiledPreviewModel(model);
+      return;
+    }
+
+    host.dataset.cropPreviewRenderer = "image";
+    clearPreviewTiledLayer();
+    template.preview.image.hidden = false;
+    template.preview.image.src = model.dataUrl;
+  };
+
+  const renderTiledPreviewModel = (model: CropTiledPreviewModel): void => {
+    if (!template) {
+      return;
+    }
+
+    host.dataset.cropPreviewRenderer = "tiled";
+    template.preview.image.removeAttribute("src");
+    template.preview.image.hidden = true;
+    template.preview.tiled.hidden = false;
+    template.preview.tiled.replaceChildren();
+    template.preview.tiled.style.width = toCssPixel(model.outputWidth);
+    template.preview.tiled.style.height = toCssPixel(model.outputHeight);
+    template.preview.tiled.dataset.cropTileCount = String(model.tiles.length);
+
+    const fragment = document.createDocumentFragment();
+
+    for (const tile of model.tiles) {
+      const tileRect = getStitchDestinationPixelRect(
+        tile.destinationCssRect,
+        model.outputScale
+      );
+      const tileElement = document.createElement("div");
+      tileElement.className = "crop-preview-tile";
+      tileElement.style.left = toCssPixel(tileRect.left);
+      tileElement.style.top = toCssPixel(tileRect.top);
+      tileElement.style.width = toCssPixel(tileRect.width);
+      tileElement.style.height = toCssPixel(tileRect.height);
+
+      const tileImage = document.createElement("img");
+      tileImage.className = "crop-preview-tile-image";
+      tileImage.alt = "";
+      tileImage.decoding = "async";
+      tileImage.draggable = false;
+      tileImage.src = tile.dataUrl;
+      tileImage.style.left = toCssPixel(-tile.viewportCropRect.left * model.outputScale.scaleX);
+      tileImage.style.top = toCssPixel(-tile.viewportCropRect.top * model.outputScale.scaleY);
+      tileImage.style.width = toCssPixel(
+        tile.viewportCssSize.clientWidth * model.outputScale.scaleX
+      );
+      tileImage.style.height = toCssPixel(
+        tile.viewportCssSize.clientHeight * model.outputScale.scaleY
+      );
+
+      tileElement.append(tileImage);
+      fragment.append(tileElement);
+    }
+
+    template.preview.tiled.append(fragment);
   };
 
   const setPreviewPending = (isPending: boolean): void => {
@@ -2008,6 +2140,11 @@ function areRectEdgesApproximatelyEqual(first: CropRect, second: CropRect): bool
     Math.abs(first.right - second.right) <= RECT_EDGE_EPSILON &&
     Math.abs(first.bottom - second.bottom) <= RECT_EDGE_EPSILON
   );
+}
+
+function toCssPixel(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  return `${Object.is(rounded, -0) ? 0 : rounded}px`;
 }
 
 function getPreviewKeyboardAction(event: KeyboardEvent): CaptureAction | null {

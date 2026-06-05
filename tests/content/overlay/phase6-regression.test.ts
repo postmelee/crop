@@ -513,6 +513,8 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayTemplate).toContain("createScreenshotsRetryIconSvg");
     expect(overlayTemplate).not.toContain("function createRetryIconSvg");
     expect(overlayTemplate).toContain('image.className = "crop-preview-image";');
+    expect(overlayTemplate).toContain('tiled.className = "crop-preview-tiled";');
+    expect(overlayTemplate).toContain("surface.append(image, tiled);");
     expect(overlayCss).toContain(".crop-preview");
     expect(overlayCss).toContain(".crop-preview-dialog");
     expect(overlayCss).toContain("align-items: flex-start;");
@@ -529,6 +531,10 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toContain("object-fit: contain;");
     expect(overlayCss).toMatch(/\.crop-preview \{[\s\S]*?cursor: auto;/);
     expect(overlayCss).toContain(".crop-preview-image");
+    expect(overlayCss).toContain(".crop-preview-tiled");
+    expect(overlayCss).toContain(".crop-preview-tile");
+    expect(overlayCss).toContain(".crop-preview-tile-image");
+    expect(overlayCss).toContain('crop-preview-tiled[hidden]');
     expect(overlayCss).toContain(".crop-preview-actions");
     expect(overlayCss).toContain(".crop-preview-actions .crop-action-group");
     expect(overlayCss).toContain(".crop-preview-actions .crop-action");
@@ -567,6 +573,15 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("captureFullPageTiles");
     expect(overlayRuntime).toContain("stitchCapturedTiles");
     expect(overlayRuntime).toContain("captureFullPageRegion");
+    expect(overlayRuntime).toContain('kind: "single-image"');
+    expect(overlayRuntime).toContain('kind: "tiled"');
+    expect(overlayRuntime).toContain("renderTiledPreviewModel");
+    expect(overlayRuntime).toContain("getStitchDestinationPixelRect");
+    expect(overlayRuntime).toContain('host.dataset.cropPreviewRenderer = "tiled";');
+    expect(overlayRuntime).toContain('host.dataset.cropPreviewRenderer = "image";');
+    expect(overlayRuntime).toContain("template.preview.image.hidden = true");
+    expect(overlayRuntime).toContain("template.preview.tiled.dataset.cropTileCount");
+    expect(overlayRuntime).toContain("tile.viewportCssSize.clientWidth * model.outputScale.scaleX");
     expect(overlayRuntime).toContain("downscaled: stitchResult.downscaled");
     expect(overlayRuntime).toContain("downscaleRatio: stitchResult.downscaleRatio");
     expect(overlayRuntime).toContain("outputScale: stitchResult.outputScale");
