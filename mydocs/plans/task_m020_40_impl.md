@@ -12,6 +12,7 @@ GitHub Issue: [#40](https://github.com/postmelee/crop/issues/40)
 | 2 | preview 렌더링 fallback 보정 | `crop-overlay.css`, preview regression test, Stage 2 보고서 | typecheck, phase6 focused test, css grep, diff |
 | 3 | 저장 PNG seam 방어 필요성 판단 | 필요 시 `stitch-image.ts`와 stitch tests, Stage 3 보고서 | typecheck, stitch/full-page/phase6 focused tests, diff |
 | 4 | 품질 매트릭스와 통합 검증 | Phase 6 matrix, Stage 4 보고서, 최종 보고서, 오늘할일 | build, typecheck, full test, permission grep, status |
+| 5 | 긴 페이지 tile paint settle 보정 | `full-page-capture.ts`, full-page capture test, feedback, Stage 5 보고서, 최종 보고서 보정 | build, typecheck, full test, permission grep, status |
 
 ## 문서 위치 확인
 
@@ -24,6 +25,7 @@ GitHub Issue: [#40](https://github.com/postmelee/crop/issues/40)
 | `mydocs/plans/task_m020_40_impl.md` | `mydocs/plans/` | `mydocs/plans/task_m020_40_impl.md` | OK | 구현계획서 |
 | `mydocs/working/task_m020_40_stage{N}.md` | `mydocs/working/` | `mydocs/working/task_m020_40_stage{N}.md` | OK | 단계 보고서 |
 | `mydocs/report/task_m020_40_report.md` | `mydocs/report/` | `mydocs/report/task_m020_40_report.md` | OK | 최종 보고서 |
+| `mydocs/feedback/task_m020_40_feedback.md` | `mydocs/feedback/` | `mydocs/feedback/task_m020_40_feedback.md` | OK | 작업지시자 추가 검증 피드백 |
 
 ## 수용 기준 고정
 
@@ -186,6 +188,50 @@ git status --short
 Task #40 Stage 4 + 최종 보고서: preview scroll blank 보정 완료
 ```
 
+## Stage 5 — 긴 페이지 tile paint settle 보정
+
+### 산출물
+
+신규:
+
+- `mydocs/feedback/task_m020_40_feedback.md`
+- `mydocs/working/task_m020_40_stage5.md`
+- `mydocs/orders/20260605.md`
+
+수정:
+
+- `src/content/overlay/full-page-capture.ts`
+- `tests/content/overlay/full-page-capture.test.ts`
+- `mydocs/plans/task_m020_40_impl.md`
+- `mydocs/report/task_m020_40_report.md`
+- `mydocs/tech/task_m020_8_quality_matrix.md`
+
+### 변경 내용
+
+- 작업지시자 수동 검증에서 긴 페이지 full page preview의 흰 band가 재현된 피드백을 기록한다.
+- `captureFullPageTiles()`와 `capturePageRectTiles()`가 사용하는 기본 tile capture wait를 `requestAnimationFrame` 2회로 강화한다.
+- visible viewport capture와 viewport 안 selected capture의 별도 wait 경로는 변경하지 않는다.
+- 기본 wait contract를 `full-page-capture.test.ts`에 추가한다.
+- 변경은 단일 Stage 5 커밋으로 묶어 수동 검증이 만족스럽지 않을 때 되돌릴 수 있게 한다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm test
+rg "debugger|<all_urls>|host_permissions|captureVisibleTab" manifest.json src tests
+rg "TILE_CAPTURE_SETTLE_FRAME_COUNT|waitForNextPaint|Stage 5|preview scroll|흰 band|P6-41" src tests mydocs
+git diff --check
+git status --short
+```
+
+### 커밋
+
+```text
+Task #40 Stage 5: 긴 페이지 tile paint settle 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -205,7 +251,8 @@ Task #40 Stage 4 + 최종 보고서: preview scroll blank 보정 완료
 - Stage 2는 Stage 1의 preview-only 우선 판단과 CSS fallback contract가 확정된 뒤 진행한다.
 - Stage 3은 Stage 2 보정과 focused test 결과를 보고한 뒤 진행한다.
 - Stage 4는 Stage 3 보고서 승인 후 품질 매트릭스와 통합 검증만 수행한다.
-- 최종 결과보고서와 PR 게시 절차는 Stage 4 완료보고서 승인 후 진행한다.
+- Stage 5는 Stage 4 이후 작업지시자 수동 검증 피드백을 반영하는 추가 보정이다.
+- 최종 결과보고서와 PR 게시 절차는 Stage 5 완료보고서 승인 후 진행한다.
 
 ## 위험과 대응
 
@@ -213,6 +260,7 @@ Task #40 Stage 4 + 최종 보고서: preview scroll blank 보정 완료
 - **preview-only와 저장 PNG 혼동**: Stage 1/3에서 preview artifact와 saved PNG seam을 분리해 보고한다.
 - **저장 PNG 오염**: canvas fill은 테스트 근거가 있을 때만 적용하고, 기본은 preview CSS fallback 보정으로 제한한다.
 - **visible preview 회귀**: Stage 2 focused test에서 visible mode no-scroll, `object-fit: contain`, max-height contract를 유지한다.
+- **캡처 시간 증가**: Stage 5의 추가 frame wait는 tile stitching 경로에만 적용하고, 긴 고정 delay는 추가하지 않는다.
 - **#39/#37 작업 충돌**: Task #40은 `/private/tmp/crop-task40` worktree와 `local/task40` 브랜치에서만 진행한다.
 
 ## 승인 요청 사항

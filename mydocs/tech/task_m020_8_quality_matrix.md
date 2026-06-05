@@ -88,7 +88,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-38 | 큰 wrapper 내부 실제 요소 선택 유지 | `[data-crop-fixture="too-large-wrapper-infobox"]`, `[data-crop-fixture="too-large-wrapper-card"]` | wrapper 내부 table/card hover | 큰 wrapper 내부의 infobox/table/card는 자동 선택 후보로 계속 유지된다. | 자동 OK, 수동 smoke 후보 | OK | 해당 없음 | #24 Stage 1/2 regression, `overlay-helpers.test.ts`, `phase6-regression.test.ts`, `phase6_edge_cases.html` |
 | P6-39 | selected scroll capture 전체 rect 저장 | `[data-crop-fixture="selected-scroll-capture-target"]` | 선택 후 스크롤로 rect 일부가 viewport 밖에 있고 sticky header가 선택 영역 위에 겹친 상태에서 Save/Copy | 저장 PNG 크기가 선택 박스 CSS 크기 x DPR과 일치하고 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다. 선택 박스 밖 sticky/fixed page chrome도 포함되지 않는다. | #26 Stage 5 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #26 |
 | P6-40 | full page oversized downscale fallback | `[data-crop-fixture="full-page-capture-section"]` 또는 실제 긴 문서 | 전체 페이지 stitched output이 `MAX_CAPTURE_DIMENSION`/`MAX_CAPTURE_AREA`를 넘는 조건 | 전체 페이지 캡처가 계획 단계에서 실패하지 않고, stitching 단계에서 종횡비 유지 downscale을 적용해 단일 PNG를 만든다. 출력 pixel dimension은 max canvas 제한 이하이며 overlay/preview/action UI가 포함되지 않는다. | #35 Stage 1/2 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `stitch-image.test.ts`, `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #35 |
-| P6-41 | full page preview scroll blank fallback | `[data-crop-fixture="full-page-capture-section"]` 또는 실제 긴 문서 | 전체 페이지 preview modal을 빠르게 스크롤 | 새로 노출되는 preview image 영역에 흰 blank 띠가 순간 노출되지 않는다. image paint fallback은 modal surface의 dark background로 흡수되고, 저장 PNG stitching 경로는 preview artifact와 분리해 판단한다. | #40 Stage 2 자동 보정 / Stage 4 수동 smoke 후보 | OK | 해당 없음 | `crop-overlay.css`, `phase6-regression.test.ts`, Task #40 |
+| P6-41 | full page preview scroll blank fallback | `[data-crop-fixture="full-page-capture-section"]` 또는 실제 긴 문서 | 전체 페이지 preview modal을 빠르게 스크롤 | 새로 노출되는 preview image 영역에 흰 blank 띠가 순간 노출되지 않는다. image paint fallback은 modal surface의 dark background로 흡수되고, 긴 페이지 tile capture는 2 animation frame settle 뒤 실행한다. | #40 Stage 5 자동 보정 / 수동 재검증 후보 | OK | 해당 없음 | `crop-overlay.css`, `full-page-capture.ts`, `full-page-capture.test.ts`, Task #40 |
 
 ## 수동 smoke 절차 초안
 
@@ -227,7 +227,10 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | preview image 흰 fallback 제거 | OK | `src/content/overlay/crop-overlay.css`, `.crop-preview-image { background: transparent; }` |
 | preview fallback 회귀 테스트 | OK | `tests/content/overlay/phase6-regression.test.ts`, preview image block `#ffffff` 금지 |
 | 저장 PNG seam 방어 필요성 판단 | OK / 변경 없음 | `tests/shared/stitch-image.test.ts`, `tests/content/overlay/full-page-capture.test.ts`, `tests/content/overlay/phase6-regression.test.ts` focused 검증 통과 |
-| 실제 preview scroll smoke | 수동 후보 | P6-41 수동 smoke 절차 |
+| 긴 페이지 preview scroll 재검증 피드백 | 재현 / 추가 보정 | 작업지시자 2026-06-05 수동 검증, `mydocs/feedback/task_m020_40_feedback.md` |
+| tile capture paint settle 보정 | OK | `src/content/overlay/full-page-capture.ts`, `TILE_CAPTURE_SETTLE_FRAME_COUNT = 2` |
+| tile capture wait 회귀 테스트 | OK | `tests/content/overlay/full-page-capture.test.ts`, 기본 wait가 여러 animation frame 후 settle되는지 검증 |
+| 실제 preview scroll smoke | 수동 재검증 후보 | P6-41 수동 smoke 절차 |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 4 grep 예정 |
 
 ## Task #24 갱신 결과

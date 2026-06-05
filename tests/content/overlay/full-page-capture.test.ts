@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   captureFullPageTiles,
   capturePageRectTiles,
@@ -8,6 +8,8 @@ import {
   createPageRectTilePlan,
   getFullPageBounds,
   readFullPageMetrics,
+  TILE_CAPTURE_SETTLE_FRAME_COUNT,
+  waitForNextPaint,
   type FullPageMetrics
 } from "../../../src/content/overlay/full-page-capture";
 import { rectFromEdges } from "../../../src/shared/rect";
@@ -351,6 +353,45 @@ describe("full page capture helpers", () => {
       "scrollBehaviorDisabled:false",
       "hidden:false"
     ]);
+  });
+
+  it("waits for multiple animation frames before the default tile capture settles", async () => {
+    const frameCallbacks: Array<() => void> = [];
+    const timeoutCallbacks: Array<() => void> = [];
+    const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallbacks.push(() => callback(frameCallbacks.length * 16));
+      return frameCallbacks.length;
+    });
+    const setTimeout = vi.fn((callback: () => void) => {
+      timeoutCallbacks.push(callback);
+      return timeoutCallbacks.length;
+    });
+
+    vi.stubGlobal("window", {
+      requestAnimationFrame,
+      setTimeout
+    });
+
+    try {
+      const settled = waitForNextPaint();
+
+      expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
+      expect(timeoutCallbacks).toHaveLength(0);
+
+      for (let frame = 1; frame < TILE_CAPTURE_SETTLE_FRAME_COUNT; frame += 1) {
+        frameCallbacks.shift()?.();
+        expect(timeoutCallbacks).toHaveLength(0);
+      }
+
+      frameCallbacks.shift()?.();
+      expect(requestAnimationFrame).toHaveBeenCalledTimes(TILE_CAPTURE_SETTLE_FRAME_COUNT);
+      expect(setTimeout).toHaveBeenCalledTimes(1);
+
+      timeoutCallbacks.shift()?.();
+      await settled;
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("captures selected page rect tiles and restores the initial scroll position", async () => {
