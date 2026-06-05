@@ -529,12 +529,6 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayCss).toContain("object-fit: contain;");
     expect(overlayCss).toMatch(/\.crop-preview \{[\s\S]*?cursor: auto;/);
     expect(overlayCss).toContain(".crop-preview-image");
-    const previewImageBlock = overlayCss.slice(
-      overlayCss.indexOf(".crop-preview-image {"),
-      overlayCss.indexOf(':host([data-crop-capture-mode="visible"]) .crop-preview-surface')
-    );
-    expect(previewImageBlock).toContain("background: transparent;");
-    expect(previewImageBlock).not.toContain("background: #ffffff;");
     expect(overlayCss).toContain(".crop-preview-actions");
     expect(overlayCss).toContain(".crop-preview-actions .crop-action-group");
     expect(overlayCss).toContain(".crop-preview-actions .crop-action");

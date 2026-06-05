@@ -13,6 +13,7 @@ GitHub Issue: [#40](https://github.com/postmelee/crop/issues/40)
 | 3 | 저장 PNG seam 방어 필요성 판단 | 필요 시 `stitch-image.ts`와 stitch tests, Stage 3 보고서 | typecheck, stitch/full-page/phase6 focused tests, diff |
 | 4 | 품질 매트릭스와 통합 검증 | Phase 6 matrix, Stage 4 보고서, 최종 보고서, 오늘할일 | build, typecheck, full test, permission grep, status |
 | 5 | 긴 페이지 tile paint settle 보정 | `full-page-capture.ts`, full-page capture test, feedback, Stage 5 보고서, 최종 보고서 보정 | build, typecheck, full test, permission grep, status |
+| 6 | 보정 rollback과 후속 이슈 분리 | Stage 2/5 제품 코드 되돌림, Stage 6 보고서, 최종 보고서 보정, 새 이슈 초안 | build, typecheck, full test, permission grep, status |
 
 ## 문서 위치 확인
 
@@ -29,8 +30,8 @@ GitHub Issue: [#40](https://github.com/postmelee/crop/issues/40)
 
 ## 수용 기준 고정
 
-- full page preview modal을 빠르게 스크롤해도 새로 노출되는 하단 영역에 하얀 blank 띠가 보이지 않는다.
-- preview image의 paint fallback은 modal surface와 같은 계열의 배경으로 노출되며, 흰색 이미지 background가 fallback으로 드러나지 않는다.
+- full page preview modal을 빠르게 스크롤할 때 보이는 blank band가 저장 PNG 결함인지 preview 렌더링 결함인지 분리해 판단한다.
+- 초대형 단일 `<img>` preview 구조에서 band를 안정적으로 제거하지 못하면 제품 코드의 시각적 완화와 capture wait 보정은 되돌리고 tiled preview 후속 이슈로 분리한다.
 - visible viewport preview는 내부 스크롤 없이 기존 `object-fit: contain` 맞춤 표시를 유지한다.
 - full page preview는 기존처럼 내부 스크롤이 가능하고 toolbar/image inline padding 정렬이 회귀하지 않는다.
 - selected/full page Copy/Save 결과에 crop overlay, preview, toolbar, action UI가 포함되지 않는다.
@@ -232,6 +233,53 @@ git status --short
 Task #40 Stage 5: 긴 페이지 tile paint settle 보정
 ```
 
+## Stage 6 — 보정 rollback과 후속 이슈 분리
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m020_40_stage6.md`
+
+수정:
+
+- `src/content/overlay/crop-overlay.css`
+- `src/content/overlay/full-page-capture.ts`
+- `tests/content/overlay/phase6-regression.test.ts`
+- `tests/content/overlay/full-page-capture.test.ts`
+- `mydocs/feedback/task_m020_40_feedback.md`
+- `mydocs/orders/20260605.md`
+- `mydocs/plans/task_m020_40_impl.md`
+- `mydocs/report/task_m020_40_report.md`
+- `mydocs/tech/task_m020_8_quality_matrix.md`
+
+### 변경 내용
+
+- 작업지시자 수동 검증에서 Stage 5 이후 흰 band가 회색 band로 바뀌어 같은 위치에 남는 현상을 확인한 결과를 반영한다.
+- 저장 PNG는 Stage 2/5 전부터 정상이라는 작업지시자 확인을 기록한다.
+- Stage 5의 tile capture wait 강화는 원인 layer와 맞지 않아 되돌린다.
+- Stage 2의 preview image background 완화도 근본 해결이 아니므로 제품 코드에서 되돌린다.
+- #40은 single `<img>` preview의 한계와 후속 tiled preview 필요성을 기록하는 분석/정리 task로 마무리한다.
+- 새 tiled preview task는 `task-register` 절차에 따라 [#41](https://github.com/postmelee/crop/issues/41)로 분리한다.
+
+### 검증
+
+```bash
+npm run build
+npm run typecheck
+npm test
+rg "debugger|<all_urls>|host_permissions|captureVisibleTab" manifest.json src tests
+rg "TILE_CAPTURE_SETTLE_FRAME_COUNT|background: transparent;|background: #ffffff;|P6-41|tiled preview|Stage 6" src tests mydocs
+git diff --check
+git status --short
+```
+
+### 커밋
+
+```text
+Task #40 Stage 6: preview band 보정 되돌림
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -252,7 +300,8 @@ Task #40 Stage 5: 긴 페이지 tile paint settle 보정
 - Stage 3은 Stage 2 보정과 focused test 결과를 보고한 뒤 진행한다.
 - Stage 4는 Stage 3 보고서 승인 후 품질 매트릭스와 통합 검증만 수행한다.
 - Stage 5는 Stage 4 이후 작업지시자 수동 검증 피드백을 반영하는 추가 보정이다.
-- 최종 결과보고서와 PR 게시 절차는 Stage 5 완료보고서 승인 후 진행한다.
+- Stage 6은 Stage 5 이후 수동 검증에서 단일 `<img>` preview 렌더링 문제가 확인된 뒤 보정 코드를 되돌리고 후속 이슈로 분리하는 정리 단계다.
+- 최종 결과보고서와 PR 게시 절차는 Stage 6 완료보고서 승인 후 진행한다.
 
 ## 위험과 대응
 
@@ -261,6 +310,7 @@ Task #40 Stage 5: 긴 페이지 tile paint settle 보정
 - **저장 PNG 오염**: canvas fill은 테스트 근거가 있을 때만 적용하고, 기본은 preview CSS fallback 보정으로 제한한다.
 - **visible preview 회귀**: Stage 2 focused test에서 visible mode no-scroll, `object-fit: contain`, max-height contract를 유지한다.
 - **캡처 시간 증가**: Stage 5의 추가 frame wait는 tile stitching 경로에만 적용하고, 긴 고정 delay는 추가하지 않는다.
+- **근본 원인 layer 불일치**: Stage 6에서 capture wait와 preview fallback 완화는 제품 코드에서 되돌리고, preview renderer 구조 변경은 별도 이슈로 분리한다.
 - **#39/#37 작업 충돌**: Task #40은 `/private/tmp/crop-task40` worktree와 `local/task40` 브랜치에서만 진행한다.
 
 ## 승인 요청 사항

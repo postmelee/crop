@@ -110,7 +110,6 @@ interface FullPageWindowLike {
 }
 
 const TILE_FIT_EPSILON = 0.5;
-export const TILE_CAPTURE_SETTLE_FRAME_COUNT = 2;
 
 export function readFullPageMetrics(win: FullPageWindowLike = window): FullPageMetrics {
   const documentElement = win.document.documentElement;
@@ -416,21 +415,11 @@ function defaultScrollTo(x: number, y: number): void {
   window.scrollTo(x, y);
 }
 
-export function waitForNextPaint(): Promise<void> {
+function waitForNextPaint(): Promise<void> {
   return new Promise((resolve) => {
-    let remainingFrames = TILE_CAPTURE_SETTLE_FRAME_COUNT;
-    const settleAfterFrame = () => {
-      remainingFrames -= 1;
-
-      if (remainingFrames <= 0) {
-        window.setTimeout(resolve, 0);
-        return;
-      }
-
-      window.requestAnimationFrame(settleAfterFrame);
-    };
-
-    window.requestAnimationFrame(settleAfterFrame);
+    window.requestAnimationFrame(() => {
+      window.setTimeout(resolve, 0);
+    });
   });
 }
 
