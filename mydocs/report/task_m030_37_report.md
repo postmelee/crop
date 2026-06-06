@@ -7,20 +7,21 @@ GitHub Issue: [#37](https://github.com/postmelee/crop/issues/37)
 
 - 대상 이슈: #37
 - 마일스톤: M030
-- 단계 수: 4개 Stage + Stage 1.1 최신 `devel` 반영
+- 단계 수: 4개 Stage + Stage 1.1 최신 `devel` 반영 + Stage 4.1 제출 직전 보정
 - 작업 목적: Chrome Web Store Developer Dashboard에 입력할 Store Listing, Privacy, 권한 justification, package/upload, localized asset, 제출 전 smoke checklist를 최신 bugfix PR 반영 상태로 확정한다.
 
 ## 변경 파일 목록과 영향 범위
 
 | 경로 | 변경 요약 | 영향 범위 |
 |---|---|---|
-| `PRIVACY.md` | full-page capture limitation의 outdated `explicit size errors` 표현을 downscale fallback 기준으로 보정 | Store privacy policy 후보 |
+| `PRIVACY.md` | full-page capture limitation 보정, 한국어/일본어/중국어 개인정보처리방침 전문 추가 | Store privacy policy 후보 |
 | `mydocs/tech/task_m030_37_chrome_web_store_dashboard.md` | 공식 문서 재대조, PR #42~#44 영향, Dashboard 입력값, package checklist, Dashboard 직접 입력 가이드 작성 | Chrome Web Store 제출 운영 진실 원천 |
 | `mydocs/working/task_m030_37_stage1.md` | Stage 1 공식 문서/현행 산출물 재대조 보고 | 단계 기록 |
 | `mydocs/working/task_m030_37_stage2.md` | Store Listing/Privacy/Permission/Distribution 입력값 확정 보고 | 단계 기록 |
 | `mydocs/working/task_m030_37_stage3.md` | package/upload와 smoke checklist 확정 보고 | 단계 기록 |
 | `mydocs/working/task_m030_37_stage4.md` | 통합 검증과 최종 보고 단계 기록 | 단계 기록 |
-| `mydocs/orders/20260604.md`, `mydocs/orders/20260606.md` | #37 진행/완료 상태 기록 | 오늘할일 보드 |
+| `mydocs/working/task_m030_37_stage4_1.md` | 제출 직전 privacy URL, category, data disclosure 보정 보고 | 단계 기록 |
+| `mydocs/orders/20260604.md`, `mydocs/orders/20260606.md`, `mydocs/orders/20260607.md` | #37 진행/완료 상태 기록 | 오늘할일 보드 |
 | `mydocs/report/task_m030_37_report.md` | 최종 보고서 작성 | PR 전 최종 결과 기록 |
 
 ## 문서 위치 검증
@@ -34,7 +35,7 @@ GitHub Issue: [#37](https://github.com/postmelee/crop/issues/37)
 
 ## Dashboard 직접 입력 가이드
 
-이 절차는 작업지시자가 현재 Chrome Web Store Developer Dashboard에서 직접 따라 하기 위한 최종 가이드다. 실제 `Submit for review`는 PR merge 후 stable privacy URL, global small promo, 제출 직전 smoke, deferred publishing 선택까지 확인한 뒤 진행한다.
+이 절차는 작업지시자가 현재 Chrome Web Store Developer Dashboard에서 직접 따라 하기 위한 최종 가이드다. 실제 `Submit for review`는 #37 PR merge와 `devel` -> `main` 반영 후 stable privacy URL, global small promo, 제출 직전 smoke, deferred publishing 선택까지 확인한 뒤 진행한다.
 
 ### 1. 새 항목과 package upload
 
@@ -53,41 +54,38 @@ GitHub Issue: [#37](https://github.com/postmelee/crop/issues/37)
 |---|---|
 | Language dropdown | English |
 | Item language | English |
-| Category | `Art & Design` |
-| Fallback category | `Tools` only if `Art & Design` cannot be selected |
+| Category | `Tools` |
+| Fallback category | `Art & Design` only if `Tools` cannot be selected or reviewer guidance asks for a screenshot/image category |
 | Short description | `Select, preview, copy, and save precise screenshots from the current page.` |
 | Homepage URL | `https://github.com/postmelee/crop` |
 | Support URL | `https://github.com/postmelee/crop/issues` |
-| Privacy policy URL | PR merge 후 `https://github.com/postmelee/crop/blob/devel/PRIVACY.md` 또는 release tag URL |
+| Privacy policy URL | `devel` -> `main` 반영 후 `https://github.com/postmelee/crop/blob/main/PRIVACY.md` 또는 release tag URL |
 | Official URL | verified publisher/site 선택지가 없으면 미입력 |
 
 Detailed description:
 
 ```text
-crop helps you capture precise screenshots from the page you are viewing.
-Open the overlay from the extension icon or keyboard shortcut, select a page
-element or draw a custom region, preview the result, then copy or save the PNG.
+crop helps you precisely select and capture the area you want from the page you are viewing.
+Open the selection screen from the extension icon or keyboard shortcut,
+then select a page element or draw a custom area and copy or save it as a PNG.
 
 Main features:
-- Select a visible page element by hovering and clicking.
-- Draw a custom capture region.
+- Point to a page element with your mouse and click to select it.
+- Drag to draw a custom capture area.
 - Move or resize the selected region before capture.
-- Capture the visible viewport.
-- Capture the current top-level document as a full-page screenshot by scrolling and stitching visible-tab captures.
-- Capture selected page regions that extend outside the current viewport.
-- Preview visible and full-page captures before copying or saving.
-- Copy the generated PNG to the system clipboard or save it as a downloaded file.
+- Capture the currently visible screen.
+- Capture a full-page screenshot.
+- Copy the generated PNG to the clipboard or save it as a downloaded file.
 
 Privacy:
-Screenshots are processed locally in your browser. crop does not upload
-screenshots or page data to a server and does not include telemetry or
-analytics. The image leaves the page only when you explicitly choose Copy or
-Save.
+- Screenshots are processed inside your browser.
+- crop does not upload screenshots or page data to a server and does not include usage statistics or analytics features.
+- Images are sent to the clipboard or saved as downloaded files only when you explicitly choose copy or save.
 
 Current limits:
 - Chrome blocks extension injection on restricted pages such as chrome:// pages and Chrome Web Store pages.
-- Cross-origin iframe contents and closed shadow DOM internals cannot be inspected from the content script.
-- Full-page capture covers the current top-level document. Very large stitched captures may be downscaled to keep the result as one PNG, and dynamic pages with lazy loading, animations, sticky layout changes, or layout shifts can produce imperfect captures.
+- For security reasons, crop cannot inspect the inside of iframes from other origins or some web components (closed shadow DOM).
+- Full-page capture targets the main document of the current page. Very large capture results may be downscaled so they can be saved as a single PNG, and results may not be perfect on pages with content that loads while scrolling, animations, fixed headers or banners, or layout changes.
 ```
 
 ### 3. Store Listing - Korean localized fields
@@ -102,30 +100,27 @@ Current limits:
 Korean detailed description draft:
 
 ```text
-crop은 보고 있는 페이지에서 정확한 스크린샷을 선택하고 캡처할 수 있게 돕습니다.
-확장 아이콘 또는 키보드 단축키로 오버레이를 열고, 페이지 요소를 선택하거나
-직접 영역을 그린 뒤 결과를 미리 보고 PNG로 복사하거나 저장하세요.
+crop은 보고 있는 페이지에서 원하는 영역을 정확하게 선택하고 캡처할 수 있게 돕습니다.
+확장 아이콘 또는 키보드 단축키로 선택 화면을 열고,
+페이지 요소를 선택하거나 직접 영역을 그린 뒤 PNG로 복사하거나 저장하세요.
 
 주요 기능:
 - 마우스로 페이지 요소를 가리키고 클릭해서 선택합니다.
-- 직접 캡처 영역을 그립니다.
+- 직접 캡처 영역을 드래그해서 그립니다.
 - 캡처 전 선택 영역을 이동하거나 크기를 조절합니다.
-- 현재 보이는 뷰포트를 캡처합니다.
-- 보이는 탭 캡처를 스크롤하며 이어 붙여 현재 최상위 문서를 전체 페이지 스크린샷으로 캡처합니다.
-- 현재 뷰포트 밖으로 이어지는 선택 영역도 캡처합니다.
-- 보이는 영역과 전체 페이지 캡처를 복사하거나 저장하기 전에 미리 봅니다.
-- 생성된 PNG를 시스템 클립보드에 복사하거나 다운로드 파일로 저장합니다.
+- 현재 보이는 화면을 캡처합니다.
+- 전체 페이지 스크린샷을 캡처합니다.
+- 생성된 PNG를 클립보드에 복사하거나 다운로드 파일로 저장합니다.
 
 개인정보:
-스크린샷은 브라우저 안에서 로컬 처리됩니다. crop은 스크린샷이나
-페이지 데이터를 서버로 업로드하지 않으며 telemetry나 analytics를 포함하지
-않습니다. 이미지는 사용자가 명시적으로 Copy 또는 Save를 선택할 때만
-페이지 밖으로 나갑니다.
+- 스크린샷은 내 브라우저 안에서 처리됩니다.
+- crop은 스크린샷이나 페이지 데이터를 서버로 업로드하지 않으며, 사용 통계나 분석 기능을 포함하지 않습니다.
+- 이미지는 사용자가 명시적으로 복사 또는 저장을 선택할 때만 클립보드나 다운로드 파일로 내보내집니다.
 
 현재 제한:
-- Chrome은 chrome:// 페이지와 Chrome Web Store 페이지 같은 제한된 페이지에서 확장 주입을 차단합니다.
-- content script는 cross-origin iframe 내부와 closed shadow DOM 내부를 검사할 수 없습니다.
-- 전체 페이지 캡처는 현재 최상위 문서를 대상으로 합니다. 매우 큰 stitched capture는 단일 PNG 유지를 위해 축소될 수 있고, lazy loading, animation, sticky layout 변화, layout shift가 있는 동적 페이지에서는 결과가 불완전할 수 있습니다.
+- Chrome은 chrome:// 페이지와 Chrome Web Store 페이지 같은 제한된 페이지에서 확장 실행을 차단합니다.
+- 보안상 다른 출처의 iframe 내부나 일부 웹 컴포넌트(closed shadow DOM) 내부는 검사할 수 없습니다.
+- 전체 페이지 캡처는 현재 페이지의 최상위 문서를 대상으로 합니다. 매우 큰 캡처 결과는 단일 PNG로 저장하기 위해 축소될 수 있고, 스크롤할 때 늦게 불러오는 콘텐츠, 애니메이션, 고정된 헤더나 배너, 화면 배치 변화가 있는 페이지에서는 결과가 완벽하지 않을 수 있습니다.
 ```
 
 ### 4. Graphic assets
@@ -145,10 +140,11 @@ crop은 보고 있는 페이지에서 정확한 스크린샷을 선택하고 캡
 | Dashboard/privacy field | 입력값 |
 |---|---|
 | Single purpose | `crop provides one purpose: selecting, previewing, copying, and saving screenshots from the current page. Users invoke the extension on the active tab, choose a page element, custom region, visible viewport, or current top-level full page, and then copy or save the generated PNG.` |
-| User data collection | No user data is collected or transmitted off-device. If a description field is shown, use the data handling text below. |
+| User data collection | Off-device collection/transmission 없음. data type checkbox에서는 로컬 처리 대상인 `Website content`만 disclosure한다. |
 | Data handling text | `crop processes screenshot pixels, page geometry, and generated PNG data locally in the browser to provide screenshot selection and capture. It does not transmit, sell, or share this data.` |
 | Remote code | No. Extension logic is bundled in the submitted package. |
 | Limited Use | `crop uses information accessed through Chrome extension APIs only to provide or improve its single purpose: selecting and capturing screenshots from the current page.` |
+| Data type checkbox | `Website content`만 체크한다. `User activity`, `Web history`, 개인 식별 정보, 건강, 금융, 인증, 위치, 개인 커뮤니케이션은 체크하지 않는다. |
 
 Permission justification:
 
@@ -178,7 +174,7 @@ Load the extension, open any normal web page, click the crop toolbar icon or use
 
 ### 7. Submit 전 중단 기준
 
-- PR merge 전이라 privacy policy URL이 최신 `PRIVACY.md`를 가리키지 않는다.
+- `devel` -> `main` 반영 전이라 privacy policy URL이 최신 `PRIVACY.md`를 가리키지 않는다.
 - global small promotional image 440x280이 준비되지 않았다.
 - Dashboard가 예상 밖 권한을 표시한다.
 - Store listing copy에 Mozilla/Firefox/Screenshots 브랜드나 제휴 암시가 들어갔다.
@@ -193,10 +189,12 @@ Load the extension, open any normal web page, click the crop toolbar icon or use
 | Dashboard 입력값 표가 Store Listing, Privacy practices, Distribution, Package/Upload, Review submit 전 확인 항목을 포함한다 | OK |
 | 입력값은 #9 Store copy/privacy policy/permission draft와 충돌하지 않는다 | OK |
 | PR #38 이후 full-page downscale fallback 설명이 Store copy/privacy/checklist에 반영된다 | OK |
+| Stage 4.1 privacy URL 후보가 `main` 기준으로 보정되고, `Website content`만 체크하는 기준이 정리된다 | OK |
+| `PRIVACY.md`가 영어, 한국어, 일본어, 중국어 내용을 포함한다 | OK |
 | `activeTab`, `scripting`, `clipboardWrite`, `downloads` 권한 justification이 현재 manifest와 실제 사용처에 맞다 | OK |
 | `debugger`, `<all_urls>`, broad `host_permissions`를 요구하거나 암시하지 않는다 | OK |
 | privacy disclosure는 local processing, no server upload, no telemetry/analytics, explicit Copy/Save behavior를 유지한다 | OK |
-| PR merge 후 사용할 privacy policy URL 후보가 `devel` 기준 stable URL로 정리된다 | OK |
+| PR merge와 `main` 반영 후 사용할 privacy policy URL 후보가 `main` 기준 stable URL로 정리된다 | OK |
 | Store screenshot, small promotional image, optional marquee/video, localized listing은 필수/선택/후속 항목으로 분리된다 | OK |
 | 실제 upload/review submit은 수행하지 않고, 작업지시자 승인 필요 항목으로 남긴다 | OK |
 
@@ -207,6 +205,7 @@ Load the extension, open any normal web page, click the crop toolbar icon or use
 - Stage 2: [task_m030_37_stage2.md](../working/task_m030_37_stage2.md) — Dashboard 입력값 표, localized screenshots/video 가능 여부, `PRIVACY.md` limitation 보정.
 - Stage 3: [task_m030_37_stage3.md](../working/task_m030_37_stage3.md) — fresh build/ZIP, package contents, manifest review, smoke checklist 확정.
 - Stage 4: [task_m030_37_stage4.md](../working/task_m030_37_stage4.md) — build/typecheck/test, package, grep 통합 검증과 Dashboard 직접 입력 가이드 작성.
+- Stage 4.1: [task_m030_37_stage4_1.md](../working/task_m030_37_stage4_1.md) — privacy policy URL을 `main` 기준으로 보정, `Tools` category, `Website content` disclosure, `PRIVACY.md` 다국어 전문 반영.
 
 ### 최종 통합 검증
 
@@ -229,12 +228,12 @@ Load the extension, open any normal web page, click the crop toolbar icon or use
 - Dashboard 실제 UI의 YouTube video 필수 여부, Official URL dropdown, deferred publishing option은 실제 화면에서 확인해야 한다.
 - global small promotional image 440x280 1개는 계속 제출 전 blocker다.
 - English/Korean screenshots와 promo video는 작업지시자가 준비했지만, 파일 품질과 YouTube URL 자체는 저장소에서 검증하지 않았다.
-- privacy policy URL은 PR merge 후 `devel` 또는 release tag 기준 stable URL로 최종 확인해야 한다.
+- privacy policy URL은 #37 PR merge 후 `devel` -> `main` 반영 또는 release tag 기준 stable URL로 최종 확인해야 한다.
 
 ### 후속 작업 후보
 
 - Stage 4 승인 후 `publish/task37` 브랜치 게시와 `devel` 대상 PR 생성.
-- PR merge 후 Chrome Web Store Dashboard에서 privacy policy URL을 stable URL로 최종 입력.
+- `devel` -> `main` 반영 후 Chrome Web Store Dashboard에서 privacy policy URL을 stable URL로 최종 입력.
 - global small promotional image 440x280 제작/선택.
 - 제출 직전 Chrome unpacked extension smoke: action/shortcut, selected/visible/full-page Copy/Save, full-page tiled preview blank band, downscale fallback, restricted page 제한 확인.
 - Japanese/Simplified Chinese Store localized screenshots/video 또는 localized description 제작.
