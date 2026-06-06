@@ -323,11 +323,11 @@ Stage 3에서는 `origin/devel` merge와 PR #42~#44 반영 이후의 현재 `loc
 
 ### Fresh build and ZIP command
 
-제출 후보 ZIP은 `dist/` 내부 파일을 ZIP root로 삼아 fresh write 방식으로 생성한다. 기존 ZIP에 update하는 방식은 제거된 파일 entry가 남을 수 있으므로 사용하지 않는다.
+제출 후보 ZIP은 `dist/` 내부 파일을 ZIP root로 삼아 fresh write 방식으로 생성한다. 기존 ZIP에 update하는 방식은 제거된 파일 entry가 남을 수 있으므로 사용하지 않는다. macOS Finder가 만든 `.DS_Store`나 `__MACOSX` entry는 제출 ZIP에 넣지 않는다.
 
 ```bash
 npm run build
-python3 -c 'from pathlib import Path; from zipfile import ZipFile, ZIP_DEFLATED; root=Path("dist"); z=ZipFile("/tmp/crop-0.1.0-cws.zip","w",ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()'
+python3 -c 'from pathlib import Path; from zipfile import ZipFile, ZIP_DEFLATED; root=Path("dist"); z=ZipFile("/tmp/crop-0.1.0-cws.zip","w",ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file() and p.name != ".DS_Store" and "__MACOSX" not in p.parts]; z.close()'
 unzip -l /tmp/crop-0.1.0-cws.zip
 ```
 
@@ -362,6 +362,7 @@ unzip -l /tmp/crop-0.1.0-cws.zip
 
 - `node_modules/` 없음.
 - `mydocs/` 없음.
+- `.DS_Store`, `__MACOSX` 없음.
 - repository root의 `README*`, `PRIVACY.md`, `NOTICE`, `THIRD_PARTY.md`, `LICENSE*`, `package*.json`, `vite.config.ts`, `tsconfig.json` 없음.
 - public source와 privacy/source availability는 ZIP에 넣지 않고 Store URL과 public repository로 제공한다.
 
@@ -679,3 +680,13 @@ Stage 4 이후 작업지시자 Dashboard 확인 과정에서 privacy policy URL,
 - `User activity`, `Web history`, 개인 식별 정보, 건강, 금융, 인증, 위치, 개인 커뮤니케이션은 체크하지 않는다.
 - Store listing detailed description은 작업지시자가 다듬은 한국어 문장을 기준으로 영어와 한국어 draft를 일반 사용자 친화 표현으로 낮췄다.
 - `PRIVACY.md`는 영어 원문을 유지하고 한국어, 일본어, 중국어 전문을 같은 파일에 추가한다.
+
+## Stage 4.2 PR 전 package command 보정
+
+PR 게시 전 최종 package 검증 중 `dist/.DS_Store`가 있으면 단순 `root.rglob("*")` 기반 ZIP 생성 명령이 macOS metadata를 제출 ZIP에 포함할 수 있음을 확인했다.
+
+보정 결과:
+
+- fresh ZIP 생성 명령은 `.DS_Store`와 `__MACOSX` entry를 제외한다.
+- `/tmp/crop-0.1.0-cws.zip`을 보정 명령으로 다시 만들었고, `unzip -l` 기준 13 files, total 436,898 bytes, root `manifest.json` 상태를 확인했다.
+- `unzip -Z1 /tmp/crop-0.1.0-cws.zip` 기준 `.DS_Store`, `__MACOSX`, repository 문서, `node_modules`, source root 파일은 포함되지 않는다.

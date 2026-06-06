@@ -7,7 +7,7 @@ GitHub Issue: [#37](https://github.com/postmelee/crop/issues/37)
 
 - 대상 이슈: #37
 - 마일스톤: M030
-- 단계 수: 4개 Stage + Stage 1.1 최신 `devel` 반영 + Stage 4.1 제출 직전 보정
+- 단계 수: 4개 Stage + Stage 1.1 최신 `devel` 반영 + Stage 4.1/4.2 제출 직전 보정
 - 작업 목적: Chrome Web Store Developer Dashboard에 입력할 Store Listing, Privacy, 권한 justification, package/upload, localized asset, 제출 전 smoke checklist를 최신 bugfix PR 반영 상태로 확정한다.
 
 ## 변경 파일 목록과 영향 범위
@@ -21,6 +21,7 @@ GitHub Issue: [#37](https://github.com/postmelee/crop/issues/37)
 | `mydocs/working/task_m030_37_stage3.md` | package/upload와 smoke checklist 확정 보고 | 단계 기록 |
 | `mydocs/working/task_m030_37_stage4.md` | 통합 검증과 최종 보고 단계 기록 | 단계 기록 |
 | `mydocs/working/task_m030_37_stage4_1.md` | 제출 직전 privacy URL, category, data disclosure 보정 보고 | 단계 기록 |
+| `mydocs/working/task_m030_37_stage4_2.md` | PR 전 package command dotfile 제외 보정 보고 | 단계 기록 |
 | `mydocs/orders/20260604.md`, `mydocs/orders/20260606.md`, `mydocs/orders/20260607.md` | #37 진행/완료 상태 기록 | 오늘할일 보드 |
 | `mydocs/report/task_m030_37_report.md` | 최종 보고서 작성 | PR 전 최종 결과 기록 |
 
@@ -191,6 +192,7 @@ Load the extension, open any normal web page, click the crop toolbar icon or use
 | PR #38 이후 full-page downscale fallback 설명이 Store copy/privacy/checklist에 반영된다 | OK |
 | Stage 4.1 privacy URL 후보가 `main` 기준으로 보정되고, `Website content`만 체크하는 기준이 정리된다 | OK |
 | `PRIVACY.md`가 영어, 한국어, 일본어, 중국어 내용을 포함한다 | OK |
+| 제출 ZIP 생성 명령이 `.DS_Store`, `__MACOSX`를 제외하고 clean runtime package를 만든다 | OK |
 | `activeTab`, `scripting`, `clipboardWrite`, `downloads` 권한 justification이 현재 manifest와 실제 사용처에 맞다 | OK |
 | `debugger`, `<all_urls>`, broad `host_permissions`를 요구하거나 암시하지 않는다 | OK |
 | privacy disclosure는 local processing, no server upload, no telemetry/analytics, explicit Copy/Save behavior를 유지한다 | OK |
@@ -206,6 +208,7 @@ Load the extension, open any normal web page, click the crop toolbar icon or use
 - Stage 3: [task_m030_37_stage3.md](../working/task_m030_37_stage3.md) — fresh build/ZIP, package contents, manifest review, smoke checklist 확정.
 - Stage 4: [task_m030_37_stage4.md](../working/task_m030_37_stage4.md) — build/typecheck/test, package, grep 통합 검증과 Dashboard 직접 입력 가이드 작성.
 - Stage 4.1: [task_m030_37_stage4_1.md](../working/task_m030_37_stage4_1.md) — privacy policy URL을 `main` 기준으로 보정, `Tools` category, `Website content` disclosure, `PRIVACY.md` 다국어 전문 반영.
+- Stage 4.2: [task_m030_37_stage4_2.md](../working/task_m030_37_stage4_2.md) — PR 전 package command에서 `.DS_Store`, `__MACOSX` 제외 기준 반영.
 
 ### 최종 통합 검증
 
@@ -214,7 +217,7 @@ Load the extension, open any normal web page, click the crop toolbar icon or use
 | Production build | `npm run build` | OK |
 | TypeScript 정합성 | `npm run typecheck` | OK |
 | 전체 테스트 | `npm test` | OK: 17 files, 213 tests passed |
-| Package contents | fresh write zip + `unzip -l` | OK: 13 files, root `manifest.json`, total 436,898 bytes |
+| Package contents | fresh write zip excluding `.DS_Store`/`__MACOSX` + `unzip -l` | OK: 13 files, root `manifest.json`, total 436,898 bytes |
 | Manifest 권한 | `sed -n '1,240p' dist/manifest.json`, 권한 grep | OK: 4개 권한만 포함 |
 | Privacy/branding 문맥 | privacy/branding grep | OK: no server/no telemetry/local processing 유지, Mozilla/Firefox는 attribution/non-affiliation 문맥 |
 | Downscale/upload 문맥 | downscale/upload grep | OK: PR #38 fallback, asset blocker, submit 보류, 입력 가이드 반영 |
