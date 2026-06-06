@@ -582,6 +582,13 @@ export function mountCropOverlay(): void {
       return;
     }
 
+    if (previewCaptureResult && !pendingCapture && isPreviewBackdropEvent(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      requestClose();
+      return;
+    }
+
     if (isCropOverlayEvent(event, host)) {
       return;
     }
@@ -1654,6 +1661,11 @@ function isPreviewScrollableEvent(event: Event): boolean {
       eventTarget.classList.contains("crop-preview-surface")
     );
   });
+}
+
+function isPreviewBackdropEvent(event: Event): boolean {
+  const [eventTarget] = event.composedPath();
+  return eventTarget instanceof HTMLElement && eventTarget.classList.contains("crop-preview");
 }
 
 function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
