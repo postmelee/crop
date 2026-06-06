@@ -3,8 +3,10 @@
 GitHub Issue: [#37](https://github.com/postmelee/crop/issues/37)
 마일스톤: M030
 확인일: 2026-06-04 KST
+추가 확인일: 2026-06-06 KST
 기준 브랜치: `local/task37`
 기준 커밋: `5fd786f`
+최신 `devel` 병합 커밋: `ae27732`
 
 ## 조사 배경
 
@@ -42,6 +44,9 @@ GitHub 상태:
 
 - #37: open, milestone `M030 — Release Preparation`, labels `documentation`, `enhancement`
 - PR #38: merged, base `devel`, head `publish/task35`, merged at `2026-06-04T06:00:34Z`
+- PR #42: merged, base `devel`, head `publish/task40`, merged at `2026-06-05T08:13:57Z`
+- PR #43: merged, base `devel`, head `publish/task39`, merged at `2026-06-06T08:14:56Z`
+- PR #44: merged, base `devel`, head `publish/task41`, merged at `2026-06-06T08:57:00Z`
 
 ## 실제 Dashboard 확인 상태
 
@@ -67,6 +72,24 @@ GitHub 상태:
 | Test instructions | publishing 필수는 아니며, reviewer가 제한 credential이나 paid account 없이 기능을 확인하기 어렵다면 제공한다. | `crop`은 account/paid feature가 없으므로 필수 입력 후보는 아니다. 수동 smoke 절차는 Stage 3 checklist에 둔다. |
 | Review | broad host permissions와 sensitive permissions는 review time을 늘릴 수 있고, `<all_urls>` 같은 broad host access는 위험하게 취급된다. | 현재 `activeTab` 기반으로 broad host permission을 피하는 점을 permission justification에 유지한다. |
 | Images | Store icon, screenshot, small promo image가 핵심 준비 항목이다. screenshot은 1280x800 또는 640x400, small promo는 440x280이다. | icon은 #9 Stage 5.2에서 해소, screenshot과 small promo는 제출 전 blocker로 유지한다. |
+
+## 2026-06-06 추가 merge 영향
+
+Stage 1 보고 후 preview 관련 버그 수정 PR들이 `devel`에 merge됐다. `local/task37`에는 `origin/devel`을 병합해 PR #42~#44를 반영했다.
+
+| PR | 내용 | #37 관련성 | Stage 2/3 반영 |
+|---|---|---|---|
+| #42 | full page preview blank band 원인 분리. 저장 PNG는 정상이고 preview rendering artifact로 분류 | 직접 관련 있음. Store copy에서 저장 PNG 결함으로 오해되지 않게 preview와 Save/Copy 결과를 분리해야 한다. | Store copy와 smoke checklist에서 preview-only 이슈였고 #44에서 해결됐다고 정리 |
+| #43 | preview modal backdrop dismiss, inline padding, visible preview bottom reserve, modal center alignment 보정 | 직접 관련 있음. Store screenshot 후보나 manual smoke에서 최신 preview layout을 기준으로 삼아야 한다. | Store screenshot 제작 전 기준 UI로 기록, smoke checklist에 backdrop dismiss와 visible preview layout 확인 추가 |
+| #44 | full page preview를 tiled renderer로 전환해 긴 페이지 scroll blank band 제거. Save/Copy는 stitched PNG `dataUrl` 경로 유지 | 직접 관련 있음. Full-page preview 품질 설명과 수동 smoke checklist에 반영해야 한다. | Stage 2 detailed description에는 과도한 구현 detail을 넣지 않되, Stage 3 checklist에 full page preview scroll blank band 없음과 Save/Copy stitched PNG 유지 확인 추가 |
+
+영향 결론:
+
+- 권한, privacy data handling, upload package 기본 정책에는 직접 변화가 없다.
+- `manifest.json` 권한은 계속 `activeTab`, `scripting`, `clipboardWrite`, `downloads`다.
+- Store copy는 "full-page capture preview"와 "Save/Copy output PNG"를 혼동하지 않게 작성한다.
+- Store screenshot 또는 manual smoke 자료를 만들 때는 #43/#44 이후 preview modal layout과 tiled full-page preview를 최신 기준으로 사용한다.
+- `mydocs/orders/20260604.md`는 최신 `devel` 병합으로 #39/#40 완료 행과 #37 진행 행을 모두 보존한 상태가 됐다.
 
 ## Category 재대조
 
