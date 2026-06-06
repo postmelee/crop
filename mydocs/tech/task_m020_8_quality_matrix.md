@@ -88,7 +88,7 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-38 | 큰 wrapper 내부 실제 요소 선택 유지 | `[data-crop-fixture="too-large-wrapper-infobox"]`, `[data-crop-fixture="too-large-wrapper-card"]` | wrapper 내부 table/card hover | 큰 wrapper 내부의 infobox/table/card는 자동 선택 후보로 계속 유지된다. | 자동 OK, 수동 smoke 후보 | OK | 해당 없음 | #24 Stage 1/2 regression, `overlay-helpers.test.ts`, `phase6-regression.test.ts`, `phase6_edge_cases.html` |
 | P6-39 | selected scroll capture 전체 rect 저장 | `[data-crop-fixture="selected-scroll-capture-target"]` | 선택 후 스크롤로 rect 일부가 viewport 밖에 있고 sticky header가 선택 영역 위에 겹친 상태에서 Save/Copy | 저장 PNG 크기가 선택 박스 CSS 크기 x DPR과 일치하고 offscreen 부분이 현재 viewport 교집합으로 잘리지 않는다. 선택 박스 밖 sticky/fixed page chrome도 포함되지 않는다. | #26 Stage 5 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #26 |
 | P6-40 | full page oversized downscale fallback | `[data-crop-fixture="full-page-capture-section"]` 또는 실제 긴 문서 | 전체 페이지 stitched output이 `MAX_CAPTURE_DIMENSION`/`MAX_CAPTURE_AREA`를 넘는 조건 | 전체 페이지 캡처가 계획 단계에서 실패하지 않고, stitching 단계에서 종횡비 유지 downscale을 적용해 단일 PNG를 만든다. 출력 pixel dimension은 max canvas 제한 이하이며 overlay/preview/action UI가 포함되지 않는다. | #35 Stage 1/2 자동 보정 / 수동 smoke 후보 | OK | 해당 없음 | `stitch-image.test.ts`, `full-page-capture.test.ts`, `phase6-regression.test.ts`, Task #35 |
-| P6-41 | full page preview scroll blank fallback | `[data-crop-fixture="full-page-capture-section"]` 또는 실제 긴 문서 | 전체 페이지 preview modal을 빠르게 스크롤 | 저장 PNG는 정상이어야 하며, preview modal에서도 새로 노출되는 image 영역에 blank band가 보이지 않아야 한다. #40에서는 초대형 단일 `<img>` preview 렌더링 한계로 분류했고, 실제 해결은 #41 tiled preview 후속 이슈로 분리한다. | #40 Stage 6 원인 분리 / #41 후속 | 후속 | preview renderer 구조 변경 필요 | `crop-overlay.css`, `full-page-capture.ts`, `mydocs/feedback/task_m020_40_feedback.md`, Task #40, #41 |
+| P6-41 | full page preview scroll blank fallback | `[data-crop-fixture="full-page-capture-section"]` 또는 실제 긴 문서 | 전체 페이지 preview modal을 빠르게 스크롤 | 저장 PNG는 정상이어야 하며, preview modal에서도 새로 노출되는 image 영역에 blank band가 보이지 않아야 한다. #41에서 full page preview만 tiled renderer로 전환하고 visible preview와 Save/Copy stitched PNG 경로는 유지한다. | 작업지시자 2026-06-06 수동 smoke OK: 흰색/회색 band 없음, 확대/alt placeholder 보정 후 재확인 완료 | OK | 해당 없음 | `crop-overlay.ts`, `crop-overlay.css`, `stitch-image.ts`, `phase6-regression.test.ts`, `stitch-image.test.ts`, Task #41 |
 
 ## 수동 smoke 절차 초안
 
@@ -230,8 +230,22 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | 긴 페이지 preview scroll 재검증 피드백 | 재현 / 원인 재분류 | 작업지시자 2026-06-05 수동 검증, 저장 PNG 정상, preview만 회색 band 재현 |
 | tile capture paint settle 보정 | 되돌림 | Stage 5 보정은 preview renderer 문제와 layer가 맞지 않아 Stage 6에서 제거 |
 | tile capture wait 회귀 테스트 | 되돌림 | Stage 6에서 기본 wait contract test 제거 |
-| 실제 preview scroll smoke | 후속 이슈 필요 | P6-41은 #41 tiled preview renderer로 재검증 필요 |
+| 실제 preview scroll smoke | OK / #41 해결 | P6-41은 #41 tiled preview renderer 전환 후 작업지시자 2026-06-06 수동 재검증 완료 |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 4 grep 예정 |
+
+## Task #41 갱신 결과
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| full page preview tiled renderer | OK | `src/content/overlay/crop-overlay.ts`, `src/content/overlay/crop-template.ts`, `src/content/overlay/crop-overlay.css` |
+| visible viewport preview 단일 image path 유지 | OK | `tests/content/overlay/phase6-regression.test.ts`, `data-crop-capture-mode="visible"` CSS override |
+| Save/Copy stitched PNG 책임 분리 | OK | `tests/content/overlay/phase6-regression.test.ts`, `performPreviewAction()`은 `result.dataUrl`만 사용 |
+| preview tile output scale 정렬 | OK | `src/shared/stitch-image.ts`, `tests/shared/stitch-image.test.ts` |
+| full page preview 확대 보정 | OK | `crop-preview-tiled-layer` scale wrapper와 `data-crop-preview-scale`, 작업지시자 2026-06-06 수동 재검증 |
+| tiled mode alt placeholder 노출 방지 | OK | `.crop-preview-image[hidden]`, 작업지시자 2026-06-06 수동 재검증 |
+| 실제 긴 GitHub 페이지 preview scroll smoke | OK | `/private/tmp/crop-task41/dist` 로드, 작업지시자 2026-06-06 수동 검증: 흰색/회색 band 미노출 |
+| 저장 PNG Save smoke | OK | Save/Copy는 기존 stitched PNG `dataUrl` 경로 유지, 작업지시자 수동 검증에서 preview DOM 오염 보고 없음 |
+| `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 4 grep |
 
 ## Task #24 갱신 결과
 

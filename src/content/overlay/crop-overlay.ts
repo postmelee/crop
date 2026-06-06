@@ -1336,8 +1336,8 @@ export function mountCropOverlay(): void {
     }
 
     host.dataset.cropPreview = "true";
-    renderPreviewModel(result.previewModel ?? { kind: "single-image", dataUrl: result.dataUrl });
     template.preview.container.hidden = false;
+    renderPreviewModel(result.previewModel ?? { kind: "single-image", dataUrl: result.dataUrl });
     setPreviewStatus(null);
   };
 
@@ -1350,6 +1350,7 @@ export function mountCropOverlay(): void {
     template.preview.tiled.replaceChildren();
     template.preview.tiled.removeAttribute("style");
     delete template.preview.tiled.dataset.cropTileCount;
+    delete template.preview.tiled.dataset.cropPreviewScale;
   };
 
   const renderPreviewModel = (model: CropPreviewModel): void => {
@@ -1378,9 +1379,17 @@ export function mountCropOverlay(): void {
     template.preview.image.hidden = true;
     template.preview.tiled.hidden = false;
     template.preview.tiled.replaceChildren();
-    template.preview.tiled.style.width = toCssPixel(model.outputWidth);
-    template.preview.tiled.style.height = toCssPixel(model.outputHeight);
+    const previewScale = getTiledPreviewDisplayScale(model.outputWidth);
+    template.preview.tiled.style.width = toCssPixel(model.outputWidth * previewScale);
+    template.preview.tiled.style.height = toCssPixel(model.outputHeight * previewScale);
     template.preview.tiled.dataset.cropTileCount = String(model.tiles.length);
+    template.preview.tiled.dataset.cropPreviewScale = formatFiniteNumber(previewScale);
+
+    const tileLayer = document.createElement("div");
+    tileLayer.className = "crop-preview-tiled-layer";
+    tileLayer.style.width = toCssPixel(model.outputWidth);
+    tileLayer.style.height = toCssPixel(model.outputHeight);
+    tileLayer.style.transform = `scale(${formatFiniteNumber(previewScale)})`;
 
     const fragment = document.createDocumentFragment();
 
@@ -1413,7 +1422,31 @@ export function mountCropOverlay(): void {
       fragment.append(tileElement);
     }
 
-    template.preview.tiled.append(fragment);
+    tileLayer.append(fragment);
+    template.preview.tiled.append(tileLayer);
+  };
+
+  const getTiledPreviewDisplayScale = (outputWidth: number): number => {
+    if (!Number.isFinite(outputWidth) || outputWidth <= 0) {
+      return 1;
+    }
+
+    const previewTemplate = template;
+
+    if (!previewTemplate) {
+      return 1;
+    }
+
+    const surfaceStyle = getComputedStyle(previewTemplate.preview.surface);
+    const horizontalPadding =
+      parseCssPixelValue(surfaceStyle.paddingLeft) + parseCssPixelValue(surfaceStyle.paddingRight);
+    const availableWidth = previewTemplate.preview.surface.clientWidth - horizontalPadding;
+
+    if (!Number.isFinite(availableWidth) || availableWidth <= 0) {
+      return 1;
+    }
+
+    return Math.min(1, availableWidth / outputWidth);
   };
 
   const setPreviewPending = (isPending: boolean): void => {
@@ -2139,6 +2172,19 @@ function areRectEdgesApproximatelyEqual(first: CropRect, second: CropRect): bool
 function toCssPixel(value: number): string {
   const rounded = Math.round(value * 100) / 100;
   return `${Object.is(rounded, -0) ? 0 : rounded}px`;
+}
+
+function parseCssPixelValue(value: string): number {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatFiniteNumber(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "1";
+  }
+
+  return String(Math.round(value * 10000) / 10000);
 }
 
 function getPreviewKeyboardAction(event: KeyboardEvent): CaptureAction | null {

@@ -470,6 +470,10 @@
   background: #ffffff;
 }
 
+.crop-preview-image[hidden] {
+  display: none;
+}
+
 .crop-preview-tiled {
   position: relative;
   display: block;
@@ -481,6 +485,12 @@
 
 .crop-preview-tiled[hidden] {
   display: none;
+}
+
+.crop-preview-tiled-layer {
+  position: absolute;
+  inset: 0 auto auto 0;
+  transform-origin: 0 0;
 }
 
 .crop-preview-tile {
