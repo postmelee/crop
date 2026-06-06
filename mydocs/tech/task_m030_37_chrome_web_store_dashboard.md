@@ -312,3 +312,152 @@ Current limits:
 - Small promotional image와 marquee promotional image는 locale-specific이 아니므로 하나의 global asset만 선택해야 한다.
 - Store icon/manifest icon은 해소됐지만 global small promotional image와 실제 upload/review submit은 제출 전 승인 필요 항목으로 남는다.
 - 실제 Dashboard 화면은 아직 직접 확인하지 않았으므로, Stage 2에서는 공식 문서 기준값과 `작업지시자 확인 필요` 값을 분리했다.
+
+## Stage 3 Package/Upload checklist
+
+Stage 3에서는 `origin/devel` merge와 PR #42~#44 반영 이후의 현재 `local/task37` 기준으로 fresh build와 fresh ZIP을 다시 검증했다. 실제 Chrome Web Store upload, Dashboard 저장, review submit은 수행하지 않았다.
+
+### Fresh build and ZIP command
+
+제출 후보 ZIP은 `dist/` 내부 파일을 ZIP root로 삼아 fresh write 방식으로 생성한다. 기존 ZIP에 update하는 방식은 제거된 파일 entry가 남을 수 있으므로 사용하지 않는다.
+
+```bash
+npm run build
+python3 -c 'from pathlib import Path; from zipfile import ZipFile, ZIP_DEFLATED; root=Path("dist"); z=ZipFile("/tmp/crop-0.1.0-cws.zip","w",ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()'
+unzip -l /tmp/crop-0.1.0-cws.zip
+```
+
+2026-06-06 KST 검증 결과:
+
+- `npm run build` 통과.
+- `/tmp/crop-0.1.0-cws.zip` 생성 통과.
+- ZIP root에 `manifest.json`이 존재한다.
+- ZIP은 runtime package 13 files만 포함한다.
+
+### ZIP contents
+
+`unzip -l /tmp/crop-0.1.0-cws.zip` 기준 contents:
+
+| Path | 판단 |
+|---|---|
+| `_locales/en/messages.json` | OK: default locale 포함 |
+| `_locales/ja/messages.json` | OK: Japanese locale 포함 |
+| `_locales/ko/messages.json` | OK: Korean locale 포함 |
+| `_locales/zh_CN/messages.json` | OK: Simplified Chinese locale 포함 |
+| `background/service-worker.js` | OK: background service worker bundle |
+| `background/service-worker.js.map` | OK: source map 포함 |
+| `content/inject.js` | OK: content script bundle |
+| `content/inject.js.map` | OK: source map 포함 |
+| `icons/crop-16.png` | OK: 16x16 RGBA PNG |
+| `icons/crop-32.png` | OK: 32x32 RGBA PNG |
+| `icons/crop-48.png` | OK: 48x48 RGBA PNG |
+| `icons/crop-128.png` | OK: 128x128 RGBA PNG, Store icon 후보 |
+| `manifest.json` | OK: ZIP root manifest |
+
+제외 확인:
+
+- `node_modules/` 없음.
+- `mydocs/` 없음.
+- repository root의 `README*`, `PRIVACY.md`, `NOTICE`, `THIRD_PARTY.md`, `LICENSE*`, `package*.json`, `vite.config.ts`, `tsconfig.json` 없음.
+- public source와 privacy/source availability는 ZIP에 넣지 않고 Store URL과 public repository로 제공한다.
+
+### `dist/manifest.json` review
+
+| 항목 | 값 | 판단 |
+|---|---|---|
+| `manifest_version` | `3` | OK |
+| `name` | `__MSG_extensionName__` | OK: i18n metadata |
+| `version` | `0.1.0` | OK: package version |
+| `default_locale` | `en` | OK: `_locales/en` 존재 |
+| `description` | `__MSG_extensionDescription__` | OK: i18n metadata |
+| `icons` | 16/32/48/128 | OK: package에 모두 포함 |
+| `action.default_icon` | 16/32/48/128 | OK: package에 모두 포함 |
+| `permissions` | `activeTab`, `scripting`, `clipboardWrite`, `downloads` | OK: Stage 2 justification과 일치 |
+| `background.service_worker` | `background/service-worker.js` | OK |
+| `commands.open-crop` | default `Ctrl+Shift+S`, mac `Command+Shift+S` | OK |
+| `host_permissions` | 없음 | OK |
+| `content_scripts` | 없음 | OK: user gesture 후 `scripting` injection |
+| `debugger`, `<all_urls>`, `tabs` | 없음 | OK |
+
+### Source map policy
+
+현재 0.1.0 제출 후보 package는 source map을 포함한다.
+
+판단:
+
+- source map은 Store review와 release debugging에 도움이 된다.
+- source code는 public repository로 공개할 예정이고, 현재 source map에 secret이나 credential을 포함하지 않는다.
+- source map은 bundle source를 더 쉽게 읽게 하므로 package 노출면을 넓힌다.
+- source map 제외가 필요하면 build policy 변경이므로 별도 승인 또는 구현계획서 갱신 후 처리한다.
+
+### Asset and listing checklist
+
+| 항목 | 현재 상태 | Dashboard 처리 |
+|---|---|---|
+| Extension icon / Store icon | `icons/crop-128.png` 포함, #9 Stage 5.2에서 해소 | Store icon field에 128x128 후보로 사용 |
+| English screenshots | 작업지시자 준비 완료 | English locale의 Localized screenshots에 입력 가능 |
+| Korean screenshots | 작업지시자 준비 완료 | Korean locale의 Localized screenshots에 입력 가능 |
+| English promo video | 작업지시자 준비 완료 | English locale의 Localized promo video URL에 입력 가능 |
+| Korean promo video | 작업지시자 준비 완료 | Korean locale의 Localized promo video URL에 입력 가능 |
+| Global small promotional image | 준비 상태 확인 필요 | 440x280 PNG/JPEG 1개 필요. locale별 분기 불가 |
+| Marquee promotional image | 준비 상태 확인 필요 | 1400x560 optional. locale별 분기 불가 |
+| Japanese/Simplified Chinese screenshots/video | 준비 미확인 | global fallback 또는 후속 asset 제작 |
+| Privacy policy URL | `https://github.com/postmelee/crop/blob/devel/PRIVACY.md` 후보 | PR merge 후 stable URL로 입력. release tag가 있으면 tag URL 후보 |
+| Homepage URL | `https://github.com/postmelee/crop` 후보 | 작업지시자 승인 후 입력 |
+| Support URL | `https://github.com/postmelee/crop/issues` 후보 | 작업지시자 승인 후 입력 |
+
+### Dashboard 직접 입력 타이밍
+
+| 시점 | 작업지시자 Dashboard 작업 | 허용/보류 |
+|---|---|---|
+| Stage 3 승인 전 | 실제 값 확인, field 존재 여부 확인 | 확인만 가능. 저장/제출 보류 |
+| Stage 3 승인 후 | Store Listing, localized screenshots/video, Privacy, Distribution draft 입력 | 가능. 단, 실제 upload와 review submit은 보류 |
+| Stage 4 최종 검증 승인 후 | ZIP upload, 최종 Dashboard 값 확인, review submit | 별도 승인 후 가능 |
+| PR merge 후 | privacy policy URL을 `devel` 또는 release tag 기준 stable URL로 최종 보정 | 실제 제출 직전 확인 |
+
+Dashboard에서 실제 확인해야 할 항목:
+
+- YouTube video field가 실제 submit blocker인지 여부.
+- `Art & Design` category label 선택 가능 여부.
+- Official URL dropdown 사용 가능 여부.
+- Korean locale 선택 시 Localized screenshots와 Localized promo video field 노출 여부.
+- Deferred publishing checkbox 또는 publish timing option 위치.
+
+### Reviewer smoke checklist
+
+reviewer에게 test instructions를 제공해야 할 경우 아래 요약을 사용한다. 계정, 결제, 서버 credential이 필요 없으므로 기본은 optional이다.
+
+```text
+Load the extension, open any normal web page, click the crop toolbar icon or use the keyboard shortcut, select an element or draw a region, preview it, then use Copy or Save. Also test the visible viewport and full-page buttons. The extension does not require an account or network service.
+```
+
+### Submit 전 수동 smoke checklist
+
+| 구분 | 체크 항목 | 상태 |
+|---|---|---|
+| Load | `npm run build` 후 Chrome `chrome://extensions`에서 `dist/` unpacked load | 제출 전 수동 확인 필요 |
+| Launch | action icon으로 overlay 실행 | 제출 전 수동 확인 필요 |
+| Shortcut | `Ctrl+Shift+S` / macOS `Command+Shift+S` shortcut 확인 | 제출 전 수동 확인 필요 |
+| Element selection | hover highlight와 click selection | 제출 전 수동 확인 필요 |
+| Custom region | drag custom region, move, resize | 제출 전 수동 확인 필요 |
+| Visible preview | visible viewport preview가 중앙 정렬되고 하단/inline padding이 깨지지 않음 | 제출 전 수동 확인 필요 |
+| Preview backdrop | preview modal 바깥 backdrop click으로 dismiss 가능 | 제출 전 수동 확인 필요 |
+| Full page preview | 긴 페이지 full-page tiled preview에서 흰색/회색 blank band가 보이지 않음 | 제출 전 수동 확인 필요 |
+| Copy | selected/visible/full-page PNG clipboard write | 제출 전 수동 확인 필요 |
+| Save | selected/visible/full-page PNG download | 제출 전 수동 확인 필요 |
+| Full page output | Save/Copy가 preview DOM이 아니라 stitched PNG `dataUrl` 경로를 사용 | 제출 전 수동 확인 필요 |
+| Oversized output | browser canvas limit 초과 후보에서 단일 PNG downscale fallback 동작 | 제출 전 수동 확인 필요 |
+| Selected out-of-viewport | viewport 밖 selected page rectangle stitching | 제출 전 수동 확인 필요 |
+| Restricted page | `chrome://` 및 Chrome Web Store page 제한 동작 | 제출 전 수동 확인 필요 |
+| iframe limit | cross-origin iframe 내부 selection 제한 | 제출 전 수동 확인 필요 |
+| Policy copy | Store listing/privacy/permission copy와 실제 동작 일치 | 제출 전 수동 review 필요 |
+| Package | upload zip contents review | Stage 3 자동 확인 완료, 제출 전 재확인 필요 |
+
+## Stage 3 결론
+
+- 현재 `dist/` build와 `/tmp/crop-0.1.0-cws.zip` fresh package는 Chrome Web Store upload 구조와 맞다.
+- ZIP root에는 `manifest.json`이 있고 `_locales`, `icons`, background/content bundles, source maps만 포함된다.
+- 권한은 계속 `activeTab`, `scripting`, `clipboardWrite`, `downloads`이고 `debugger`, `<all_urls>`, broad `host_permissions`는 없다.
+- English/Korean localized screenshots와 localized promo video는 Dashboard draft 입력 가능 항목이다.
+- global small promotional image 1개는 계속 제출 전 blocker다.
+- 실제 Dashboard upload와 review submit은 Stage 4 최종 검증과 작업지시자 승인 전까지 보류한다.
