@@ -181,11 +181,134 @@ Stage 2 privacy 기준:
 | Distribution | Public + all regions 후보 | Stage 2에서 승인 필요 항목으로 명시 |
 | Test instructions | account/paid gate가 없어 필수 아님 | reviewer용 간단 smoke instruction 필요 여부 결정 |
 
-## Stage 1 결론
+## Stage 2 Dashboard 입력값 확정
 
-- #37은 #9의 Store 준비 산출물을 재사용할 수 있지만, PR #38 이후 large canvas/downscale 설명은 Stage 2에서 반드시 최신화해야 한다.
+Stage 2에서는 실제 Dashboard upload/review submit을 수행하지 않고, 작업지시자가 입력하거나 최종 승인할 값을 표로 확정한다. 실제 Dashboard 화면에서 dropdown 값이나 필수 여부가 다르면 해당 항목은 작업지시자 확인 후 조정한다.
+
+### Store Listing - 기본 입력값
+
+| Dashboard 항목 | 입력값 또는 후보 | 상태 | 근거/비고 |
+|---|---|---|---|
+| Item language | English | 확정 후보 | `manifest.json`의 `default_locale`은 `en`이다. |
+| Primary category | `Art & Design` | 확정 후보 | Chrome Web Store category guide에서 screenshot capture가 `Art & Design` 설명에 직접 포함된다. `Tools`는 fallback 후보로만 둔다. |
+| Short description | `Select, preview, copy, and save precise screenshots from the current page.` | 확정 후보 | 132자 제한 안. current page screenshot single purpose와 visible/full-page preview를 모두 포괄한다. |
+| Homepage URL | `https://github.com/postmelee/crop` | 확정 후보 | 별도 product site가 없고 source availability와 README/NOTICE 접근성이 가장 명확하다. 실제 입력은 작업지시자 승인 필요. |
+| Support URL | `https://github.com/postmelee/crop/issues` | 확정 후보 | 별도 support channel이 없으므로 public GitHub Issues를 support channel 후보로 둔다. 실제 입력은 작업지시자 승인 필요. |
+| Privacy policy URL | `https://github.com/postmelee/crop/blob/devel/PRIVACY.md` | 확정 후보 | PR merge 후 `devel` 기준 stable URL 후보. release tag를 만들면 tag URL로 교체 가능하다. |
+| Official URL | 미입력 | 작업지시자 확인 필요 | verified publisher/site 설정이 확인되지 않았다. |
+
+### Store Listing - English detailed description
+
+아래 문구를 English default listing의 detailed description 후보로 둔다.
+
+```text
+crop helps you capture precise screenshots from the page you are viewing.
+Open the overlay from the extension icon or keyboard shortcut, select a page
+element or draw a custom region, preview the result, then copy or save the PNG.
+
+Main features:
+- Select a visible page element by hovering and clicking.
+- Draw a custom capture region.
+- Move or resize the selected region before capture.
+- Capture the visible viewport.
+- Capture the current top-level document as a full-page screenshot by scrolling and stitching visible-tab captures.
+- Capture selected page regions that extend outside the current viewport.
+- Preview visible and full-page captures before copying or saving.
+- Copy the generated PNG to the system clipboard or save it as a downloaded file.
+
+Privacy:
+Screenshots are processed locally in your browser. crop does not upload
+screenshots or page data to a server and does not include telemetry or
+analytics. The image leaves the page only when you explicitly choose Copy or
+Save.
+
+Current limits:
+- Chrome blocks extension injection on restricted pages such as chrome:// pages and Chrome Web Store pages.
+- Cross-origin iframe contents and closed shadow DOM internals cannot be inspected from the content script.
+- Full-page capture covers the current top-level document. Very large stitched captures may be downscaled to keep the result as one PNG, and dynamic pages with lazy loading, animations, sticky layout changes, or layout shifts can produce imperfect captures.
+```
+
+판단:
+
+- #9 detailed description의 `explicit size errors` 표현을 제거했다.
+- #42~#44를 반영해 preview를 언급하되 tiled renderer 같은 내부 구현 detail은 Store copy에 넣지 않는다.
+- Save/Copy 결과는 generated PNG로 설명하고 preview artifact와 output PNG를 혼동하지 않게 했다.
+- Mozilla/Firefox 이름을 Store listing copy에 사용하지 않는다.
+
+### Localized listing assets
+
+공식 Store Listing 문서 기준, extension이 locale을 지원하면 해당 locale별 description, screenshots, promotional video를 넣을 수 있다. 각 locale은 extension ZIP 안의 `_locales/LOCALE_CODE` directory와 연결된다.
+
+현재 `crop`이 포함하는 locale resource:
+
+| Locale directory | Dashboard locale 의미 | 현재 asset 준비 상태 | Stage 2 판단 |
+|---|---|---|---|
+| `_locales/en` | English | 작업지시자가 English screenshot/video 준비 완료 | English localized screenshots와 English localized promo video 입력 가능 |
+| `_locales/ko` | Korean | 작업지시자가 Korean screenshot/video 준비 완료 | Korean localized screenshots와 Korean localized promo video 입력 가능 |
+| `_locales/ja` | Japanese | asset 준비 미확인 | 이번 task에서는 localized screenshot/video 입력 대상에서 제외, global fallback 또는 후속 |
+| `_locales/zh_CN` | Simplified Chinese | asset 준비 미확인 | 이번 task에서는 localized screenshot/video 입력 대상에서 제외, global fallback 또는 후속 |
+
+입력 방침:
+
+- English locale 선택 후 English screenshots와 English YouTube promo video URL을 localized field에 넣을 수 있다.
+- Korean locale 선택 후 Korean screenshots와 Korean YouTube promo video URL을 localized field에 넣을 수 있다.
+- localized video와 localized screenshots가 있으면 Store listing에서 global video/screenshots보다 먼저 표시된다.
+- Japanese/Simplified Chinese는 별도 localized asset이 없으므로 global screenshot/video fallback 또는 후속 localized asset 제작으로 처리한다.
+- locale별 metadata는 제공 기능 집합이 크게 달라 보이면 안 되므로 English/Korean copy와 assets는 같은 기능 범위를 보여야 한다.
+
+중요 제약:
+
+- Screenshots와 promotional video는 locale별 설정 가능하다.
+- Small promotional image와 marquee promotional image는 locale-specific이 아니다.
+- 따라서 English/Korean small promo가 각각 있어도 Dashboard에는 언어별로 나누어 넣지 못한다. 하나의 global small promotional image를 골라야 하며, 다국어 대응을 위해 텍스트를 줄이거나 가장 중요한 시장 언어를 선택하는 방향이 안전하다.
+
+### Graphic assets
+
+| 자산 | 공식 기준 | 현재 상태 | Stage 2 판단 |
+|---|---|---|---|
+| Extension icon | 128x128 icon이 package에 필요 | #9 Stage 5.2에서 `public/icons/crop-128.png`와 manifest icons 해소 | Stage 3 package contents에서 재확인 |
+| Store screenshot | 최소 1개, 1280x800 또는 640x400 | 작업지시자가 English/Korean 준비 완료 | locale별 screenshots로 입력 가능. 실제 upload는 제외 |
+| Small promotional image | 440x280 required | 준비 상태 확인 필요 | locale별 설정 불가. 하나의 global image 필요 |
+| Marquee promotional image | 1400x560 optional | 준비 상태 확인 필요 | locale별 설정 불가. optional |
+| Promo video | YouTube URL field | 작업지시자가 English/Korean 준비 완료 | locale별 promo video 입력 가능. 실제 Dashboard 필수 여부는 확인 필요 |
+
+### Privacy practices
+
+| Dashboard/privacy 항목 | 입력값 |
+|---|---|
+| Single purpose | `crop provides one purpose: selecting, previewing, copying, and saving screenshots from the current page. Users invoke the extension on the active tab, choose a page element, custom region, visible viewport, or current top-level full page, and then copy or save the generated PNG.` |
+| Data collection/use disclosure | `crop processes screenshot pixels, page geometry, and generated PNG data locally in the browser to provide screenshot selection and capture. It does not transmit, sell, or share this data.` |
+| Remote code | No remote code. Extension logic is bundled in the submitted package. |
+| Limited Use certification | `crop uses information accessed through Chrome extension APIs only to provide or improve its single purpose: selecting and capturing screenshots from the current page.` |
+| Privacy policy URL | `https://github.com/postmelee/crop/blob/devel/PRIVACY.md` |
+| User action disclosure | Copy writes the generated PNG to the system clipboard. Save asks Chrome to download the generated PNG file. |
+
+### Permission justification
+
+| Permission | Dashboard justification draft |
+|---|---|
+| `activeTab` | Required to access the current tab only after the user invokes crop from the extension icon or keyboard shortcut, so the extension can display the screenshot overlay and capture the active page. |
+| `scripting` | Required to inject the screenshot selection overlay content script into the active tab after the user invokes the extension. |
+| `clipboardWrite` | Required only when the user clicks Copy, to write the generated PNG screenshot to the system clipboard. |
+| `downloads` | Required only when the user clicks Save, to save the generated PNG screenshot as a downloaded file. |
+
+### Distribution and submit
+
+| Dashboard 항목 | 입력값 또는 후보 | 상태 |
+|---|---|---|
+| Visibility | Public | 작업지시자 승인 필요 |
+| Regions | All regions | 작업지시자 승인 필요 |
+| Trusted testers | 미사용 | Public release 후보라 기본 미사용 |
+| Test instructions | Optional. Reviewer credential이 필요 없는 extension이므로 기본 미입력, 필요 시 Stage 3 smoke checklist 요약 입력 | 작업지시자 확인 필요 |
+| Deferred publishing | 실제 review submit 시 선택 | 작업지시자 확인 필요 |
+
+## Stage 2 결론
+
+- #37은 #9의 Store 준비 산출물을 재사용하되, PR #38 이후 large canvas/downscale 설명을 Stage 2 입력값에서 최신화했다.
 - README family와 Phase 6 품질 매트릭스는 PR #38 기준으로 이미 갱신되어 있다.
-- `PRIVACY.md`는 browser/page limitation 문구 중 `explicit size errors` 표현을 downscale fallback 기준으로 보정해야 한다.
+- `PRIVACY.md`는 Stage 2에서 browser/page limitation 문구 중 `explicit size errors` 표현을 downscale fallback 기준으로 보정했다.
 - #9 기술 노트는 선행 이력으로 유지하고, 최종 Dashboard 입력값은 새 #37 기술 노트에서 확정한다.
-- Store icon/manifest icon은 해소됐지만 Store screenshot과 small promotional image는 제출 전 blocker로 계속 남는다.
-- 실제 Dashboard 화면은 아직 직접 확인하지 않았으므로, Stage 2에서는 공식 문서 기준값과 `작업지시자 확인 필요` 값을 분리해야 한다.
+- English/Korean screenshots와 promo video는 locale별 입력 가능하다.
+- Small promotional image와 marquee promotional image는 locale-specific이 아니므로 하나의 global asset만 선택해야 한다.
+- Store icon/manifest icon은 해소됐지만 global small promotional image와 실제 upload/review submit은 제출 전 승인 필요 항목으로 남는다.
+- 실제 Dashboard 화면은 아직 직접 확인하지 않았으므로, Stage 2에서는 공식 문서 기준값과 `작업지시자 확인 필요` 값을 분리했다.

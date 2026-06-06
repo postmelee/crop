@@ -1,6 +1,6 @@
 # crop Privacy Policy
 
-Last updated: June 4, 2026
+Last updated: June 6, 2026
 
 This privacy policy applies to `crop`, a Chrome Manifest V3 extension for
 selecting and capturing screenshots from the current page.
@@ -74,8 +74,10 @@ pages and Chrome Web Store pages. `crop` also cannot inspect cross-origin
 iframe contents or closed shadow DOM internals from a content script.
 
 Full-page capture uses visible-tab captures plus scrolling and stitching.
-Dynamic pages with lazy loading, animations, sticky layout changes, or large
-canvas dimensions can produce imperfect captures or explicit size errors.
+If the stitched output would exceed browser canvas limits, `crop` may
+downscale the PNG to keep it as a single image. Dynamic pages with lazy
+loading, animations, or sticky layout changes can still produce imperfect
+captures.
 
 ## Contact
 
