@@ -10,9 +10,9 @@ GitHub Issue: [#46](https://github.com/postmelee/crop/issues/46)
 
 첫 `main` 릴리즈와 Chrome Web Store 제출 전에 반복 가능한 release pipeline, PR CI, Store 제출 ZIP 생성/검증 기준, Dashboard 제출 runbook의 경계를 정한다. 이 문서는 Stage 1 조사 결과와 이후 Stage 2~3 구현 판단 근거를 기록한다.
 
-이번 Stage에서는 실제 GitHub Actions workflow, package script, release runbook을 아직 추가하지 않는다. 구현은 Stage 2와 Stage 3에서 수행한다.
+Stage 1 조사 당시에는 실제 GitHub Actions workflow, package script, release runbook을 아직 추가하지 않았고, 구현은 Stage 2와 Stage 3에서 수행하기로 했다.
 
-## 현재 저장소 상태
+## Stage 1 저장소 상태
 
 | 항목 | 현재 상태 | Stage 1 판단 |
 |---|---|---|
@@ -204,9 +204,40 @@ Stage 3는 Stage 2 scripts가 통과한 뒤 다음을 구현한다.
 - `mydocs/manual/README.md`에 새 runbook entry를 추가한다.
 - 필요 시 `.github/pull_request_template.md`의 CI/원격 검증 표기를 최소 보정한다.
 
+## Stage 3 구현 결과
+
+Stage 3에서는 PR CI workflow와 반복 release runbook을 추가했다.
+
+| 항목 | 구현 |
+|---|---|
+| PR CI workflow | `.github/workflows/ci.yml` |
+| trigger | `pull_request` 대상 `devel`, `main`; `workflow_dispatch` |
+| 권한 | `contents: read` |
+| runner | `ubuntu-latest` |
+| Node | `actions/setup-node@v6`, `node-version: 24`, `cache: npm` |
+| 검증 명령 | `npm ci`, `npm run build`, `npm run typecheck`, `npm test`, `npm run package:cws`, `npm run verify:cws` |
+| release runbook | `mydocs/manual/release_pipeline_guide.md` |
+| manual index | `mydocs/manual/README.md`에 runbook entry 추가 |
+| PR template | 기존 `CI/원격 검증` 표가 있으므로 Stage 3에서 수정하지 않음 |
+
+Stage 3 직전 공식 문서/README를 다시 확인했다.
+
+- GitHub workflow syntax는 workflow 파일 위치, trigger event, branch filter, `workflow_dispatch`를 지원한다.
+- `actions/checkout` README는 2026-06-07 확인 시 `actions/checkout@v6` 예시를 제공한다.
+- `actions/setup-node` README는 2026-06-07 확인 시 `actions/setup-node@v6`, `node-version: 24`, `cache: npm` 예시를 제공한다.
+- `workflow_dispatch`는 workflow file이 default branch에 있어야 수동 실행 event를 받는다. 따라서 이 workflow는 #46 PR이 merge되고 default branch에 반영된 뒤 수동 실행 대상이 된다.
+
+Runbook은 다음 기준을 고정했다.
+
+- task PR과 release PR을 분리한다.
+- task PR은 `devel` 대상, release PR은 `devel -> main` 대상이다.
+- Chrome Web Store `Submit for review`는 `main` 또는 release tag 기준 `PRIVACY.md` URL, release 기준 ZIP 재생성/검증, 필수 asset, deferred publishing 의도, 작업지시자 승인 전에는 누르지 않는다.
+- `small promotional image`를 포함한 Store asset 누락은 제출 중단 기준이다.
+- release workflow artifact upload는 이번 baseline에서 제외하고, Store 제출 ZIP은 release runbook에서 재생성/검증한다.
+
 ## 잔여 위험
 
-- GitHub Actions 공식 action major version은 변동될 수 있다. Stage 3에서 workflow를 실제 작성하기 직전 현재 README와 release compatibility를 다시 확인한다.
+- GitHub Actions 공식 action major version은 변동될 수 있다. 변경 시 별도 task에서 workflow와 이 기술 노트를 함께 갱신한다.
 - PR CI baseline에는 artifact upload를 넣지 않으므로 GitHub Actions UI에서 제출 ZIP을 직접 내려받는 흐름은 제공하지 않는다. Store 제출용 ZIP은 release runbook에서 재생성/검증한다.
-- root `package.json`에 `engines`와 `packageManager`가 없어 CI Node/npm 버전 고정 근거가 약하다. Stage 3에서 workflow Node version을 명시하고, 필요하면 별도 task로 `packageManager` 고정을 검토한다.
+- root `package.json`에 `engines`와 `packageManager`가 없어 CI Node/npm 버전 고정 근거가 약하다. Stage 3 workflow에는 Node 24를 명시했지만, 필요하면 별도 task로 `packageManager` 고정을 검토한다.
 - 실제 GitHub Actions run은 PR 생성 후 원격에서만 확인할 수 있다. Stage 3까지는 workflow 구조와 로컬 명령 검증으로 대체한다.

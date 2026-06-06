@@ -26,7 +26,12 @@
 - `pr_command_guide.md`
 - `framework_lifecycle_guide.md`
 - `release_update_protocol.md`
+- `release_pipeline_guide.md`
 - `agent_code_hyperfall_rule_conflict.md`
+
+## 현재 주요 runbook
+
+- [`release_pipeline_guide.md`](release_pipeline_guide.md): `crop`의 PR CI, `devel -> main` release PR, package artifact 검증, Chrome Web Store 제출 중단 기준.
 
 ## 사용 템플릿
 
