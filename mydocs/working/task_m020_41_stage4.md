@@ -32,6 +32,13 @@ Stage 1~3에서 구현한 full page tiled preview를 통합 검증하고, 실제
 - 두 번째 수동 smoke에서 좌상단에 `Full page screenshot preview` alt text가 노출됐다. `.crop-preview-image { display: block; }`이 `hidden` 속성의 기본 표시 규칙을 덮었기 때문이다.
 - `.crop-preview-image[hidden] { display: none; }`를 추가해 tiled mode에서 빈 단일 image alt text가 보이지 않도록 했다.
 
+## PR #43 병합 충돌 해소
+
+- Task #39 PR #43이 먼저 `devel`에 merge되어 PR 게시 전 `origin/devel`을 `local/task41`에 병합했다.
+- 실제 conflict는 `src/content/overlay/crop-overlay.css`와 `tests/content/overlay/phase6-regression.test.ts`에서 발생했다.
+- CSS는 #43의 preview modal 중앙 정렬, backdrop padding, visible preview padding reserve 규칙을 유지하고, #41의 `.crop-preview-image[hidden]`, `.crop-preview-tiled`, `.crop-preview-tiled-layer`, tile image 규칙을 같은 preview block에 병합했다.
+- regression test는 #39 backdrop dismiss assertion과 #41 Save/Copy stitched PNG, visible mode 단일 image, tiled preview assertion을 모두 유지했다.
+
 ## 검증 결과
 
 실행 명령:
@@ -40,6 +47,7 @@ Stage 1~3에서 구현한 full page tiled preview를 통합 검증하고, 실제
 npm run build
 npm run typecheck
 npm test
+npm test -- tests/content/overlay/phase6-regression.test.ts tests/shared/stitch-image.test.ts
 rg "debugger|<all_urls>|host_permissions|captureVisibleTab" manifest.json src tests
 rg "P6-41|#41|tiled preview|crop-preview-tile|crop-preview-tiled|full page preview" src tests mydocs/tech/task_m020_8_quality_matrix.md mydocs/report/task_m020_41_report.md
 git diff --check
@@ -50,7 +58,8 @@ git status --short
 
 - OK: `npm run build` 통과. `dist/content/inject.js` 생성 확인.
 - OK: `npm run typecheck` 통과 (`tsc --noEmit`).
-- OK: `npm test` 통과. 17개 test file, 212개 test 통과.
+- OK: PR #43 병합 후 `npm test` 통과. 17개 test file, 213개 test 통과.
+- OK: PR #43 병합 후 focused regression 통과. 2개 test file, 40개 test 통과.
 - OK: 권한 grep에서 `debugger`, `<all_urls>` 권한 추가 없음. `captureVisibleTab` 기반 경로 유지.
 - OK: `git diff --check` 통과.
 - OK: 최종 문서 작성 후 P6-41/#41/tiled preview grep을 재실행해 문서와 코드 참조를 확인했다.
@@ -71,8 +80,8 @@ git status --short
 
 ## 다음 단계 영향
 
-- 최종 보고서 승인 후 `publish/task41` 브랜치로 push하고 `devel` 대상 PR을 생성한다.
-- PR 전에는 `local/task41`이 `origin/devel`보다 behind인 상태를 해소할지 판단해야 한다. 현재 변경은 `/private/tmp/crop-task41` worktree에만 있다.
+- `origin/devel` 병합과 PR #43 충돌 해소를 완료했으므로 `publish/task41` 브랜치로 push하고 `devel` 대상 PR을 생성한다.
+- 현재 변경은 `/private/tmp/crop-task41` worktree에만 있다.
 
 ## 승인 요청
 

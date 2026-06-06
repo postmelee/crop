@@ -44,7 +44,16 @@ GitHub Issue: [#41](https://github.com/postmelee/crop/issues/41)
 | full page preview renderer | stitched PNG 단일 `<img>` | capture tile 기반 tiled renderer |
 | P6-41 상태 | 후속 | OK |
 | focused regression | full page preview 단일 image pipeline 중심 | tiled layer, scale wrapper, Save/Copy 책임 분리, hidden image 방지 포함 |
-| 전체 테스트 | 기존 suite | 17개 test file, 212개 test 통과 |
+| 전체 테스트 | 기존 suite | PR #43 병합 후 17개 test file, 213개 test 통과 |
+
+## PR #43 병합 후 통합 결과
+
+PR #43(Task #39)이 먼저 `devel`에 merge되어 PR 게시 전 `origin/devel`을 `local/task41`에 병합했다. 충돌은 preview CSS와 phase6 regression test에서 발생했다.
+
+| 충돌 영역 | 해소 결과 |
+|---|---|
+| `src/content/overlay/crop-overlay.css` | #43의 modal 중앙 정렬, backdrop padding, visible preview padding reserve를 유지하고 #41의 tiled preview/hidden image 규칙을 병합 |
+| `tests/content/overlay/phase6-regression.test.ts` | #39 backdrop dismiss assertion과 #41 Save/Copy/tiled preview assertion을 모두 유지 |
 
 ## 검증 결과
 
@@ -54,6 +63,7 @@ GitHub Issue: [#41](https://github.com/postmelee/crop/issues/41)
 | Save/Copy 결과 PNG는 기존 stitched PNG `dataUrl` 사용 | OK — `performPreviewAction()` regression에서 `result.dataUrl`만 사용 확인 |
 | visible viewport preview는 기존 단일 image path 유지 | OK — visible mode CSS/phase6 regression 확인 |
 | full page preview toolbar, Copy/Save/Cancel/Retry 유지 | OK — 기존 preview action DOM 유지, phase6 regression 통과 |
+| PR #43 preview modal layout 변경과 병합 후 tiled preview 계약 유지 | OK — conflict 해소 후 focused regression 40개, 전체 test 213개 통과 |
 | 저장 PNG 해상도 개선, multipart/PDF export, virtualization 제외 | OK — 이번 변경에 포함하지 않음 |
 | `debugger`, `<all_urls>`, broad host permission 미추가 | OK — 권한 grep과 manifest regression 확인 |
 
@@ -62,7 +72,7 @@ GitHub Issue: [#41](https://github.com/postmelee/crop/issues/41)
 - Stage 1: [`task_m020_41_stage1.md`](../working/task_m020_41_stage1.md) — preview/capture/stitching contract 문서화, `rg`, `git diff --check` 통과.
 - Stage 2: [`task_m020_41_stage2.md`](../working/task_m020_41_stage2.md) — tiled DOM/model/CSS 구현, typecheck와 phase6 focused test 통과.
 - Stage 3: [`task_m020_41_stage3.md`](../working/task_m020_41_stage3.md) — Save/Copy 책임 분리와 scale 정렬 검증, focused tests 54개 통과.
-- Stage 4: [`task_m020_41_stage4.md`](../working/task_m020_41_stage4.md) — build/typecheck/full test/권한 grep/수동 smoke 통과.
+- Stage 4: [`task_m020_41_stage4.md`](../working/task_m020_41_stage4.md) — PR #43 병합 충돌 해소, build/typecheck/full test/권한 grep/수동 smoke 통과.
 
 ## 잔여 위험과 후속 작업
 

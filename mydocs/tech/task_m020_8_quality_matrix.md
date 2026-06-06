@@ -75,8 +75,9 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | P6-28 | Firefox식 선택 후 편집 UI parity | 실제 웹 대표 페이지 | 요소 클릭 후 selected 상태 | resize handle, 점선 표시, 이미지 사이즈 badge, Firefox식 Copy/Save 버튼을 제공한다. | 현재 MVP 미구현, 일부는 #13과 연결, size badge/button parity는 신규 후속 후보 | 후속 | 기존 후속 + 신규 후속 후보 | 작업지시자 첨부 이미지, #13 |
 | P6-29 | full page mode 진입 | `[data-crop-fixture="full-page-capture-section"]` | `전체 페이지 선택` 클릭 | Firefox처럼 거대한 selected rectangle을 만들지 않고 full page capture preview가 표시된다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
 | P6-29a | visible viewport mode 진입 | 현재 visible viewport | `보이는 영역 선택` 클릭 | Firefox처럼 같은 preview modal에 visible viewport capture가 표시된다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression, 작업지시자 smoke |
-| P6-29b | visible preview no-scroll | visible preview modal | `보이는 영역 선택` 클릭 후 preview | preview dialog가 상단에 가깝게 표시되고 visible viewport 이미지는 내부 스크롤 없이 맞춰진다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression |
-| P6-29c | preview toolbar/image right alignment | visible/full page preview modal | preview 표시 | Save button 오른쪽 끝과 image 오른쪽 끝이 같은 inline padding 기준으로 정렬된다. | 자동+수동 OK | OK | 해당 없음 | #15 Stage 5 regression |
+| P6-29b | visible preview no-scroll와 backdrop target | visible preview modal | `보이는 영역 선택` 클릭 후 preview | preview dialog가 화면 중앙에 표시되고 화면을 과도하게 채우지 않아 모달 밖 backdrop click 영역을 남기며, visible viewport 이미지는 내부 스크롤 없이 맞춰진다. 이미지 아래 내부 여백은 양옆 inline padding과 같은 기준으로 보존된다. | 자동 OK / 수동 smoke 후보 | OK | 해당 없음 | #15 Stage 5 regression, #39 Stage 2/4/5 regression |
+| P6-29c | preview toolbar/image right alignment | visible/full page preview modal | preview 표시 | Save button 오른쪽 끝과 image 오른쪽 끝이 같은 shared inline padding 기준으로 정렬된다. | 자동 OK / 수동 smoke 후보 | OK | 해당 없음 | #15 Stage 5 regression, #39 Stage 2 regression |
+| P6-29d | preview backdrop dismiss | visible/full page preview modal | preview 표시 후 모달 밖 어두운 backdrop 직접 클릭 | preview backdrop 직접 클릭은 `Esc`/Cancel과 같은 cleanup 경로로 overlay를 제거하고, dialog 내부 click과 Copy/Save/Retry/Cancel action은 dismiss와 충돌하지 않는다. | 자동 OK / 수동 smoke 후보 | OK | 해당 없음 | #39 Stage 1 regression |
 | P6-30 | full page stitching top/mid/bottom | `[data-crop-fixture="full-page-top-marker"]`, `[data-crop-fixture="full-page-mid-seam-marker"]`, `[data-crop-fixture="full-page-bottom-marker"]` | full page Save | 저장 PNG에 상단, 중간 seam marker, 하단 partial tile marker가 포함된다. | 자동+수동 OK | OK | 해당 없음 | `phase6-regression.test.ts`, `stitch-image.test.ts`, 작업지시자 PNG smoke |
 | P6-31 | full page horizontal overflow | `[data-crop-fixture="full-page-horizontal-overflow"]` | full page Save | 오른쪽으로 확장된 horizontal marker가 stitched PNG에 포함된다. | 자동+수동 OK | OK | 해당 없음 | `full-page-capture.test.ts`, 작업지시자 PNG smoke |
 | P6-32 | fixed/sticky 반복 노출 정책 | `[data-crop-fixture="sticky-header"]`, `[data-crop-fixture="full-page-fixed-marker"]` | full page Save | 첫 tile 이후 viewport에 보이는 fixed/sticky page chrome 반복 노출을 capture 직전 숨김으로 줄인다. Firefox `drawSnapshot()`과 pixel-perfect parity는 아니다. | 자동+수동 OK / 제한 문서화 | OK | 제한 문서화 | `phase6-regression.test.ts`, README, 작업지시자 smoke |
@@ -106,24 +107,26 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 12. 다시 `전체 페이지 선택` 후 preview에서 `Copy`를 눌러 clipboard 이미지 paste가 가능한지 확인한다.
 13. preview toolbar hover title에 Copy/Save/Cancel shortcut이 표시되고 `Command+C`/`Command+S` 또는 `Ctrl+C`/`Ctrl+S`가 동작하는지 확인한다.
 14. `보이는 영역 선택` 후 Firefox식 preview modal이 열리고 visible viewport Copy/Save가 동작하는지 확인한다.
-15. visible preview가 내부 스크롤 없이 한 화면에 맞춰지고 modal 위치가 과도하게 낮지 않은지 확인한다.
-16. visible/full page preview의 modal 크기가 동일하고 Save button 오른쪽 끝이 image 오른쪽 끝과 맞는지 확인한다.
-17. selected/drag/visible/full page 각 모드에서 Copy/Save 직후 선택 박스나 preview toolbar가 깜빡이지 않는지 확인한다.
-18. `[data-crop-fixture="selected-scroll-capture-target"]` 전체 panel을 선택하고 표시 크기 `1520 x 920`을 기록한다.
-19. 선택 상태를 유지한 채 스크롤해 sticky header가 선택 영역 위쪽과 겹치도록 만든 뒤 `Save`를 실행한다.
-20. 저장 PNG 크기가 DPR 2 환경에서는 `3040 x 1840`처럼 선택 CSS 크기 x DPR과 일치하는지 확인한다.
-21. 저장 PNG에 top/bottom marker가 모두 포함되고 crop overlay, handles, action buttons, 선택 박스 밖 sticky header가 포함되지 않는지 확인한다.
-22. selected scroll Save 후 시작 scroll position으로 복구되는지 확인한다.
-23. `[data-crop-fixture="offscreen-large-element"]`의 빈 큰 영역을 hover/click해도 자동 추천 박스가 생성되지 않는지 확인한다.
-24. `too-large-wrapper`의 빈 wrapper 영역을 hover해 큰 선택 박스가 생기지 않는지 확인한다.
-25. 같은 영역의 `too-large-wrapper-infobox`, `too-large-wrapper-card`를 hover해 내부 table/card가 정상 선택되는지 확인한다.
-26. 매우 긴 실제 문서 또는 oversized test page에서 `전체 페이지 선택`을 실행한다.
-27. preview 또는 Save 결과가 단일 PNG로 생성되고 Chrome 확장 오류 페이지에 `maximum canvas size` 오류가 남지 않는지 확인한다.
-28. 저장 PNG의 pixel dimension이 `MAX_CAPTURE_DIMENSION`과 `MAX_CAPTURE_AREA` 한도 아래인지 확인한다.
-29. downscale 때문에 원본 DPR 해상도보다 낮아질 수 있음을 기록하고, overlay/preview/action UI가 결과에 포함되지 않는지 확인한다.
-30. 전체 페이지 preview modal에서 스크롤 바를 빠르게 아래/위로 움직인다.
-31. preview image 하단 또는 새로 노출되는 영역에 흰 blank 띠가 순간 노출되지 않는지 확인한다.
-32. 흰 띠가 다시 보이면 저장 PNG 파일 자체에 seam이 있는지 preview artifact와 분리해 확인한다.
+15. visible preview가 내부 스크롤 없이 한 화면에 맞춰지고 modal이 화면 중앙에 있으며, 모달 밖 어두운 backdrop 영역이 클릭 가능하게 남고 이미지 아래 padding이 양옆 padding과 같은 기준으로 보존되는지 확인한다.
+16. visible/full page preview의 modal 크기가 동일하고 Save button 오른쪽 끝이 image 오른쪽 끝과 같은 inline padding 기준으로 맞는지 확인한다.
+17. visible/full page preview에서 dialog 내부를 클릭해도 닫히지 않고, 모달 밖 어두운 backdrop 직접 클릭은 preview와 overlay를 함께 닫는지 확인한다.
+18. preview Copy/Save/Retry/Cancel button과 `Command+C`/`Command+S` 또는 `Ctrl+C`/`Ctrl+S`, `Esc`가 backdrop dismiss와 충돌하지 않는지 확인한다.
+19. selected/drag/visible/full page 각 모드에서 Copy/Save 직후 선택 박스나 preview toolbar가 깜빡이지 않는지 확인한다.
+20. `[data-crop-fixture="selected-scroll-capture-target"]` 전체 panel을 선택하고 표시 크기 `1520 x 920`을 기록한다.
+21. 선택 상태를 유지한 채 스크롤해 sticky header가 선택 영역 위쪽과 겹치도록 만든 뒤 `Save`를 실행한다.
+22. 저장 PNG 크기가 DPR 2 환경에서는 `3040 x 1840`처럼 선택 CSS 크기 x DPR과 일치하는지 확인한다.
+23. 저장 PNG에 top/bottom marker가 모두 포함되고 crop overlay, handles, action buttons, 선택 박스 밖 sticky header가 포함되지 않는지 확인한다.
+24. selected scroll Save 후 시작 scroll position으로 복구되는지 확인한다.
+25. `[data-crop-fixture="offscreen-large-element"]`의 빈 큰 영역을 hover/click해도 자동 추천 박스가 생성되지 않는지 확인한다.
+26. `too-large-wrapper`의 빈 wrapper 영역을 hover해 큰 선택 박스가 생기지 않는지 확인한다.
+27. 같은 영역의 `too-large-wrapper-infobox`, `too-large-wrapper-card`를 hover해 내부 table/card가 정상 선택되는지 확인한다.
+28. 매우 긴 실제 문서 또는 oversized test page에서 `전체 페이지 선택`을 실행한다.
+29. preview 또는 Save 결과가 단일 PNG로 생성되고 Chrome 확장 오류 페이지에 `maximum canvas size` 오류가 남지 않는지 확인한다.
+30. 저장 PNG의 pixel dimension이 `MAX_CAPTURE_DIMENSION`과 `MAX_CAPTURE_AREA` 한도 아래인지 확인한다.
+31. downscale 때문에 원본 DPR 해상도보다 낮아질 수 있음을 기록하고, overlay/preview/action UI가 결과에 포함되지 않는지 확인한다.
+32. 전체 페이지 preview modal에서 스크롤 바를 빠르게 아래/위로 움직인다.
+33. preview image 하단 또는 새로 노출되는 영역에 흰 blank 띠가 순간 노출되지 않는지 확인한다.
+34. 흰 띠가 다시 보이면 저장 PNG 파일 자체에 seam이 있는지 preview artifact와 분리해 확인한다.
 
 ## Stage별 갱신 계획
 
@@ -218,6 +221,19 @@ Phase 6에서 MVP 품질과 edge case를 같은 기준으로 반복 확인하기
 | selected/full page stitch metadata 유지 | OK | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
 | 실제 oversized full page PNG smoke | 수동 후보 | P6-40 수동 smoke 절차 |
 | `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, Stage 4 grep 예정 |
+
+## Task #39 갱신 결과
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| preview backdrop 직접 click dismiss | 자동 OK / 수동 후보 | `src/content/overlay/crop-overlay.ts`, `tests/content/overlay/phase6-regression.test.ts` |
+| preview dialog 내부 click과 action path 충돌 방지 | 자동 OK / 수동 후보 | action/mode 처리 이후 backdrop 분기, direct `.crop-preview` target helper, `phase6-regression.test.ts` |
+| preview dialog backdrop target 유지 | 자동 OK / 수동 후보 | `crop-overlay.css`의 `--crop-preview-backdrop-*` 변수와 dialog max size regression |
+| Save button/image shared inline padding 유지 | 자동 OK / 수동 후보 | `--crop-preview-inline-padding`을 surface/footer가 공유하는 CSS regression |
+| visible preview 하단 padding 보정 | 자동 OK / 수동 후보 | visible mode dialog `height: auto`, image max-height에서 footer/bottom padding 제외, surface bottom `--crop-preview-inline-padding` regression |
+| preview modal 중앙 정렬 | 자동 OK / 수동 후보 | backdrop block start/end 공유 변수, `.crop-preview` center alignment regression |
+| visible preview no-scroll와 full page preview scroll 유지 | 자동 OK / 수동 후보 | visible mode `overflow: hidden`, `object-fit: contain`, full page surface `overflow: auto` regression |
+| `debugger`, `<all_urls>` 권한 미추가 | OK | `manifest.json`, `phase6-regression.test.ts`, Task #39 Stage 3 grep |
 
 ## Task #40 갱신 결과
 
