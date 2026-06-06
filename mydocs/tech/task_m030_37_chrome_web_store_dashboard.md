@@ -461,3 +461,208 @@ Load the extension, open any normal web page, click the crop toolbar icon or use
 - English/Korean localized screenshots와 localized promo video는 Dashboard draft 입력 가능 항목이다.
 - global small promotional image 1개는 계속 제출 전 blocker다.
 - 실제 Dashboard upload와 review submit은 Stage 4 최종 검증과 작업지시자 승인 전까지 보류한다.
+
+## Stage 4 통합 검증과 Dashboard 직접 입력 가이드
+
+Stage 4에서는 Stage 1~3 산출물을 통합 검증하고, 작업지시자가 Chrome Web Store Developer Dashboard에서 직접 따라 할 수 있는 입력 순서를 확정했다.
+
+주의:
+
+- 실제 Chrome Web Store Dashboard upload, 저장, review submit은 에이전트가 수행하지 않았다.
+- PR merge 전에는 `devel`의 `PRIVACY.md`가 Stage 2 보정 내용을 아직 포함하지 않을 수 있다. 최종 제출 직전에는 PR merge 후 `devel` URL 또는 release tag URL을 다시 확인한다.
+- `Submit for review`는 최종 검증, asset 확인, 작업지시자 승인 후에만 누른다.
+
+### Dashboard 입력 순서
+
+| 순서 | 화면/탭 | 작업 |
+|---|---|---|
+| 1 | 항목 목록 | `+ 새 항목` 클릭 |
+| 2 | Package upload | `/tmp/crop-0.1.0-cws.zip` 업로드 |
+| 3 | Package metadata | item name `crop`, version `0.1.0`, MV3, icon, locale 포함 여부 확인 |
+| 4 | Store Listing - English | category, short/detailed description, URLs, English screenshots/video 입력 |
+| 5 | Store Listing - Korean | Korean localized screenshots/video 입력. Dashboard가 Korean detailed description을 요구하면 아래 Korean draft 사용 |
+| 6 | Graphic assets | Store icon, global small promotional image, optional marquee image 확인 |
+| 7 | Privacy | single purpose, data handling, remote code, permission justification 입력 |
+| 8 | Distribution | Public, all regions 후보 입력. deferred publishing option은 submit 직전 확인 |
+| 9 | Submit 전 확인 | Save/draft 상태까지만 진행하고 `Submit for review`는 별도 승인 전 보류 |
+
+### Package upload
+
+| 항목 | 입력/확인값 |
+|---|---|
+| Upload ZIP | `/tmp/crop-0.1.0-cws.zip` |
+| Expected version | `0.1.0` |
+| Expected name | `crop` |
+| Expected default locale | `en` |
+| Expected permissions | `activeTab`, `scripting`, `clipboardWrite`, `downloads` |
+| Expected icons | 16/32/48/128 포함, Store icon 후보는 `icons/crop-128.png` |
+
+업로드 후 Dashboard가 manifest metadata warning을 표시하면 다음을 확인한다.
+
+- `debugger`, `<all_urls>`, broad `host_permissions`가 표시되지 않아야 한다.
+- `host_permissions` 또는 `tabs`가 새로 표시되면 제출을 중단하고 package를 재검토한다.
+- package contents는 runtime files 13개 기준이다.
+
+### Store Listing - English
+
+| Dashboard field | 입력값 |
+|---|---|
+| Language dropdown | English |
+| Item language | English |
+| Category | `Art & Design` |
+| Fallback category | `Tools` only if `Art & Design` cannot be selected |
+| Short description | `Select, preview, copy, and save precise screenshots from the current page.` |
+| Homepage URL | `https://github.com/postmelee/crop` |
+| Support URL | `https://github.com/postmelee/crop/issues` |
+| Privacy policy URL | 최종 제출 전 `https://github.com/postmelee/crop/blob/devel/PRIVACY.md` 또는 release tag URL |
+| Official URL | 미입력. verified publisher/site dropdown에 선택지가 있을 때만 작업지시자 판단 후 입력 |
+
+English detailed description:
+
+```text
+crop helps you capture precise screenshots from the page you are viewing.
+Open the overlay from the extension icon or keyboard shortcut, select a page
+element or draw a custom region, preview the result, then copy or save the PNG.
+
+Main features:
+- Select a visible page element by hovering and clicking.
+- Draw a custom capture region.
+- Move or resize the selected region before capture.
+- Capture the visible viewport.
+- Capture the current top-level document as a full-page screenshot by scrolling and stitching visible-tab captures.
+- Capture selected page regions that extend outside the current viewport.
+- Preview visible and full-page captures before copying or saving.
+- Copy the generated PNG to the system clipboard or save it as a downloaded file.
+
+Privacy:
+Screenshots are processed locally in your browser. crop does not upload
+screenshots or page data to a server and does not include telemetry or
+analytics. The image leaves the page only when you explicitly choose Copy or
+Save.
+
+Current limits:
+- Chrome blocks extension injection on restricted pages such as chrome:// pages and Chrome Web Store pages.
+- Cross-origin iframe contents and closed shadow DOM internals cannot be inspected from the content script.
+- Full-page capture covers the current top-level document. Very large stitched captures may be downscaled to keep the result as one PNG, and dynamic pages with lazy loading, animations, sticky layout changes, or layout shifts can produce imperfect captures.
+```
+
+### Store Listing - Korean localized fields
+
+| Dashboard field | 입력값 |
+|---|---|
+| Language dropdown | Korean |
+| Localized screenshots | 작업지시자가 준비한 Korean screenshots |
+| Localized promo video | 작업지시자가 준비한 Korean YouTube video URL |
+| Localized detailed description | Dashboard가 요구하거나 Korean listing을 완성하려면 아래 draft 사용 |
+
+Korean detailed description draft:
+
+```text
+crop은 보고 있는 페이지에서 정확한 스크린샷을 선택하고 캡처할 수 있게 돕습니다.
+확장 아이콘 또는 키보드 단축키로 오버레이를 열고, 페이지 요소를 선택하거나
+직접 영역을 그린 뒤 결과를 미리 보고 PNG로 복사하거나 저장하세요.
+
+주요 기능:
+- 마우스로 페이지 요소를 가리키고 클릭해서 선택합니다.
+- 직접 캡처 영역을 그립니다.
+- 캡처 전 선택 영역을 이동하거나 크기를 조절합니다.
+- 현재 보이는 뷰포트를 캡처합니다.
+- 보이는 탭 캡처를 스크롤하며 이어 붙여 현재 최상위 문서를 전체 페이지 스크린샷으로 캡처합니다.
+- 현재 뷰포트 밖으로 이어지는 선택 영역도 캡처합니다.
+- 보이는 영역과 전체 페이지 캡처를 복사하거나 저장하기 전에 미리 봅니다.
+- 생성된 PNG를 시스템 클립보드에 복사하거나 다운로드 파일로 저장합니다.
+
+개인정보:
+스크린샷은 브라우저 안에서 로컬 처리됩니다. crop은 스크린샷이나
+페이지 데이터를 서버로 업로드하지 않으며 telemetry나 analytics를 포함하지
+않습니다. 이미지는 사용자가 명시적으로 Copy 또는 Save를 선택할 때만
+페이지 밖으로 나갑니다.
+
+현재 제한:
+- Chrome은 chrome:// 페이지와 Chrome Web Store 페이지 같은 제한된 페이지에서 확장 주입을 차단합니다.
+- content script는 cross-origin iframe 내부와 closed shadow DOM 내부를 검사할 수 없습니다.
+- 전체 페이지 캡처는 현재 최상위 문서를 대상으로 합니다. 매우 큰 stitched capture는 단일 PNG 유지를 위해 축소될 수 있고, lazy loading, animation, sticky layout 변화, layout shift가 있는 동적 페이지에서는 결과가 불완전할 수 있습니다.
+```
+
+### Localized assets
+
+| Locale | screenshots | promo video | detailed description |
+|---|---|---|---|
+| English | 준비된 English screenshots 입력 | 준비된 English YouTube URL 입력 | 위 English copy 입력 |
+| Korean | 준비된 Korean screenshots 입력 | 준비된 Korean YouTube URL 입력 | 필요 시 위 Korean draft 입력 |
+| Japanese | 이번 제출에서는 global fallback 또는 후속 | 이번 제출에서는 global fallback 또는 후속 | 후속 |
+| Simplified Chinese | 이번 제출에서는 global fallback 또는 후속 | 이번 제출에서는 global fallback 또는 후속 | 후속 |
+
+표시 순서 기준:
+
+1. localized promo video
+2. localized screenshots
+3. global promo video
+4. global screenshots
+
+### Graphic assets
+
+| Asset | 입력/처리 |
+|---|---|
+| Store icon | `public/icons/crop-128.png` 또는 ZIP의 `icons/crop-128.png` 기준 128x128 PNG |
+| Screenshots | English/Korean 각각 1280x800 또는 640x400 |
+| Small promotional image | 440x280 PNG/JPEG global image 1개. locale별 설정 불가 |
+| Marquee promotional image | 1400x560 PNG/JPEG optional global image 1개. locale별 설정 불가 |
+| Promo video | locale별 YouTube URL 입력 가능 |
+
+### Privacy tab
+
+| Dashboard/privacy field | 입력값 |
+|---|---|
+| Single purpose | `crop provides one purpose: selecting, previewing, copying, and saving screenshots from the current page. Users invoke the extension on the active tab, choose a page element, custom region, visible viewport, or current top-level full page, and then copy or save the generated PNG.` |
+| User data collection | No user data is collected or transmitted off-device. If a description field is shown, use the data handling text below. |
+| Data handling text | `crop processes screenshot pixels, page geometry, and generated PNG data locally in the browser to provide screenshot selection and capture. It does not transmit, sell, or share this data.` |
+| Remote code | No. Extension logic is bundled in the submitted package. |
+| Limited Use | `crop uses information accessed through Chrome extension APIs only to provide or improve its single purpose: selecting and capturing screenshots from the current page.` |
+| Privacy policy URL | PR merge 후 `https://github.com/postmelee/crop/blob/devel/PRIVACY.md` 또는 release tag URL |
+
+Permission justification:
+
+| Permission | 입력값 |
+|---|---|
+| `activeTab` | `Required to access the current tab only after the user invokes crop from the extension icon or keyboard shortcut, so the extension can display the screenshot overlay and capture the active page.` |
+| `scripting` | `Required to inject the screenshot selection overlay content script into the active tab after the user invokes the extension.` |
+| `clipboardWrite` | `Required only when the user clicks Copy, to write the generated PNG screenshot to the system clipboard.` |
+| `downloads` | `Required only when the user clicks Save, to save the generated PNG screenshot as a downloaded file.` |
+
+### Distribution and submit
+
+| Dashboard field | 후보값 |
+|---|---|
+| Visibility | Public |
+| Regions | All regions |
+| Trusted testers | 미사용 |
+| In-app purchases / payments | None / No, 해당 field가 있으면 결제 기능 없음으로 입력 |
+| Test instructions | 기본 미입력. 필수 field면 아래 reviewer smoke text 입력 |
+| Deferred publishing | option이 있으면 `Publish manually after review` 또는 deferred publishing ON을 권장 후보로 둔다. 실제 선택은 submit 직전 작업지시자 확인 |
+
+Reviewer smoke text:
+
+```text
+Load the extension, open any normal web page, click the crop toolbar icon or use the keyboard shortcut, select an element or draw a region, preview it, then use Copy or Save. Also test the visible viewport and full-page buttons. The extension does not require an account or network service.
+```
+
+### Submit 전 중단 기준
+
+아래 중 하나라도 해당하면 `Submit for review`를 누르지 않는다.
+
+- PR merge 전이라 privacy policy URL이 최신 `PRIVACY.md`를 가리키지 않는다.
+- global small promotional image 440x280이 준비되지 않았다.
+- Dashboard가 `debugger`, `<all_urls>`, broad `host_permissions`, `tabs` 같은 예상 밖 권한을 표시한다.
+- Store listing copy에 Mozilla/Firefox/Screenshots 브랜드나 제휴 암시가 들어갔다.
+- English/Korean screenshots/video가 서로 다른 기능 범위를 암시한다.
+- full-page preview/Save/Copy 수동 smoke를 제출 직전 아직 확인하지 않았다.
+- deferred publishing / automatic publishing 선택을 아직 결정하지 않았다.
+
+## Stage 4 결론
+
+- build/typecheck/test와 package 재생성, manifest/ZIP, 권한/privacy/branding/downscale/upload grep을 통합 검증했다.
+- 전체 테스트는 17 files, 213 tests passed다.
+- `/tmp/crop-0.1.0-cws.zip`은 13 files, root `manifest.json`, `_locales` 4개, icon 4개, background/content bundles와 source maps를 포함한다.
+- 실제 Chrome Web Store upload/review submit은 수행하지 않았다.
+- 작업지시자가 직접 Dashboard를 입력할 수 있도록 package upload부터 Store Listing, localized assets, Privacy, Distribution, Submit 전 중단 기준까지 확정했다.
