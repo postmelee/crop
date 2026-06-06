@@ -118,6 +118,82 @@ Stage 2는 이 결론을 바탕으로 다음을 구현한다.
 - `/tmp/crop-0.1.0-cws.zip` fresh 생성/검증 dry-run을 수행한다.
 - 이 기술 노트에 Stage 2 실제 ZIP contents와 검증 결과를 추가한다.
 
+## Stage 2 구현 결과
+
+Stage 2에서는 #37 Stage 4.2의 one-off ZIP 생성 명령을 반복 가능한 Node scripts와 package scripts로 대체했다. #37 기술 노트는 이력 문서로 유지하고 직접 수정하지 않았다.
+
+| 항목 | 구현 |
+|---|---|
+| ZIP 생성 | `scripts/package-cws.mjs` |
+| ZIP 검증 | `scripts/verify-cws-zip.mjs` |
+| 로컬/CI 진입점 | `npm run package:cws`, `npm run verify:cws` |
+| 기본 ZIP 경로 | `/tmp/crop-0.1.0-cws.zip` |
+| 입력 root | `dist/` |
+| ZIP 방식 | Node 표준 라이브러리 기반 ZIP writer. 외부 `zip` CLI나 신규 npm 의존성 없음 |
+| 검증 방식 | ZIP central directory 직접 파싱. method 0, method 8 entry를 읽을 수 있음 |
+
+### 생성 script 기준
+
+`scripts/package-cws.mjs`는 `dist/` 아래 파일을 정렬해 ZIP root에 넣는다. macOS metadata는 다음 기준으로 제외한다.
+
+- `.DS_Store`
+- `__MACOSX`
+
+이번 Stage에서 `npm run build` 후 `dist/.DS_Store`가 실제로 존재하는 상태를 확인했다. 그럼에도 `npm run package:cws` 결과 ZIP에는 `.DS_Store`가 들어가지 않았다.
+
+### 검증 script 기준
+
+`scripts/verify-cws-zip.mjs`는 다음 조건을 실패 처리한다.
+
+- root `manifest.json` 없음
+- required runtime entry 누락
+- unsafe path (`/`, `\`, `..`) 포함
+- `.DS_Store`, `__MACOSX`, `node_modules`, `mydocs` 포함
+- root `README*`, `PRIVACY.md`, `NOTICE`, `THIRD_PARTY.md`, `LICENSE*`, `package*.json`, `vite.config.*`, `tsconfig*.json` 포함
+- manifest `permissions`가 `activeTab`, `scripting`, `clipboardWrite`, `downloads` 밖으로 확장됨
+- `debugger`, `tabs`, `<all_urls>` 같은 unexpected optional permission 포함
+- `host_permissions` entry 포함
+- broad `optional_host_permissions` 포함
+
+### Stage 2 package 결과
+
+실행 명령:
+
+```bash
+npm run build
+npm run package:cws
+npm run verify:cws
+unzip -l /tmp/crop-0.1.0-cws.zip
+unzip -Z1 /tmp/crop-0.1.0-cws.zip
+```
+
+결과:
+
+- `/tmp/crop-0.1.0-cws.zip` 생성 통과.
+- ZIP은 13 files를 포함한다.
+- `unzip -l` 기준 uncompressed total은 436,898 bytes다.
+- package script 출력 기준 ZIP file size는 438,474 bytes다.
+- root `manifest.json`, `_locales` 4개, icon 4개, background/content bundle과 source map이 포함된다.
+- `.DS_Store`, `__MACOSX`, repository 문서, `node_modules`, source root config 파일은 포함되지 않는다.
+
+`unzip -Z1 /tmp/crop-0.1.0-cws.zip` 기준 contents:
+
+```text
+_locales/en/messages.json
+_locales/ja/messages.json
+_locales/ko/messages.json
+_locales/zh_CN/messages.json
+background/service-worker.js
+background/service-worker.js.map
+content/inject.js
+content/inject.js.map
+icons/crop-128.png
+icons/crop-16.png
+icons/crop-32.png
+icons/crop-48.png
+manifest.json
+```
+
 ## Stage 3 입력
 
 Stage 3는 Stage 2 scripts가 통과한 뒤 다음을 구현한다.

@@ -7,8 +7,10 @@
   "license": "MIT",
   "scripts": {
     "build": "vite build",
+    "package:cws": "node scripts/package-cws.mjs",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:cws": "node scripts/verify-cws-zip.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
