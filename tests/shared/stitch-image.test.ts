@@ -3,6 +3,7 @@ import {
   getStitchDestinationPixelRect,
   getStitchOutputPixelPlan,
   getStitchOutputPixelSize,
+  getStitchPreviewTileLayout,
   getStitchSourcePixelRect,
   MAX_CAPTURE_AREA,
   MAX_CAPTURE_DIMENSION,
@@ -170,6 +171,69 @@ describe("stitch image helpers", () => {
     expect(secondTile.right).toBe(plan.width);
     expect(firstTile.bottom).toBe(plan.height);
     expect(secondTile.bottom).toBe(plan.height);
+  });
+
+  it("uses the stitched destination rect as the preview tile wrapper", () => {
+    const outputScale = {
+      scaleX: 1.5,
+      scaleY: 1.5
+    };
+    const destinationCssRect = rectFromEdges(0, 800.2, 500, 950);
+    const layout = getStitchPreviewTileLayout({
+      viewportCropRect: rectFromEdges(0, 250.2, 500, 399.6),
+      destinationCssRect,
+      viewportCssSize: {
+        clientWidth: 500,
+        clientHeight: 400
+      },
+      outputScale
+    });
+
+    expect(layout.tileRect).toEqual(
+      getStitchDestinationPixelRect(destinationCssRect, outputScale)
+    );
+    expect(layout.imageRect).toEqual(rectFromEdges(0, -375, 750, 225));
+    expect(layout.imageRect.bottom).toBe(layout.tileRect.height);
+  });
+
+  it("keeps preview tile wrappers edge-aligned after downscaling", () => {
+    const plan = getStitchOutputPixelPlan(
+      {
+        width: 1000,
+        height: 1000
+      },
+      {
+        scaleX: 1,
+        scaleY: 1
+      },
+      {
+        maxOutputArea: 250_000
+      }
+    );
+    const firstTile = getStitchPreviewTileLayout({
+      viewportCropRect: rectFromEdges(0, 0, 500, 1000),
+      destinationCssRect: rectFromEdges(0, 0, 500, 1000),
+      viewportCssSize: {
+        clientWidth: 500,
+        clientHeight: 1000
+      },
+      outputScale: plan.outputScale
+    });
+    const secondTile = getStitchPreviewTileLayout({
+      viewportCropRect: rectFromEdges(0, 0, 500, 1000),
+      destinationCssRect: rectFromEdges(500, 0, 1000, 1000),
+      viewportCssSize: {
+        clientWidth: 500,
+        clientHeight: 1000
+      },
+      outputScale: plan.outputScale
+    });
+
+    expect(plan.downscaled).toBe(true);
+    expect(firstTile.tileRect.right).toBe(secondTile.tileRect.left);
+    expect(secondTile.tileRect.right).toBe(plan.width);
+    expect(firstTile.imageRect.width).toBe(firstTile.tileRect.width);
+    expect(secondTile.imageRect.width).toBe(secondTile.tileRect.width);
   });
 
   it("rejects empty and over-limit output sizes", () => {

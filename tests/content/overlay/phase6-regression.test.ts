@@ -513,22 +513,68 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayTemplate).toContain("createScreenshotsRetryIconSvg");
     expect(overlayTemplate).not.toContain("function createRetryIconSvg");
     expect(overlayTemplate).toContain('image.className = "crop-preview-image";');
+    expect(overlayTemplate).toContain('tiled.className = "crop-preview-tiled";');
+    expect(overlayTemplate).toContain("surface.append(image, tiled);");
     expect(overlayCss).toContain(".crop-preview");
     expect(overlayCss).toContain(".crop-preview-dialog");
-    expect(overlayCss).toContain("align-items: flex-start;");
-    expect(overlayCss).toContain("padding: 24px 52px 44px;");
-    expect(overlayCss).toContain("width: min(1480px, calc(100vw - 104px));");
-    expect(overlayCss).toContain("height: min(860px, calc(100vh - 68px));");
+    expect(overlayCss).toContain("--crop-preview-backdrop-block: clamp(32px, 6vh, 72px);");
+    expect(overlayCss).toContain("align-items: center;");
+    expect(overlayCss).toContain("--crop-preview-backdrop-inline: clamp(64px, 10vw, 144px);");
+    expect(overlayCss).toContain(
+      "--crop-preview-backdrop-block-start: var(--crop-preview-backdrop-block);"
+    );
+    expect(overlayCss).toContain(
+      "--crop-preview-backdrop-block-end: var(--crop-preview-backdrop-block);"
+    );
+    expect(overlayCss).toContain("--crop-preview-dialog-max-width: 1280px;");
+    expect(overlayCss).toContain("--crop-preview-dialog-max-height: 820px;");
+    expect(overlayCss).toContain("--crop-preview-dialog-available-height: min(");
+    expect(overlayCss).toContain("--crop-preview-footer-block-size: 46px;");
+    expect(overlayCss).toContain(
+      "padding: var(--crop-preview-backdrop-block-start) var(--crop-preview-backdrop-inline)"
+    );
+    expect(overlayCss).toContain("var(--crop-preview-backdrop-block-end);");
+    expect(overlayCss).toContain("var(--crop-preview-dialog-max-width)");
+    expect(overlayCss).toContain(
+      "calc(100vw - var(--crop-preview-backdrop-inline) - var(--crop-preview-backdrop-inline))"
+    );
+    expect(overlayCss).toContain("var(--crop-preview-dialog-max-height)");
+    expect(overlayCss).toContain(
+      "100vh - var(--crop-preview-backdrop-block-start) -"
+    );
     expect(overlayCss).toContain("--crop-preview-inline-padding: 24px;");
-    expect(overlayCss).toContain("padding: 0 var(--crop-preview-inline-padding) 24px;");
+    expect(overlayCss).toContain(
+      "padding: 0 var(--crop-preview-inline-padding) var(--crop-preview-inline-padding);"
+    );
+    expect(overlayCss).toContain("min-height: var(--crop-preview-footer-block-size);");
     expect(overlayCss).toContain("padding: 8px var(--crop-preview-inline-padding) 6px;");
+    expect(overlayCss).toContain(
+      ':host([data-crop-capture-mode="visible"]) .crop-preview-dialog'
+    );
+    expect(overlayCss).toContain("height: auto;");
+    expect(overlayCss).toContain("max-height: var(--crop-preview-dialog-available-height);");
+    expect(overlayCss).toContain("flex: 0 1 auto;");
+    expect(overlayCss).toContain(
+      "var(--crop-preview-dialog-available-height) - var(--crop-preview-footer-block-size)"
+    );
+    expect(overlayCss).toContain(
+      "var(--crop-preview-dialog-available-height) - var(--crop-preview-footer-block-size) -"
+    );
+    expect(overlayCss).toContain("var(--crop-preview-inline-padding)");
+    expect(overlayCss).toContain("--crop-preview-backdrop-inline: 16px;");
+    expect(overlayCss).toContain("--crop-preview-backdrop-block: 16px;");
     expect(overlayCss).toContain("background: #44414f;");
     expect(overlayCss).toContain(':host([data-crop-capture-mode="visible"]) .crop-preview-surface');
     expect(overlayCss).toContain("overflow: hidden;");
-    expect(overlayCss).toContain("max-height: 100%;");
     expect(overlayCss).toContain("object-fit: contain;");
     expect(overlayCss).toMatch(/\.crop-preview \{[\s\S]*?cursor: auto;/);
     expect(overlayCss).toContain(".crop-preview-image");
+    expect(overlayCss).toContain(".crop-preview-image[hidden]");
+    expect(overlayCss).toContain(".crop-preview-tiled");
+    expect(overlayCss).toContain(".crop-preview-tiled-layer");
+    expect(overlayCss).toContain(".crop-preview-tile");
+    expect(overlayCss).toContain(".crop-preview-tile-image");
+    expect(overlayCss).toContain('crop-preview-tiled[hidden]');
     expect(overlayCss).toContain(".crop-preview-actions");
     expect(overlayCss).toContain(".crop-preview-actions .crop-action-group");
     expect(overlayCss).toContain(".crop-preview-actions .crop-action");
@@ -541,6 +587,7 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("getCropModeFromEvent");
     expect(overlayRuntime).toContain("handleWheel");
     expect(overlayRuntime).toContain("isPreviewScrollableEvent");
+    expect(overlayRuntime).toContain("isPreviewBackdropEvent");
     expect(overlayRuntime).toContain("getPreviewKeyboardAction");
     expect(overlayRuntime).toContain("getCaptureKeyboardAction");
     expect(overlayRuntime).toContain("selectedShortcutAction");
@@ -567,6 +614,19 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("captureFullPageTiles");
     expect(overlayRuntime).toContain("stitchCapturedTiles");
     expect(overlayRuntime).toContain("captureFullPageRegion");
+    expect(overlayRuntime).toContain('kind: "single-image"');
+    expect(overlayRuntime).toContain('kind: "tiled"');
+    expect(overlayRuntime).toContain("renderTiledPreviewModel");
+    expect(overlayRuntime).toContain("getTiledPreviewDisplayScale");
+    expect(overlayRuntime).toContain("getStitchPreviewTileLayout");
+    expect(overlayRuntime).toContain('host.dataset.cropPreviewRenderer = "tiled";');
+    expect(overlayRuntime).toContain('host.dataset.cropPreviewRenderer = "image";');
+    expect(overlayRuntime).toContain("template.preview.image.hidden = true");
+    expect(overlayRuntime).toContain("template.preview.tiled.dataset.cropTileCount");
+    expect(overlayRuntime).toContain("template.preview.tiled.dataset.cropPreviewScale");
+    expect(overlayRuntime).toContain('tileLayer.className = "crop-preview-tiled-layer";');
+    expect(overlayRuntime).toContain("tileLayer.style.transform");
+    expect(overlayRuntime).toContain("tileLayout.imageRect.width");
     expect(overlayRuntime).toContain("downscaled: stitchResult.downscaled");
     expect(overlayRuntime).toContain("downscaleRatio: stitchResult.downscaleRatio");
     expect(overlayRuntime).toContain("outputScale: stitchResult.outputScale");
@@ -590,6 +650,71 @@ describe("Phase 6 overlay regression coverage", () => {
 
     expect(previewPendingBlock).toContain('setAttribute("aria-busy", "true")');
     expect(previewPendingBlock).not.toContain("button.disabled");
+  });
+
+  it("keeps preview Copy and Save actions tied to the stitched PNG dataUrl", () => {
+    const previewActionStart = overlayRuntime.indexOf("const performPreviewAction");
+    const previewActionEnd = overlayRuntime.indexOf("const recordCaptureSuccess");
+    const previewActionBlock = overlayRuntime.slice(previewActionStart, previewActionEnd);
+
+    expect(previewActionBlock).toContain("writePngDataUrlToClipboard(result.dataUrl)");
+    expect(previewActionBlock).toContain("requestPngDownload(result.dataUrl, document.title)");
+    expect(previewActionBlock).not.toContain("previewModel");
+    expect(previewActionBlock).not.toContain("template.preview");
+  });
+
+  it("keeps tiled preview model out of selected visible capture actions", () => {
+    const selectedCaptureStart = overlayRuntime.indexOf("const captureVisibleSelectedRegion");
+    const selectedCaptureEnd = overlayRuntime.indexOf("const captureSelectedPageRectRegion");
+    const selectedCaptureBlock = overlayRuntime.slice(selectedCaptureStart, selectedCaptureEnd);
+    const pageRectCaptureStart = overlayRuntime.indexOf("const captureSelectedPageRectRegion");
+    const pageRectCaptureEnd = overlayRuntime.indexOf("const captureVisibleViewportRegion");
+    const pageRectCaptureBlock = overlayRuntime.slice(pageRectCaptureStart, pageRectCaptureEnd);
+
+    expect(selectedCaptureBlock).not.toContain("previewModel");
+    expect(pageRectCaptureBlock).not.toContain("previewModel");
+    expect(selectedCaptureBlock).not.toContain('kind: "tiled"');
+    expect(pageRectCaptureBlock).not.toContain('kind: "tiled"');
+  });
+
+  it("dismisses preview only from direct backdrop clicks", () => {
+    const actionIndex = overlayRuntime.indexOf("const action = getCropActionFromEvent(event);");
+    const modeIndex = overlayRuntime.indexOf("const mode = getCropModeFromEvent(event);");
+    const backdropIndex = overlayRuntime.indexOf(
+      "if (previewCaptureResult && !pendingCapture && isPreviewBackdropEvent(event))"
+    );
+    const overlayEventIndex = overlayRuntime.indexOf(
+      "if (isCropOverlayEvent(event, host))",
+      backdropIndex
+    );
+    const documentClickIndex = overlayRuntime.indexOf(
+      "if (suppressNextDocumentClick)",
+      backdropIndex
+    );
+
+    expect(actionIndex).toBeGreaterThanOrEqual(0);
+    expect(modeIndex).toBeGreaterThan(actionIndex);
+    expect(backdropIndex).toBeGreaterThan(modeIndex);
+    expect(overlayEventIndex).toBeGreaterThan(backdropIndex);
+    expect(documentClickIndex).toBeGreaterThan(overlayEventIndex);
+
+    const backdropBlock = overlayRuntime.slice(backdropIndex, overlayEventIndex);
+    expect(backdropBlock).toContain("event.preventDefault();");
+    expect(backdropBlock).toContain("event.stopPropagation();");
+    expect(backdropBlock).toContain("requestClose();");
+
+    const backdropHelperStart = overlayRuntime.indexOf("function isPreviewBackdropEvent");
+    const backdropHelperEnd = overlayRuntime.indexOf(
+      "function isCropOverlayElement",
+      backdropHelperStart
+    );
+    const backdropHelper = overlayRuntime.slice(backdropHelperStart, backdropHelperEnd);
+
+    expect(backdropHelper).toContain("const [eventTarget] = event.composedPath();");
+    expect(backdropHelper).toContain('eventTarget.classList.contains("crop-preview")');
+    expect(backdropHelper).not.toContain("some(");
+    expect(overlayRuntime).toContain("startPreviewAction(action)");
+    expect(overlayRuntime).toContain("isPreviewScrollableEvent");
   });
 
   it("keeps the mode toolbar inside the page viewport below browser chrome", () => {
