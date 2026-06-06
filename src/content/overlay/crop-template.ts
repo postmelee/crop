@@ -151,7 +151,9 @@ export interface CropSelectionControlsTemplate {
 export interface CropPreviewTemplate {
   readonly container: HTMLElement;
   readonly dialog: HTMLElement;
+  readonly surface: HTMLElement;
   readonly image: HTMLImageElement;
+  readonly tiled: HTMLElement;
   readonly actions: HTMLElement;
   readonly status: HTMLElement;
 }
@@ -278,6 +280,11 @@ function createPreviewTemplate(): CropPreviewTemplate {
   image.className = "crop-preview-image";
   image.alt = getCropMessage("previewImageAlt");
 
+  const tiled = document.createElement("div");
+  tiled.className = "crop-preview-tiled";
+  tiled.hidden = true;
+  tiled.setAttribute("aria-hidden", "true");
+
   const footer = document.createElement("div");
   footer.className = "crop-preview-footer";
 
@@ -302,14 +309,16 @@ function createPreviewTemplate(): CropPreviewTemplate {
   primaryActionGroup.append(copyButton, saveButton);
   actions.append(secondaryActionGroup, primaryActionGroup, status);
   footer.append(actions);
-  surface.append(image);
+  surface.append(image, tiled);
   dialog.append(footer, surface);
   container.append(dialog);
 
   return {
     container,
     dialog,
+    surface,
     image,
+    tiled,
     actions,
     status
   };
