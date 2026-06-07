@@ -235,6 +235,34 @@ Runbook은 다음 기준을 고정했다.
 - `small promotional image`를 포함한 Store asset 누락은 제출 중단 기준이다.
 - release workflow artifact upload는 이번 baseline에서 제외하고, Store 제출 ZIP은 release runbook에서 재생성/검증한다.
 
+## Stage 4 통합 검증 결과
+
+Stage 4에서는 Stage 1~3 산출물, #37 Dashboard guide, package scripts, PR CI workflow, release runbook을 대조했다.
+
+통합 검증:
+
+- `npm run build` 통과.
+- `npm run typecheck` 통과.
+- `npm test` 통과: 17 files, 213 tests.
+- `npm run package:cws` 통과: `/tmp/crop-0.1.0-cws.zip`, 13 files, 438,474 bytes.
+- `npm run verify:cws` 통과.
+- `unzip -l /tmp/crop-0.1.0-cws.zip` 기준 uncompressed total 436,898 bytes.
+- `unzip -Z1 /tmp/crop-0.1.0-cws.zip` 기준 package contents는 Stage 2와 동일하다.
+- `dist/.DS_Store`가 존재하지만 ZIP에는 포함되지 않는다.
+
+충돌 대조:
+
+| 영역 | #37 기준 | #46 기준 | 결과 |
+|---|---|---|---|
+| Store ZIP | `/tmp/crop-0.1.0-cws.zip`, root `manifest.json`, 13 files, macOS metadata 제외 | `npm run package:cws`와 `npm run verify:cws`로 같은 ZIP 기준 고정 | OK |
+| Privacy URL | `main` 또는 release tag 기준 `PRIVACY.md` | `main` 또는 release tag 기준 stable URL 전까지 submit 금지 | OK |
+| Submit timing | `Submit for review`는 최종 검증, asset 확인, 승인 후 | `main`/tag, package verify, assets, deferred publishing, 승인 전 submit 금지 | OK |
+| Category | `Tools` 1차, `Art & Design` fallback | release runbook은 Dashboard 입력값 상세를 #37 guide로 위임 | OK |
+| Data disclosure | `Website content`만 체크 | release runbook은 #37 privacy disclosure 확인을 submit 조건으로 요구 | OK |
+| Small promo | global small promotional image가 제출 전 blocker | small promotional image 누락을 submit 중단 기준으로 유지 | OK |
+
+실제 release PR, GitHub Release/tag, Chrome Web Store upload/review submit은 수행하지 않았다.
+
 ## 잔여 위험
 
 - GitHub Actions 공식 action major version은 변동될 수 있다. 변경 시 별도 task에서 workflow와 이 기술 노트를 함께 갱신한다.
