@@ -17,6 +17,7 @@ GitHub Discussions category 설정 변경, GitHub 저장소 설정 변경, GitHu
 | `SECURITY.md` | 보안 취약점 제보 경로, 지원 범위, 응답 기대치를 English canonical 문서로 추가 |
 | `.github/FUNDING.yml` | GitHub Sponsors 계정 `postmelee`를 Funding 설정에 추가 |
 | GitHub Discussions #57~#61 | `crop` 소개, 첫 사용 안내, 피드백 요청, 제약/로드맵, 후원 안내 Discussion 5개 게시 |
+| GitHub Discussion #63 | 다음 언어 지원 조사를 위한 Polls category Discussion 게시 |
 | `mydocs/working/task_m030_29_stage4.md` | Stage 4 검증 결과와 잔여 위험 기록 |
 | `mydocs/orders/20260608.md` | #29 비고를 Stage 4 완료 후 최종 보고 승인 대기로 갱신 |
 
@@ -29,6 +30,8 @@ GitHub Discussions category 설정 변경, GitHub 저장소 설정 변경, GitHu
 - `SECURITY.md`는 GitHub가 인식하는 root security policy로 작성했다. 민감한 보안 정보는 public Issue/Discussion에 쓰지 말고, 가능한 경우 private vulnerability reporting 또는 maintainer private follow-up 경로를 쓰도록 안내한다.
 - `.github/FUNDING.yml`은 GitHub Sponsors 설정만 추가했다. 후원은 선택 사항이며 issue/PR 우선순위를 바꾸지 않는다는 문구는 GitHub Discussion #61에 둔다.
 - 초안 본문 파일은 `mydocs/working/`에서 제거했다. 실제 게시글 본문은 GitHub Discussions에 있고, 보고서에는 URL만 기록한다.
+- #57~#61 본문은 heading, list, table 중심 Markdown으로 재편집했다. #59는 Ideas category를 유지하면서 reaction voting 표를 추가했다.
+- #63은 다음 언어 지원 우선순위를 조사하는 Polls category Discussion으로 추가했다.
 
 ## 게시된 Discussions
 
@@ -39,6 +42,7 @@ GitHub Discussions category 설정 변경, GitHub 저장소 설정 변경, GitHu
 | #59 | Ideas | What should crop handle better? | https://github.com/postmelee/crop/discussions/59 |
 | #60 | Announcements | Known limits and near-term direction for crop | https://github.com/postmelee/crop/discussions/60 |
 | #61 | General | Supporting crop development | https://github.com/postmelee/crop/discussions/61 |
+| #63 | Polls | Which language should crop support next? | https://github.com/postmelee/crop/discussions/63 |
 
 ## 검증 결과
 
@@ -71,6 +75,9 @@ git status --short
 - OK: `SECURITY.md`가 존재하며 공개 이슈에 민감 정보를 쓰지 말라는 안내, 지원 범위, 응답 기대치를 포함한다.
 - OK: `SUPPORT.md`는 존재하지 않는다. Stage 1 판단대로 독립 support file은 보류했다.
 - OK: GitHub Discussions #57~#61이 생성됐고 각 URL, 제목, 카테고리를 GraphQL 조회로 확인했다.
+- OK: GitHub Discussions #57~#61 본문을 heading 기반 Markdown 구조로 업데이트했다.
+- OK: #59는 Ideas category를 유지하고 reaction voting 표를 포함한다.
+- OK: #63 언어 지원 조사는 Polls category로 생성됐고 reaction voting 표를 포함한다.
 - OK: GitHub API의 현재 인증 사용자 login은 `postmelee`다.
 - OK: `https://github.com/sponsors/postmelee`는 HTTP 200으로 조회됐다.
 - OK: `https://github.com/postmelee/crop/community`는 HTTP 200으로 조회됐다.

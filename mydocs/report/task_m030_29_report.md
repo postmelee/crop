@@ -25,7 +25,8 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | `SECURITY.md` | 보안 취약점 제보 정책 추가 | GitHub security policy, 민감 정보 공개 방지 |
 | `.github/FUNDING.yml` | GitHub Sponsors 계정 `postmelee` 설정 | Sponsor button 표시 준비 |
 | `.github/ISSUE_TEMPLATE/config.yml` | blank issue 허용과 Discussions contact link 추가 | issue chooser 안내 |
-| GitHub Discussions #57~#61 | Discussions 게시글 5개 직접 생성 | 공개 커뮤니티 게시글 |
+| GitHub Discussions #57~#61 | Discussions 게시글 5개 직접 생성 후 heading 기반 Markdown으로 본문 개선 | 공개 커뮤니티 게시글 |
+| GitHub Discussion #63 | 다음 언어 지원 조사를 위한 Polls category Discussion 생성 | 공개 커뮤니티 조사 |
 | `mydocs/plans/task_m030_29.md` | 수행계획서 작성 및 범위 보정 | 작업 추적 문서 |
 | `mydocs/plans/task_m030_29_impl.md` | 구현계획서 작성 및 다국어/Funding/Discussions 범위 반영 | 작업 추적 문서 |
 | `mydocs/working/task_m030_29_stage1.md` | Community Profile 감사와 범위 확정 보고 | 단계 보고서 |
@@ -44,6 +45,7 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | #59 | Ideas | What should crop handle better? | https://github.com/postmelee/crop/discussions/59 |
 | #60 | Announcements | Known limits and near-term direction for crop | https://github.com/postmelee/crop/discussions/60 |
 | #61 | General | Supporting crop development | https://github.com/postmelee/crop/discussions/61 |
+| #63 | Polls | Which language should crop support next? | https://github.com/postmelee/crop/discussions/63 |
 
 ## 문서 위치 검증
 
@@ -61,7 +63,7 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | `SUPPORT.md` | repository root, 필요 시 | 해당 없음 | OK | Stage 1/4에서 독립 파일 보류로 판단 |
 | `.github/FUNDING.yml` | `.github/FUNDING.yml` | `.github/FUNDING.yml` | OK | GitHub Sponsors 인식 위치 |
 | `.github/ISSUE_TEMPLATE/config.yml` | `.github/ISSUE_TEMPLATE/config.yml`, 필요 시 | `.github/ISSUE_TEMPLATE/config.yml` | OK | Stage 3에서 contact link 필요로 추가 |
-| GitHub Discussions 게시글 | GitHub Discussions | #57~#61 | OK | 작업지시자 추가 지시에 따라 실제 게시하고 URL을 보고서에 기록 |
+| GitHub Discussions 게시글 | GitHub Discussions | #57~#61, #63 | OK | 작업지시자 추가 지시에 따라 실제 게시하고 URL을 보고서에 기록 |
 | `README.md` | 필요 시 최소 수정 | 변경 없음 | OK | 다국어 README 동시 정리가 필요해 이번 Stage에서는 보류 |
 
 ## 변경 전·후 정량 비교
@@ -71,8 +73,8 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | GitHub 인식 후보 community health file | `LICENSE`, `README.md`, PR template 중심 | `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/FUNDING.yml`, issue template config 추가 |
 | 기여 안내 언어 수 | 없음 | 영어 canonical + 한국어 + Simplified Chinese + Japanese |
 | 행동 강령 언어 수 | 없음 | 영어 canonical + 한국어 + Simplified Chinese + Japanese |
-| GitHub Discussions 게시글 | 없음 | 5개 게시글 |
-| 구현 산출물 diff | 0 | Discussions 초안 파일 제거 후 기준 20 files, 1697 insertions |
+| GitHub Discussions 게시글 | 없음 | 6개 게시글 |
+| 구현 산출물 diff | 0 | Discussions Markdown/Poll 보정 후 기준 20 files, 1717 insertions |
 
 ## 검증 결과
 
@@ -85,6 +87,8 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | `SECURITY.md`, `SUPPORT.md`, 추가 issue form, `config.yml` 추가/보류 사유를 기록한다 | OK — `SECURITY.md` 추가, `SUPPORT.md` 독립 파일 보류, 추가 issue form 보류, `config.yml` 추가 사유 기록 |
 | `.github/FUNDING.yml`은 GitHub Sponsors 계정 `postmelee`를 가리킨다 | OK — `github: [postmelee]`, YAML 파싱 결과 `{"github"=>["postmelee"]}` |
 | GitHub Discussions에 `crop` 소개 및 글을 게시하고 URL을 기록한다 | OK — `crop` 소개, 첫 사용 안내, 피드백 요청, 제약/로드맵, 후원 안내 글 #57~#61 생성 |
+| GitHub Discussions 본문을 Markdown heading 중심으로 가독성 있게 정리한다 | OK — #57~#61 본문을 heading/list/table 구조로 업데이트 |
+| 다음 언어 지원 조사를 위한 Polls category Discussion을 추가한다 | OK — #63 생성 |
 | GitHub Discussions category, Wiki, Pages 설정 변경, 법률 자문이 필요한 정책 확정, 라이선스 변경, 새 label/milestone 생성은 수행하지 않는다 | OK — 게시글 생성 외 플랫폼 설정 변경 없음 |
 | #51 README 변경과 충돌하면 #51 병합 결과를 우선한다 | OK — #51/#50 merge 이후 `origin/devel` 위로 rebase했고 README는 변경하지 않음 |
 
@@ -94,7 +98,7 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 - Stage 2: `mydocs/working/task_m030_29_stage2.md` — 기여자 안내와 행동 강령 초안 작성, 권한/브랜딩/라이선스 경계 확인.
 - Stage 2.1: `mydocs/working/task_m030_29_stage2_1.md` — 영어 canonical + 한국어/중국어/일본어 분리 구조 보정, 언어 링크 확인.
 - Stage 3: `mydocs/working/task_m030_29_stage3.md` — `task.yml` YAML schema 확인, `.github/ISSUE_TEMPLATE/config.yml` 추가, Community UI/API 불일치 기록.
-- Stage 4: `mydocs/working/task_m030_29_stage4.md` — `SECURITY.md`, `.github/FUNDING.yml`, Discussions #57~#61 게시와 GitHub Sponsors URL HTTP 200 확인.
+- Stage 4: `mydocs/working/task_m030_29_stage4.md` — `SECURITY.md`, `.github/FUNDING.yml`, Discussions #57~#61/#63 게시와 GitHub Sponsors URL HTTP 200 확인.
 
 ### 통합 검증
 
@@ -120,9 +124,11 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 
 - PR merge 후 GitHub Community Standards page, Sponsor button, issue chooser를 default branch 기준으로 확인한다.
 - 필요하면 README/README.ko.md/README.zh-CN.md/README.ja.md에 community 문서 링크 섹션을 동시에 추가한다.
-- 필요하면 게시된 Discussions #57~#61에 한국어/중국어/일본어 요약 댓글을 추가한다.
+- 필요하면 게시된 Discussions #57~#61/#63에 한국어/중국어/일본어 요약 댓글을 추가한다.
 
 ## 작업지시자 지시 반영
 
 - 작업지시자의 추가 지시에 따라 GitHub Discussions #57~#61을 직접 생성했고, `mydocs/working/`의 본문 초안 파일을 제거했다.
+- 추가 지시에 따라 #57~#61 본문을 Markdown heading 중심으로 재편집하고, #59에는 reaction voting 표를 추가했다.
+- 다음 언어 지원 조사를 위해 Polls category Discussion #63을 생성했다.
 - 이 보정은 `publish/task29`와 PR #56에 추가 반영한다.
