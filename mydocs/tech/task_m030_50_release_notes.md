@@ -74,6 +74,18 @@ GitHub Issue: [#50](https://github.com/postmelee/crop/issues/50)
 - Stage 3은 `mydocs/manual/release_pipeline_guide.md`에 `--notes-file` 기반 작성 흐름을 연결한다.
 - Stage 3에서 `.github/release.yml`은 추가하지 않고, 보류 판단을 단계 보고서에 기록한다. 작업지시자가 Stage 1 판단을 변경 승인하면 구현계획서를 갱신한 뒤 진행한다.
 
+## Stage 3 구현 결과
+
+Stage 3에서는 `mydocs/manual/release_pipeline_guide.md`에 GitHub Release note 작성 절차를 추가했다.
+
+| 항목 | 구현 결과 |
+|---|---|
+| release note template | `mydocs/_templates/github_release_note.md`를 release별 notes file로 복사해 채우도록 명시 |
+| `--notes-file` 흐름 | `gh release create v{version} ... --notes-file {filled_notes_file} --verify-tag` 예시 추가 |
+| 필수 확인값 | release tag/commit, package asset, SHA-256 checksum, privacy URL, Chrome Web Store 상태, verification, rollback/follow-up |
+| user/developer 경계 | `user 안내`와 `developer 검증 기록`에 넣을 정보를 분리해 guide에 기록 |
+| `.github/release.yml` | 추가하지 않음. 자동 release notes category는 PR label taxonomy 정리 후 별도 task에서 재검토 |
+
 ## 참고 링크
 
 - [GitHub Docs - Automatically generated release notes](https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes)
