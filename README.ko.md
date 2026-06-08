@@ -5,15 +5,9 @@
 # <div align="center">crop</div>
 
 <p align="center">
-  <a href="https://github.com/postmelee/crop/releases/latest">
-    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/postmelee/crop?label=release" />
-  </a>
-  <a href="LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/postmelee/crop" />
-  </a>
-  <a href="https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki">
-    <img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/pdmniipgbjdcpnhbkkppodechbehagki?label=chrome%20web%20store&logo=googlechrome&logoColor=white" />
-  </a>
+  <a href="https://github.com/postmelee/crop/releases/latest"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/postmelee/crop?label=release" /></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/postmelee/crop" /></a>
+  <a href="https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki"><img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/pdmniipgbjdcpnhbkkppodechbehagki?label=chrome%20web%20store&logo=googlechrome&logoColor=white" /></a>
 </p>
 
 `crop`은 정밀한 페이지 스크린샷을 찍기 위한 Chrome Manifest V3 확장입니다.
