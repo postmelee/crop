@@ -189,7 +189,50 @@ Stage 2에서 보강해야 할 정보:
 
 ## Stage 3 update 전후 비교 영역
 
-Stage 3 승인 후 원격 GitHub Release body를 수정하면 update 전후 요약과 불변 항목을 이 섹션에 기록한다.
+Stage 3 승인 후 원격 GitHub Release body를 수정했다. 적용 명령은 승인된 임시 notes file만 사용했고, tag, Release name/title, asset, draft/prerelease 상태 변경 옵션은 사용하지 않았다.
+
+```bash
+gh release edit v0.1.0 --repo postmelee/crop --notes-file /private/tmp/crop-task54-v010-release-body-approved.md
+```
+
+### update 전 body 요약
+
+- 단일 문단 body였다.
+- 포함 정보는 Chrome Web Store submission candidate 문맥, release commit, build/package/verify 명령 요약, asset SHA-256 checksum뿐이었다.
+- `user 안내`와 `developer 검증 기록` 섹션이 분리되어 있지 않았다.
+
+### update 후 body 요약
+
+- #50 템플릿 구조에 맞춰 `user 안내`와 `developer 검증 기록` 섹션을 분리했다.
+- Chrome Web Store `published` 상태와 Store URL을 추가했다.
+- 권한, privacy URL, 데이터 처리, known limitations를 사용자 안내에 추가했다.
+- release 기준, package asset, verification 결과, rollback/follow-up을 developer 검증 기록에 추가했다.
+- 템플릿 주석, notes-file 작성 체크박스, placeholder, 내부 승인 로그는 공개 body에 남기지 않았다.
+
+### update 후 원격 metadata
+
+| 항목 | update 전 | update 후 | 결과 |
+|---|---|---|---|
+| Tag | `v0.1.0` | `v0.1.0` | 불변 |
+| Release name/title | `crop v0.1.0` | `crop v0.1.0` | 불변 |
+| Release URL | `https://github.com/postmelee/crop/releases/tag/v0.1.0` | `https://github.com/postmelee/crop/releases/tag/v0.1.0` | 불변 |
+| Draft | `false` | `false` | 불변 |
+| Prerelease | `false` | `false` | 불변 |
+| Asset name | `crop-0.1.0-cws.zip` | `crop-0.1.0-cws.zip` | 불변 |
+| Asset URL | `https://github.com/postmelee/crop/releases/download/v0.1.0/crop-0.1.0-cws.zip` | 동일 | 불변 |
+| Asset size | `438474 bytes` | `438474 bytes` | 불변 |
+| Asset digest | `sha256:84c69f31e40667fdda97cf5af045ed8e770769b135dd72656dedb8dd0f9f4c15` | 동일 | 불변 |
+
+`downloadCount`는 asset download 검증으로 증가할 수 있는 통계값이므로 불변 기준에서 제외했다.
+
+### Stage 3 asset 재검증
+
+| 항목 | 값 |
+|---|---|
+| downloaded path | `/tmp/crop-task54-release-check-stage3/crop-0.1.0-cws.zip` |
+| SHA-256 | `84c69f31e40667fdda97cf5af045ed8e770769b135dd72656dedb8dd0f9f4c15` |
+| size | `438474 bytes` |
+| 결과 | Stage 1/#48 기준과 동일 |
 
 현재 불변 기준:
 
@@ -223,3 +266,22 @@ curl -I -L --max-time 20 https://chromewebstore.google.com/detail/crop/pdmniipgb
 - OK: 원격 `v0.1.0` tag가 `53808a2147c120e67f7bb93b737b2f6d0526d6f4`를 가리킨다.
 - OK: Chrome Web Store URL이 HTTP 200으로 접근됐다.
 - OK: Stage 1에서는 원격 GitHub Release body를 변경하지 않았다.
+
+## Stage 3 검증 로그
+
+```bash
+gh release view v0.1.0 --repo postmelee/crop --json tagName,name,url,isDraft,isPrerelease,assets,body
+gh release edit v0.1.0 --repo postmelee/crop --notes-file /private/tmp/crop-task54-v010-release-body-approved.md
+gh release view v0.1.0 --repo postmelee/crop --json tagName,name,url,isDraft,isPrerelease,assets,body
+gh release download v0.1.0 --repo postmelee/crop --pattern 'crop-0.1.0-cws.zip' --dir /tmp/crop-task54-release-check-stage3
+shasum -a 256 /tmp/crop-task54-release-check-stage3/crop-0.1.0-cws.zip
+wc -c /tmp/crop-task54-release-check-stage3/crop-0.1.0-cws.zip
+```
+
+결과:
+
+- OK: `gh release edit`가 `https://github.com/postmelee/crop/releases/tag/v0.1.0`를 반환했다.
+- OK: update 후 body가 Stage 2 승인 초안의 `user 안내`와 `developer 검증 기록` 구조로 조회됐다.
+- OK: tag, Release name/title, Release URL, draft/prerelease 상태가 변경되지 않았다.
+- OK: asset name, URL, size, digest가 변경되지 않았다.
+- OK: update 후 downloaded asset SHA-256과 byte size가 Stage 1/#48 기준과 동일하다.
