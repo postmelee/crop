@@ -11,7 +11,7 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | 1 | Community Profile 감사와 문서 범위 확정 | `mydocs/working/task_m030_29_stage1.md` | Community API, `.github` template, README/PR template 상태 확인 |
 | 2 | 기여자 안내와 행동 강령 작성 | `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `mydocs/working/task_m030_29_stage2.md` | 공개 기여 흐름, 신고 경로, Hyper-Waterfall 경계 대조 |
 | 3 | Issue template 인식 문제 수정 | `.github/ISSUE_TEMPLATE/task.yml`, 필요 시 `.github/ISSUE_TEMPLATE/config.yml`, `mydocs/working/task_m030_29_stage3.md` | GitHub issue forms schema, Community API/UI 인식 상태 확인 |
-| 4 | 보안/지원/README 링크 정리와 최종 검증 | 필요 시 `SECURITY.md`, `SUPPORT.md`, `README.md`, `mydocs/working/task_m030_29_stage4.md` | community health files, 링크, 최종 Community API 결과 확인 |
+| 4 | 보안/지원/Funding/Discussions 후보와 최종 검증 | 필요 시 `SECURITY.md`, `SUPPORT.md`, `.github/FUNDING.yml`, `mydocs/working/task_m030_29_discussions_drafts.md`, `README.md`, `mydocs/working/task_m030_29_stage4.md` | community health files, sponsor button 설정, discussion 후보, 링크, 최종 Community API 결과 확인 |
 
 ## 문서 위치 확인
 
@@ -25,7 +25,9 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | `.github/ISSUE_TEMPLATE/config.yml` | `.github/ISSUE_TEMPLATE/config.yml` | `.github/ISSUE_TEMPLATE/config.yml` | OK | 필요하다고 판단될 때만 Stage 3에서 추가 |
 | `SECURITY.md` | `SECURITY.md` | `SECURITY.md` | OK | Stage 1 판단 후 Stage 4에서 추가 또는 보류 |
 | `SUPPORT.md` | `SUPPORT.md` | `SUPPORT.md` | OK | Stage 1 판단 후 Stage 4에서 추가 또는 보류 |
+| `.github/FUNDING.yml` | `.github/FUNDING.yml` | `.github/FUNDING.yml` | OK | Stage 4에서 GitHub Sponsors 계정 `postmelee` 연결 |
 | `README.md` | `README.md` | `README.md` | OK | Stage 4에서 community 문서 링크가 필요할 때만 최소 수정 |
+| `mydocs/working/task_m030_29_discussions_drafts.md` | `mydocs/working/` | `mydocs/working/task_m030_29_discussions_drafts.md` | OK | Stage 4에서 실제 Discussions 게시 전 후보 문안 작성 |
 | `mydocs/plans/task_m030_29_impl.md` | `mydocs/plans/` | `mydocs/plans/task_m030_29_impl.md` | OK | 구현계획서 |
 | `mydocs/working/task_m030_29_stage{N}.md` | `mydocs/working/` | `mydocs/working/task_m030_29_stage{N}.md` | OK | 단계 보고서 |
 | `mydocs/report/task_m030_29_report.md` | `mydocs/report/` | `mydocs/report/task_m030_29_report.md` | OK | 최종 보고서 |
@@ -38,7 +40,10 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 - `CODE_OF_CONDUCT.md`는 공개 저장소 운영에 필요한 최소 행동 기준과 신고/연락 경로를 포함한다.
 - `.github/ISSUE_TEMPLATE/task.yml`이 community profile에서 인식되지 않는 원인을 확인하고, 가능한 수정은 반영한다.
 - `SECURITY.md`, `SUPPORT.md`, 추가 issue form, `.github/ISSUE_TEMPLATE/config.yml`은 Stage 1 감사 결과로 추가/보류를 결정하고 그 이유를 기록한다.
+- `.github/FUNDING.yml`은 GitHub Sponsors 계정 `postmelee`를 가리킨다.
+- GitHub Discussions에 실제로 게시할 수 있는 `crop` 소개 및 커뮤니티 게시글 후보를 작업 산출물로 준비한다.
 - GitHub Discussions, Wiki, Pages 설정 변경, 법률 자문이 필요한 정책 확정, 라이선스 변경, 새 label/milestone 생성은 수행하지 않는다.
+- GitHub Discussions 실제 게시글 생성은 수행하지 않는다.
 - #51 README 변경과 충돌하면 #51 병합 결과를 우선해 rebase/충돌 해소한다.
 
 ## Stage 1 — Community Profile 감사와 문서 범위 확정
@@ -176,7 +181,7 @@ git diff --check
 Task #29 Stage 3: issue template 인식 문제 수정
 ```
 
-## Stage 4 — 보안/지원/README 링크 정리와 최종 검증
+## Stage 4 — 보안/지원/Funding/Discussions 후보와 최종 검증
 
 ### 산출물
 
@@ -184,6 +189,8 @@ Task #29 Stage 3: issue template 인식 문제 수정
 
 - Stage 1 판단에 따라 `SECURITY.md`
 - Stage 1 판단에 따라 `SUPPORT.md`
+- `.github/FUNDING.yml`
+- `mydocs/working/task_m030_29_discussions_drafts.md`
 - `mydocs/working/task_m030_29_stage4.md`
 
 수정:
@@ -197,6 +204,14 @@ Task #29 Stage 3: issue template 인식 문제 수정
 ### 변경 내용
 
 - Stage 1 판단에 따라 `SECURITY.md`와 `SUPPORT.md`를 추가하거나 보류 사유를 Stage 4 보고서에 남긴다.
+- `.github/FUNDING.yml`을 추가하고 GitHub Sponsors 계정 `postmelee`를 연결한다.
+- GitHub Discussions에 게시할 후보 문안을 작성한다.
+  - `crop` 소개
+  - 설치와 첫 사용 안내
+  - 피드백 요청
+  - 알려진 제약과 로드맵 공유
+  - sponsor 안내
+- 실제 GitHub Discussions 게시글 생성은 수행하지 않는다.
 - README에는 필요한 경우 `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `SUPPORT.md` 링크를 최소 범위로 추가한다.
 - #51이 README의 Chrome Web Store 게시 문구를 먼저 갱신했다면 rebase 후 그 결과를 기준으로 링크만 보정한다.
 - 모든 community 문서가 서로 모순되지 않는지 확인한다.
@@ -206,9 +221,11 @@ Task #29 Stage 3: issue template 인식 문제 수정
 
 ```bash
 ls CONTRIBUTING.md CODE_OF_CONDUCT.md
+sed -n '1,120p' .github/FUNDING.yml
 test -f SECURITY.md && sed -n '1,240p' SECURITY.md || true
 test -f SUPPORT.md && sed -n '1,240p' SUPPORT.md || true
-rg -n "CONTRIBUTING|CODE_OF_CONDUCT|SECURITY|SUPPORT|Issue|Pull Request|security|conduct" README.md CONTRIBUTING.md CODE_OF_CONDUCT.md .github
+sed -n '1,320p' mydocs/working/task_m030_29_discussions_drafts.md
+rg -n "CONTRIBUTING|CODE_OF_CONDUCT|SECURITY|SUPPORT|FUNDING|Sponsor|Sponsors|Issue|Pull Request|security|conduct" README.md CONTRIBUTING.md CODE_OF_CONDUCT.md .github mydocs/working/task_m030_29_discussions_drafts.md
 gh api repos/postmelee/crop/community/profile
 git diff --check
 git status --short
@@ -218,11 +235,12 @@ git status --short
 
 - GitHub Community Standards page 최종 상태
 - README와 community 문서 링크 클릭 경로
+- GitHub sponsor button 표시 여부는 PR merge 후 default branch 기준으로 최종 확인
 
 ### 커밋
 
 ```text
-Task #29 Stage 4: community 문서 링크와 최종 검증
+Task #29 Stage 4: community 문서 링크와 funding 정리
 ```
 
 ## 최종 보고와 PR 준비
@@ -243,6 +261,7 @@ git status --short --branch
 git diff --check
 gh api repos/postmelee/crop/community/profile
 rg -n "CONTRIBUTING|CODE_OF_CONDUCT|SECURITY|SUPPORT|issue template|Community Standards" README.md CONTRIBUTING.md CODE_OF_CONDUCT.md mydocs/working mydocs/report
+rg -n "FUNDING|Sponsors|Discussions|discussion|crop 소개" .github mydocs/working mydocs/report
 ```
 
 ## 검증
@@ -251,6 +270,8 @@ rg -n "CONTRIBUTING|CODE_OF_CONDUCT|SECURITY|SUPPORT|issue template|Community St
 - 실패한 검증은 단계 완료로 처리하지 않는다.
 - Community Profile API는 default branch 기준으로 반영될 수 있으므로, branch-local 수정 직후 API가 개선되지 않으면 stage 보고서에 "PR merge 후 확인 필요"로 구분한다.
 - 수동 GitHub UI 확인은 확인 시점과 관찰 결과를 단계 보고서에 남긴다.
+- GitHub sponsor button은 `.github/FUNDING.yml`이 default branch에 반영된 뒤 표시될 수 있으므로 branch-local 단계에서는 파일 형식과 계정 값 확인을 1차 검증으로 둔다.
+- GitHub Discussions 후보는 실제 게시 여부와 별개로 문안 품질과 게시 목적을 검증한다.
 - 구현 중 문서 위치나 범위가 이 계획과 달라지면 구현계획서를 갱신하고 작업지시자 승인을 다시 받는다.
 
 ## 커밋
@@ -264,7 +285,7 @@ rg -n "CONTRIBUTING|CODE_OF_CONDUCT|SECURITY|SUPPORT|issue template|Community St
 
 - Stage 2는 Stage 1에서 community health file 추가/보류 범위가 확정된 뒤 진행한다.
 - Stage 3은 Stage 1의 issue template 원인 후보가 정리된 뒤 진행한다.
-- Stage 4는 Stage 2와 Stage 3 산출물이 모두 존재한 뒤 통합 링크와 보안/지원 문서 판단을 마무리한다.
+- Stage 4는 Stage 2와 Stage 3 산출물이 모두 존재한 뒤 통합 링크, 보안/지원 문서 판단, funding 설정, discussion 후보 문안을 마무리한다.
 - 모든 Stage는 단계 보고서 작성과 커밋 후 작업지시자 승인 없이는 다음 Stage로 넘어가지 않는다.
 
 ## 위험과 대응
@@ -273,10 +294,14 @@ rg -n "CONTRIBUTING|CODE_OF_CONDUCT|SECURITY|SUPPORT|issue template|Community St
 - **외부 기여 안내 과잉**: 내부 작업자용 산출물 요구가 공개 문서에 과도하게 들어가지 않도록 issue/PR 기대사항 중심으로 작성한다.
 - **정책 문서 과확정**: 보안/행동강령 문서는 운영 원칙과 연락 경로 중심으로 좁게 작성하고 법률/라이선스 판단은 범위 밖으로 둔다.
 - **#51 충돌**: README와 `mydocs/orders/20260608.md`는 #51과 충돌 가능성이 있다. #51 병합 결과를 rebase 후 우선 반영하고, #29는 community link 변경만 남긴다.
+- **Discussion 실제 게시 오해**: 이번 task는 후보 문안만 준비한다. 실제 GitHub Discussions 게시글 생성은 원격 플랫폼 쓰기 작업이므로 별도 승인 없이는 수행하지 않는다.
+- **Funding 계정 오기입**: Stage 4에서 `.github/FUNDING.yml`의 `github` 값이 `postmelee`인지 확인한다.
 
 ## 승인 요청 사항
 
 - 위 Stage 1~4 분할, 산출물, 검증 명령, 커밋 메시지로 #29 구현을 진행한다.
 - Stage 1에서는 감사/판단과 단계 보고서만 작성하고, 공식 community health file 생성은 Stage 2 이후로 미룬다.
 - `SECURITY.md`, `SUPPORT.md`, `.github/ISSUE_TEMPLATE/config.yml`, 추가 issue form은 Stage 1 판단 결과에 따라 추가 또는 보류한다.
+- `.github/FUNDING.yml`은 GitHub Sponsors 계정 `postmelee`만 포함한다.
+- GitHub Discussions 게시글 후보는 `mydocs/working/task_m030_29_discussions_drafts.md`에 작성하며 실제 게시글 생성은 제외한다.
 - GitHub Community Profile API가 default branch 기준으로 즉시 개선되지 않을 수 있음을 검증 한계로 인정한다.
