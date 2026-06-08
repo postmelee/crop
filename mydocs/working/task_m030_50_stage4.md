@@ -53,6 +53,7 @@ git status --short
 
 ## 다음 단계 영향
 
+- 기존 `v0.1.0` GitHub Release body 소급 보정은 후속 이슈 [#54](https://github.com/postmelee/crop/issues/54)로 분리했다.
 - Stage 4 산출물 승인 후 `task-final-report` 절차로 PR 게시를 진행한다.
 - PR 게시 전에는 최종 보고서 승인과 `publish/task50` 원격 브랜치 push 승인이 필요하다.
 

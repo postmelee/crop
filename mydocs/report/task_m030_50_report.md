@@ -96,6 +96,7 @@ GitHub Issue: [#50](https://github.com/postmelee/crop/issues/50)
 
 ### 후속 작업 후보
 
+- [#54](https://github.com/postmelee/crop/issues/54): 기존 `v0.1.0` GitHub Release body를 #50 템플릿 기준으로 소급 표준화한다.
 - 다음 release task에서 `mydocs/_templates/github_release_note.md`를 복사해 실제 notes file을 작성하고 `gh release create --notes-file`로 사용한다.
 - release PR label taxonomy가 필요해지면 `.github/release.yml` 추가 여부를 별도 issue로 검토한다.
 - Stage 4 승인 후 `task-final-report` 절차로 `publish/task50` push와 `devel` 대상 PR 생성을 진행한다.
