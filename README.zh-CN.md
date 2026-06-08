@@ -4,7 +4,15 @@
 
 `crop` 是一个用于精确截取网页截图的 Chrome Manifest V3 扩展。打开覆盖层，选择页面元素或拖出自定义区域，然后复制或保存生成的 PNG。
 
-发布状态：`crop` 正在准备 Chrome Web Store 发布，目前尚未上架 Chrome Web Store。现在请在本地构建扩展，并将生成的 `dist/` 文件夹作为未打包扩展加载。
+发布状态：`crop` 已在 Chrome Web Store 发布，可通过官方页面安装。
+
+## 从 Chrome Web Store 安装
+
+1. 打开 [Chrome Web Store 上的 `crop`](https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki)。
+2. 点击 Add to Chrome 并确认安装。
+3. 打开普通网页，然后点击 `crop` 扩展图标。
+
+安装后，如果建议快捷键与现有浏览器或操作系统快捷键冲突，Chrome 可能会让该快捷键保持未分配状态。你可以在 `chrome://extensions/shortcuts` 中查看扩展快捷键。
 
 ## crop 能做什么
 
@@ -18,7 +26,22 @@
 - 当 Chrome 允许内容脚本检查 iframe 文档时，支持选择同源(same-origin)和 `srcdoc` iframe 元素。
 - 对延伸到当前视口外的选区，通过滚动和 stitching 截取完整的页面选区。
 
-## 从源码加载
+## 基本用法
+
+1. 打开普通网页。
+2. 点击 `crop` 扩展图标，或按 `Ctrl+Shift+S`。macOS 使用 `Command+Shift+S`。
+3. 选择一种截图流程。
+   - 移到元素上并点击以选择它。
+   - 拖动绘制自定义区域。
+   - 使用“可见区域选择”按钮截取当前视口。
+   - 使用“整页选择”按钮截取当前顶层文档。
+4. 如有需要，调整选区。
+5. 点击 Copy 将 PNG 写入剪贴板，或点击 Save 下载 PNG。
+6. 如需关闭覆盖层且不截图，按 Escape 或使用 Cancel。
+
+## 开发用源码加载
+
+当你开发 `crop`、测试本地更改，或需要手动加载未打包构建时，请使用此路径。
 
 要求：
 
@@ -40,21 +63,6 @@ npm run build
 3. 点击 Load unpacked。
 4. 选择本仓库的 `dist/` 文件夹。
 5. 打开普通网页，然后点击 `crop` 扩展图标。
-
-如果建议快捷键与现有浏览器或操作系统快捷键冲突，Chrome 可能会让该快捷键保持未分配状态。你可以在 `chrome://extensions/shortcuts` 中查看扩展快捷键。
-
-## 基本用法
-
-1. 打开普通网页。
-2. 点击 `crop` 扩展图标，或按 `Ctrl+Shift+S`。macOS 使用 `Command+Shift+S`。
-3. 选择一种截图流程。
-   - 移到元素上并点击以选择它。
-   - 拖动绘制自定义区域。
-   - 使用“可见区域选择”按钮截取当前视口。
-   - 使用“整页选择”按钮截取当前顶层文档。
-4. 如有需要，调整选区。
-5. 点击 Copy 将 PNG 写入剪贴板，或点击 Save 下载 PNG。
-6. 如需关闭覆盖层且不截图，按 Escape 或使用 Cancel。
 
 ## 权限
 
