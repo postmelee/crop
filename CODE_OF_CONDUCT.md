@@ -1,43 +1,47 @@
-# crop 행동 강령
+# crop Code of Conduct
 
-`crop` 저장소는 작고 실용적인 오픈소스 협업 공간을 지향합니다. 이 행동 강령은 Issues, Pull Requests, Discussions, code review, 문서, release 준비 대화 등 저장소와 관련된 모든 공개 상호작용에 적용됩니다.
+Languages: English | [한국어](CODE_OF_CONDUCT.ko.md) | [简体中文](CODE_OF_CONDUCT.zh-CN.md) | [日本語](CODE_OF_CONDUCT.ja.md)
 
-## 기대하는 행동
+This English document is the canonical version. Translations are provided for convenience.
 
-- 서로를 존중하고 선의로 해석합니다.
-- 주장에는 재현 절차, 근거, tradeoff를 함께 제시합니다.
-- 비판은 사람보다 코드, 문서, 정책, 사용자 영향에 집중합니다.
-- 다른 사람의 시간과 맥락을 존중하고, 요청 범위를 명확히 합니다.
-- 보안, privacy, 라이선스, 브랜딩처럼 민감한 주제는 단정하지 않고 확인 가능한 근거를 우선합니다.
-- 실수를 발견하면 조용히 바로잡을 수 있는 경로를 제안합니다.
+The `crop` repository aims to be a small, practical, and respectful open source collaboration space. This Code of Conduct applies to all public interactions related to the repository, including Issues, Pull Requests, Discussions, code review, documentation, and release preparation conversations.
 
-## 허용하지 않는 행동
+## Expected behavior
 
-- 모욕, 비하, 괴롭힘, 위협
-- 차별적 표현이나 배제적인 농담
-- 성적이거나 폭력적인 부적절한 표현
-- 개인 정보, 비공개 연락처, 민감한 보안 정보를 동의 없이 공개하는 행위
-- 반복적인 off-topic 논쟁, spam, 의도적인 방해
-- maintainer나 contributor에게 무리한 응답 시간, 특정 결정, 특정 구현을 강요하는 행위
+- Treat others with respect and assume good intent.
+- Support claims with reproduction steps, evidence, and tradeoffs.
+- Focus criticism on code, documentation, policy, and user impact rather than people.
+- Respect other people's time and context, and keep requests clear.
+- Treat security, privacy, license, and branding topics with care and verifiable evidence.
+- When you find a mistake, suggest a path to correct it.
 
-## 신고와 처리
+## Unacceptable behavior
 
-행동 강령 위반을 발견하면 maintainer에게 알려 주세요.
+- Insults, harassment, threats, or intimidation
+- Discriminatory language or exclusionary jokes
+- Inappropriate sexual or violent content
+- Publishing personal information, private contact details, or sensitive security information without consent
+- Repeated off-topic arguments, spam, or intentional disruption
+- Pressuring maintainers or contributors for unreasonable response times, decisions, or implementations
 
-- 공개적으로 다뤄도 되는 내용은 GitHub Issue나 Discussion에서 간결하게 보고할 수 있습니다.
-- 개인 정보, 안전 문제, 민감한 보안 내용이 포함된 경우 공개 글에 세부 내용을 적지 마세요.
-- 비공개 조율이 필요하면 maintainer `@postmelee`에게 GitHub profile에 표시된 연락 경로를 사용하거나, 공개 Issue에는 "비공개 연락이 필요한 행동 강령 신고"처럼 최소한의 설명만 남겨 주세요.
+## Reporting and enforcement
 
-Maintainer는 신고 내용을 검토하고 필요한 경우 다음 조치를 취할 수 있습니다.
+If you observe a violation, notify the maintainer.
 
-- 대화 정리 요청
-- 댓글 편집 또는 숨김 요청
-- Issue, Pull Request, Discussion 잠금
-- 반복 위반자의 참여 제한
-- GitHub 플랫폼 정책에 따른 추가 신고
+- If the matter can be handled publicly, report it briefly in a GitHub Issue or Discussion.
+- If it includes personal information, safety concerns, or sensitive security details, do not post the details publicly.
+- If private coordination is needed, contact maintainer `@postmelee` using the contact path shown on the GitHub profile, or leave only a minimal public note such as "Code of Conduct report requiring private follow-up."
 
-처리 과정에서 가능한 한 필요한 사람에게만 정보를 공유합니다. 다만 GitHub의 공개 저장소 특성상 이미 공개된 댓글이나 활동 기록은 플랫폼 정책과 권한 범위 안에서만 조정할 수 있습니다.
+The maintainer may take actions such as:
 
-## 적용 원칙
+- Asking participants to refocus the conversation
+- Asking for a comment to be edited or hidden
+- Locking an Issue, Pull Request, or Discussion
+- Limiting participation for repeated violations
+- Escalating through GitHub platform reporting tools
 
-이 문서는 협업의 최소 기준입니다. 법률 자문, 고용 정책, 플랫폼 정책을 대체하지 않습니다. GitHub Terms, GitHub Community Guidelines, 저장소의 라이선스와 보안 정책이 함께 적용될 수 있습니다.
+Information will be shared only with people who need it where practical. Public comments and activity records can only be adjusted within GitHub's platform policy and permission model.
+
+## Scope and limits
+
+This document defines minimum collaboration expectations. It is not legal advice, employment policy, or a replacement for platform rules. GitHub Terms, GitHub Community Guidelines, repository licenses, and security policies may also apply.

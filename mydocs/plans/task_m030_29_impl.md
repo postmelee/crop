@@ -9,7 +9,7 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | Stage | 제목 | 주요 산출 | 검증 |
 |---|---|---|---|
 | 1 | Community Profile 감사와 문서 범위 확정 | `mydocs/working/task_m030_29_stage1.md` | Community API, `.github` template, README/PR template 상태 확인 |
-| 2 | 기여자 안내와 행동 강령 작성 | `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `mydocs/working/task_m030_29_stage2.md` | 공개 기여 흐름, 신고 경로, Hyper-Waterfall 경계 대조 |
+| 2 | 기여자 안내와 행동 강령 작성 | `CONTRIBUTING*.md`, `CODE_OF_CONDUCT*.md`, `mydocs/working/task_m030_29_stage2.md`, `mydocs/working/task_m030_29_stage2_1.md` | 공개 기여 흐름, 신고 경로, Hyper-Waterfall 경계, 언어 링크 대조 |
 | 3 | Issue template 인식 문제 수정 | `.github/ISSUE_TEMPLATE/task.yml`, 필요 시 `.github/ISSUE_TEMPLATE/config.yml`, `mydocs/working/task_m030_29_stage3.md` | GitHub issue forms schema, Community API/UI 인식 상태 확인 |
 | 4 | 보안/지원/Funding/Discussions 후보와 최종 검증 | 필요 시 `SECURITY.md`, `SUPPORT.md`, `.github/FUNDING.yml`, `mydocs/working/task_m030_29_discussions_drafts.md`, `README.md`, `mydocs/working/task_m030_29_stage4.md` | community health files, sponsor button 설정, discussion 후보, 링크, 최종 Community API 결과 확인 |
 
@@ -20,7 +20,13 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 | 파일 | 수행계획서상 선택 위치 | Stage 산출물 경로 | 일치 여부 | 비고 |
 |---|---|---|---|---|
 | `CONTRIBUTING.md` | `CONTRIBUTING.md` | `CONTRIBUTING.md` | OK | Stage 2에서 작성 |
+| `CONTRIBUTING.ko.md` | `CONTRIBUTING.ko.md` | `CONTRIBUTING.ko.md` | OK | Stage 2 보정에서 작성 |
+| `CONTRIBUTING.zh-CN.md` | `CONTRIBUTING.zh-CN.md` | `CONTRIBUTING.zh-CN.md` | OK | Stage 2 보정에서 작성 |
+| `CONTRIBUTING.ja.md` | `CONTRIBUTING.ja.md` | `CONTRIBUTING.ja.md` | OK | Stage 2 보정에서 작성 |
 | `CODE_OF_CONDUCT.md` | `CODE_OF_CONDUCT.md` | `CODE_OF_CONDUCT.md` | OK | Stage 2에서 작성 |
+| `CODE_OF_CONDUCT.ko.md` | `CODE_OF_CONDUCT.ko.md` | `CODE_OF_CONDUCT.ko.md` | OK | Stage 2 보정에서 작성 |
+| `CODE_OF_CONDUCT.zh-CN.md` | `CODE_OF_CONDUCT.zh-CN.md` | `CODE_OF_CONDUCT.zh-CN.md` | OK | Stage 2 보정에서 작성 |
+| `CODE_OF_CONDUCT.ja.md` | `CODE_OF_CONDUCT.ja.md` | `CODE_OF_CONDUCT.ja.md` | OK | Stage 2 보정에서 작성 |
 | `.github/ISSUE_TEMPLATE/task.yml` | `.github/ISSUE_TEMPLATE/task.yml` | `.github/ISSUE_TEMPLATE/task.yml` | OK | Stage 3에서 원인 확인 후 최소 수정 |
 | `.github/ISSUE_TEMPLATE/config.yml` | `.github/ISSUE_TEMPLATE/config.yml` | `.github/ISSUE_TEMPLATE/config.yml` | OK | 필요하다고 판단될 때만 Stage 3에서 추가 |
 | `SECURITY.md` | `SECURITY.md` | `SECURITY.md` | OK | Stage 1 판단 후 Stage 4에서 추가 또는 보류 |
@@ -36,8 +42,8 @@ GitHub Issue: [#29](https://github.com/postmelee/crop/issues/29)
 ## 수용 기준 고정
 
 - GitHub Community Standards checklist에서 현재 저장소가 지원 가능한 누락 항목을 보강한다.
-- `CONTRIBUTING.md`는 issue/PR 흐름, 외부 기여 기대사항, Hyper-Waterfall과 외부 기여의 경계를 설명한다.
-- `CODE_OF_CONDUCT.md`는 공개 저장소 운영에 필요한 최소 행동 기준과 신고/연락 경로를 포함한다.
+- `CONTRIBUTING.md`는 English canonical로 issue/PR 흐름, 외부 기여 기대사항, Hyper-Waterfall과 외부 기여의 경계를 설명하고, 한국어/중국어/일본어 번역 파일을 연결한다.
+- `CODE_OF_CONDUCT.md`는 English canonical로 공개 저장소 운영에 필요한 최소 행동 기준과 신고/연락 경로를 포함하고, 한국어/중국어/일본어 번역 파일을 연결한다.
 - `.github/ISSUE_TEMPLATE/task.yml`이 community profile에서 인식되지 않는 원인을 확인하고, 가능한 수정은 반영한다.
 - `SECURITY.md`, `SUPPORT.md`, 추가 issue form, `.github/ISSUE_TEMPLATE/config.yml`은 Stage 1 감사 결과로 추가/보류를 결정하고 그 이유를 기록한다.
 - `.github/FUNDING.yml`은 GitHub Sponsors 계정 `postmelee`를 가리킨다.
@@ -98,8 +104,15 @@ Task #29 Stage 1: Community Profile 감사와 범위 확정
 신규:
 
 - `CONTRIBUTING.md`
+- `CONTRIBUTING.ko.md`
+- `CONTRIBUTING.zh-CN.md`
+- `CONTRIBUTING.ja.md`
 - `CODE_OF_CONDUCT.md`
+- `CODE_OF_CONDUCT.ko.md`
+- `CODE_OF_CONDUCT.zh-CN.md`
+- `CODE_OF_CONDUCT.ja.md`
 - `mydocs/working/task_m030_29_stage2.md`
+- `mydocs/working/task_m030_29_stage2_1.md`
 
 수정:
 
@@ -107,27 +120,36 @@ Task #29 Stage 1: Community Profile 감사와 범위 확정
 
 ### 변경 내용
 
-- `CONTRIBUTING.md`를 공개 기여자 관점으로 작성한다.
+- `CONTRIBUTING.md`를 공개 기여자 관점의 English canonical로 작성하고 언어 링크를 둔다.
+  - `CONTRIBUTING.ko.md`
+  - `CONTRIBUTING.zh-CN.md`
+  - `CONTRIBUTING.ja.md`
   - issue 먼저 열기
   - scope를 작게 유지하기
   - PR template 사용
   - permissions/privacy/branding/license 경계
   - maintainer가 Hyper-Waterfall 작업으로 전환할 수 있다는 안내
   - 외부 기여자가 내부 task 문서를 직접 작성해야 하는 요구는 두지 않음
-- `CODE_OF_CONDUCT.md`를 공개 저장소의 최소 행동 기준으로 작성한다.
+- `CODE_OF_CONDUCT.md`를 공개 저장소의 최소 행동 기준을 담은 English canonical로 작성하고 언어 링크를 둔다.
+  - `CODE_OF_CONDUCT.ko.md`
+  - `CODE_OF_CONDUCT.zh-CN.md`
+  - `CODE_OF_CONDUCT.ja.md`
   - 기대 행동
   - 허용하지 않는 행동
   - 신고/연락 경로
   - maintainer 처리 원칙
+- 번역 파일에는 English canonical 우선 문구를 둔다.
 - Mozilla/Firefox 명칭은 제품명, 제휴, 보증 암시 없이 license/attribution 맥락에서만 다룬다.
 
 ### 검증
 
 ```bash
+ls CONTRIBUTING.md CONTRIBUTING.ko.md CONTRIBUTING.zh-CN.md CONTRIBUTING.ja.md CODE_OF_CONDUCT.md CODE_OF_CONDUCT.ko.md CODE_OF_CONDUCT.zh-CN.md CODE_OF_CONDUCT.ja.md
 sed -n '1,280p' CONTRIBUTING.md
 sed -n '1,240p' CODE_OF_CONDUCT.md
-rg -n "Hyper-Waterfall|issue|pull request|security|conduct|Mozilla|Firefox|debugger|<all_urls>|activeTab|scripting|clipboardWrite|downloads" CONTRIBUTING.md CODE_OF_CONDUCT.md AGENTS.md mydocs/manual
-rg -n "affiliated|endorsed|sponsored|official" CONTRIBUTING.md CODE_OF_CONDUCT.md
+rg -n "CONTRIBUTING\\.(ko|zh-CN|ja)\\.md|CODE_OF_CONDUCT\\.(ko|zh-CN|ja)\\.md|canonical|English" CONTRIBUTING*.md CODE_OF_CONDUCT*.md
+rg -n "Hyper-Waterfall|issue|pull request|security|conduct|Mozilla|Firefox|debugger|<all_urls>|activeTab|scripting|clipboardWrite|downloads" CONTRIBUTING*.md CODE_OF_CONDUCT*.md AGENTS.md mydocs/manual
+rg -n "affiliated|endorsed|sponsored|official" CONTRIBUTING*.md CODE_OF_CONDUCT*.md
 git diff --check
 ```
 
@@ -135,6 +157,7 @@ git diff --check
 
 ```text
 Task #29 Stage 2: 기여자 안내와 행동 강령 작성
+Task #29 [Stage 2.1]: 다국어 community 문서 보정
 ```
 
 ## Stage 3 — Issue template 인식 문제 수정

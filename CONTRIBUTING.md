@@ -1,46 +1,50 @@
-# crop 기여 안내
+# Contributing to crop
 
-`crop`에 관심을 가져 주셔서 감사합니다. 이 문서는 공개 저장소에서 이슈와 풀 리퀘스트를 열 때의 기본 기대사항을 정리합니다.
+Languages: English | [한국어](CONTRIBUTING.ko.md) | [简体中文](CONTRIBUTING.zh-CN.md) | [日本語](CONTRIBUTING.ja.md)
 
-이 저장소의 내부 작업은 Hyper-Waterfall 절차로 관리됩니다. 외부 기여자가 내부 작업 문서나 단계 보고서를 직접 작성할 필요는 없습니다. 다만 maintainer는 제안이나 PR을 검토한 뒤 필요한 경우 별도 GitHub Issue, 작업 브랜치, 계획 문서로 전환할 수 있습니다.
+This English document is the canonical version. Translations are provided for convenience.
 
-## 기여 전에 확인할 것
+Thank you for your interest in `crop`. This document explains the basic expectations for opening issues and pull requests in this public repository.
 
-- 이미 열린 GitHub Issues와 Pull Requests를 먼저 검색합니다.
-- 새 기능, 버그 수정, 문서 변경은 가능한 한 작은 범위로 나눕니다.
-- 사용자에게 보이는 제품명과 브랜딩은 `crop`만 사용합니다.
-- Mozilla, Firefox, Screenshots 명칭은 출처, 라이선스, 기술 참고 맥락에서만 사용하고 제휴, 보증, 공식 제품처럼 보이게 쓰지 않습니다.
-- Chrome MV3 권한은 좁게 유지합니다. `debugger`, `<all_urls>`, broad host permission, `tabs` 권한은 maintainer와 사전 논의 없이 추가하지 않습니다.
-- Firefox 유래 코드나 MPL 2.0 적용 파일을 다룰 때는 `src/firefox-derived/`, `NOTICE`, `THIRD_PARTY.md`, `LICENSE-MPL-2.0`의 출처와 라이선스 경계를 유지합니다.
+This repository uses an internal Hyper-Waterfall workflow for maintainer-managed work. External contributors do not need to write internal task documents or stage reports. A maintainer may review an issue or pull request and, when needed, convert it into a tracked GitHub Issue, task branch, and plan.
 
-## 이슈 열기
+## Before contributing
 
-새 작업은 가능하면 먼저 Issue로 논의합니다.
+- Search existing GitHub Issues and Pull Requests first.
+- Keep new features, bug fixes, and documentation changes as small as practical.
+- Use `crop` as the only user-facing product name and brand.
+- Use Mozilla, Firefox, and Screenshots names only for source attribution, license notices, or technical references. Do not imply affiliation, endorsement, sponsorship, or product status from Mozilla or Firefox.
+- Keep Chrome MV3 permissions narrow. Do not add `debugger`, `<all_urls>`, broad host permissions, or the `tabs` permission without prior maintainer discussion.
+- When touching Firefox-derived or MPL 2.0-covered files, preserve the boundaries and notices in `src/firefox-derived/`, `NOTICE`, `THIRD_PARTY.md`, and `LICENSE-MPL-2.0`.
 
-좋은 Issue에는 다음 내용이 들어갑니다.
+## Opening an issue
 
-- 문제나 제안의 배경
-- 기대하는 결과
-- 포함 범위와 제외 범위
-- 재현 절차 또는 확인 방법
-- 관련 페이지, 브라우저 버전, 운영체제, 스크린샷 등 필요한 맥락
+Start with an Issue when possible.
 
-보안 취약점이나 개인 정보가 포함된 내용은 공개 Issue에 자세히 적지 마세요. 공개 범위로 다룰 수 있는 최소 설명만 남기고, maintainer가 비공개로 이어갈 수 있는 연락 방법을 조율합니다.
+A useful Issue includes:
 
-## 풀 리퀘스트 열기
+- Background for the problem or proposal
+- Expected outcome
+- Included and excluded scope
+- Reproduction steps or a verification method
+- Relevant page, browser version, operating system, screenshots, or other context
 
-Pull Request는 작고 검토 가능한 단위로 유지합니다.
+Do not put sensitive security details or personal information in a public Issue. Leave only the minimum public description and coordinate with the maintainer on a private follow-up path.
 
-기본 기대사항:
+## Opening a pull request
 
-- PR template을 채웁니다.
-- 변경 이유와 변경 범위를 명확히 적습니다.
-- 사용자에게 보이는 동작, 권한, privacy, 브랜딩, 라이선스에 영향을 주는 변경은 별도로 표시합니다.
-- 관련 Issue가 있으면 연결합니다.
-- 실행한 검증 명령과 결과를 적습니다.
-- unrelated formatting, 대규모 리팩터링, 기능 변경을 한 PR에 섞지 않습니다.
+Keep Pull Requests small and reviewable.
 
-권장 검증:
+Basic expectations:
+
+- Fill out the PR template.
+- Explain why the change is needed and what changed.
+- Call out any user-facing behavior, permission, privacy, branding, or license impact.
+- Link related Issues when they exist.
+- Record the verification commands you ran and their results.
+- Avoid mixing unrelated formatting, large refactors, and feature changes in one PR.
+
+Recommended verification:
 
 ```bash
 npm run build
@@ -49,33 +53,33 @@ npm test
 git diff --check
 ```
 
-문서만 바꾼 PR은 소스 build/test가 필요하지 않을 수 있습니다. 이 경우 실행하지 않은 이유를 PR에 적어 주세요.
+Documentation-only PRs may not need source build or test commands. If you skip them, explain why in the PR.
 
-## 코드와 문서 기준
+## Code and documentation standards
 
-- 현재 구현과 다른 기능을 문서에서 약속하지 않습니다.
-- 스크린샷 처리는 기본적으로 브라우저 안에서 로컬로 수행된다는 privacy stance를 유지합니다.
-- 서버 업로드, telemetry, 계정 동기화처럼 구현되지 않은 기능을 암시하지 않습니다.
-- overlay, highlight, button이 최종 PNG에 포함되지 않는 동작은 중요한 사용자 경험 기준입니다.
-- Chrome 제한 페이지, cross-origin iframe, closed shadow DOM, canvas 크기 제한 같은 제약은 숨기지 않습니다.
+- Do not promise behavior that the current implementation does not support.
+- Preserve the privacy stance that screenshots are processed locally in the browser.
+- Do not imply server uploads, telemetry, account sync, or other unimplemented behavior.
+- Keep the overlay, highlight, and buttons out of the final PNG.
+- Be explicit about limits such as Chrome restricted pages, cross-origin iframes, closed shadow DOM, and canvas size limits.
 
-## Maintainer workflow와 외부 기여
+## Maintainer workflow and external contributions
 
-Maintainer 작업은 GitHub Issue 기준으로 추적되고, 필요 시 다음 흐름을 따릅니다.
+Maintainer work is tracked from GitHub Issues and may follow this flow:
 
 ```text
 Issue -> branch -> daily order -> plan -> implementation plan -> stage report -> final report -> pull request
 ```
 
-이 흐름은 maintainer와 작업 에이전트가 변경을 추적하기 위한 내부 운영 절차입니다. 외부 기여자는 일반적인 Issue와 Pull Request로 제안해도 됩니다. maintainer가 필요하다고 판단하면 해당 제안은 별도 task로 등록되어 위 절차에 맞게 진행됩니다.
+This is an internal operating workflow for maintainers and coding agents. External contributors can still use normal Issues and Pull Requests. If needed, a maintainer will turn a contribution into a tracked task and handle the internal workflow.
 
-## 리뷰와 merge
+## Review and merge
 
-- 모든 PR은 maintainer review를 거칩니다.
-- CI와 필요한 수동 검증이 통과해야 merge할 수 있습니다.
-- 범위가 커지거나 정책 판단이 필요한 경우 maintainer가 PR을 닫지 않고 Issue로 되돌려 계획부터 다시 잡을 수 있습니다.
-- Issue close는 maintainer가 승인하거나 PR merge 후 처리합니다.
+- Every PR requires maintainer review.
+- CI and required manual verification must pass before merge.
+- If scope grows or policy decisions are needed, a maintainer may move the work back to an Issue and re-plan it.
+- Issues are closed by maintainer approval or after the related PR is merged.
 
-## 질문과 논의
+## Questions and discussions
 
-질문, 사용 후기, 기능 아이디어는 GitHub Issues 또는 Discussions를 사용합니다. 버그와 구체적인 작업 요청은 Issues가 더 적합하고, 사용 경험 공유나 넓은 제안은 Discussions가 더 적합합니다.
+Use GitHub Issues or Discussions for questions, usage reports, and feature ideas. Issues are better for bugs and concrete task requests. Discussions are better for broader suggestions, usage experience, and open-ended conversation.
