@@ -7,22 +7,23 @@ GitHub Issue: [#54](https://github.com/postmelee/crop/issues/54)
 
 - 대상 이슈: #54
 - 마일스톤: M030
-- 단계 수: 4
+- 단계 수: 4 + Stage 4.1 보정
 - 작업 목적: 기존 GitHub Release `v0.1.0` body를 #50 release note 템플릿 구조에 맞춰 소급 표준화한다.
 
 ## 변경 파일 목록과 영향 범위
 
 | 경로 | 변경 요약 | 영향 범위 |
 |---|---|---|
-| GitHub Release `v0.1.0` body | 기존 단일 문단 body를 `user 안내`와 `developer 검증 기록` 분리 구조로 업데이트 | 공개 GitHub Release body |
+| GitHub Release `v0.1.0` body | 기존 단일 문단 body를 English/한국어/日本語/简体中文 user-facing 섹션과 공통 `Developer Verification` 섹션으로 업데이트 | 공개 GitHub Release body |
 | `mydocs/orders/20260608.md` | #54 진행 상태를 완료 후보로 갱신 | 오늘할일 보드 |
 | `mydocs/plans/task_m030_54.md` | 수행계획서 작성 | task 범위와 승인 기준 |
-| `mydocs/plans/task_m030_54_impl.md` | 구현계획서 작성 | Stage별 산출물/검증/커밋 경계 |
-| `mydocs/tech/task_m030_54_v010_release_body.md` | 현재 body, 기준값, 공개 body 초안, update 전후 비교, 검증 로그 기록 | task-specific 기술 근거 |
+| `mydocs/plans/task_m030_54_impl.md` | 구현계획서 작성과 Stage 4.1 보정 단계 추가 | Stage별 산출물/검증/커밋 경계 |
+| `mydocs/tech/task_m030_54_v010_release_body.md` | 현재 body, 기준값, 공개 body 초안, update 전후 비교, 다국어 보정, future rule 확인 결과, 검증 로그 기록 | task-specific 기술 근거 |
 | `mydocs/working/task_m030_54_stage1.md` | 현재 release 상태와 기준값 확인 보고 | 단계 기록 |
 | `mydocs/working/task_m030_54_stage2.md` | 공개 body 초안 작성 보고 | 단계 기록 |
 | `mydocs/working/task_m030_54_stage3.md` | 원격 Release body 반영과 불변 항목 검증 보고 | 단계 기록 |
 | `mydocs/working/task_m030_54_stage4.md` | 통합 검증과 최종 보고 단계 기록 | 단계 기록 |
+| `mydocs/working/task_m030_54_stage4_1.md` | 다국어 Release body 보정과 future rule 확인 보고 | 단계 기록 |
 | `mydocs/report/task_m030_54_report.md` | 최종 보고서 작성 | PR 게시 전 승인 자료 |
 
 ## 문서 위치 검증
@@ -33,15 +34,16 @@ GitHub Issue: [#54](https://github.com/postmelee/crop/issues/54)
 |---|---|---|---|---|
 | GitHub Release `v0.1.0` body | GitHub Release | GitHub Release `v0.1.0` | OK | 공개 Release body가 진실 원천이며 Stage 3에서 승인 초안만 반영 |
 | `mydocs/tech/task_m030_54_v010_release_body.md` | `mydocs/tech/` | `mydocs/tech/task_m030_54_v010_release_body.md` | OK | 현재 body, 기준값, 초안, update 전후 비교를 재사용 가능한 근거로 보관 |
-| `mydocs/working/task_m030_54_stage{N}.md` | `mydocs/working/` | `mydocs/working/task_m030_54_stage1.md` ~ `task_m030_54_stage4.md` | OK | 단계 보고서 표준 위치 |
+| `mydocs/working/task_m030_54_stage{N}.md` | `mydocs/working/` | `mydocs/working/task_m030_54_stage1.md` ~ `task_m030_54_stage4.md`, `task_m030_54_stage4_1.md` | OK | 단계 보고서 표준 위치. 기존 관례에 맞춰 하위 보정 단계는 `_stage4_1` 사용 |
 | `mydocs/report/task_m030_54_report.md` | `mydocs/report/` | `mydocs/report/task_m030_54_report.md` | OK | 최종 보고서 표준 위치 |
 
 ## 변경 전·후 정량 비교
 
 | 지표 | 변경 전 | 변경 후 |
 |---|---|---|
-| GitHub Release body 구조 | 단일 문단 | `# crop v0.1.0`, `user 안내`, `developer 검증 기록` 구조 |
-| Chrome Web Store 상태 표기 | submission candidate 문맥만 있음 | `published`와 Store URL 포함 |
+| GitHub Release body 구조 | 단일 문단 | English/한국어/日本語/简体中文 user-facing 섹션 + 공통 `Developer Verification` 구조 |
+| 사용자-facing 언어 | 단일 영어 문단 | README 지원 언어 4개: English, 한국어, 日本語, 简体中文 |
+| Chrome Web Store 상태 표기 | submission candidate 문맥만 있음 | 4개 사용자 언어 섹션에 published/게시 완료/公開済み/已发布와 Store URL 포함 |
 | privacy URL | 없음 | `https://github.com/postmelee/crop/blob/v0.1.0/PRIVACY.md` |
 | asset URL | 없음 | `https://github.com/postmelee/crop/releases/download/v0.1.0/crop-0.1.0-cws.zip` |
 | asset size | 없음 | `438474 bytes` |
@@ -51,13 +53,16 @@ GitHub Issue: [#54](https://github.com/postmelee/crop/issues/54)
 | Release name/title | `crop v0.1.0` | `crop v0.1.0` |
 | Draft/prerelease | `false` / `false` | `false` / `false` |
 | Release asset | `crop-0.1.0-cws.zip`, `438474 bytes` | 동일 |
+| future release 다국어 규칙 | 명시 규칙 여부 미확인 | 현재 템플릿/가이드에 명시 규칙 없음 확인 |
 
 ## 검증 결과
 
 | 수용 기준 | 결과 |
 |---|---|
-| `v0.1.0` GitHub Release body가 #50 템플릿의 사용자 안내와 developer 검증 기록 분리 구조를 따른다 | OK — 원격 body에서 `user 안내`와 `developer 검증 기록` 구조 확인 |
-| Chrome Web Store 상태, privacy URL, release asset, SHA-256 checksum, verification 결과가 body에 포함된다 | OK — Stage 3/4 `gh release view`와 기술 노트 grep에서 확인 |
+| `v0.1.0` GitHub Release body가 #50 템플릿의 사용자 안내와 developer 검증 기록 분리 구조를 따른다 | OK — 원격 body에서 4개 사용자 언어 섹션과 공통 `Developer Verification` 구조 확인 |
+| Chrome Web Store 상태, privacy URL, release asset, SHA-256 checksum, verification 결과가 body에 포함된다 | OK — Stage 3/4/4.1 `gh release view`와 기술 노트 grep에서 확인 |
+| 공개 사용자 안내가 README 지원 언어 전체를 포함한다 | OK — English, 한국어, 日本語, 简体中文 섹션 확인 |
+| 앞으로의 release 규칙에 다국어 작성 요구가 명시돼 있는지 확인한다 | OK — 템플릿/README/guide 확인 결과 명시 규칙 없음, 후속 작업 후보로 기록 |
 | release asset과 tag/commit 기준은 기존 `v0.1.0` release와 일치한다 | OK — tag `v0.1.0`, commit `53808a2147c120e67f7bb93b737b2f6d0526d6f4`, asset size/checksum 일치 |
 | release body 수정 전후 차이와 검증 결과가 task 산출물에 남는다 | OK — `mydocs/tech/task_m030_54_v010_release_body.md`, Stage 1~4 보고서에 기록 |
 | release asset, tag, version, Dashboard 상태는 변경되지 않는다 | OK — asset metadata/tag/version 불변 확인, Chrome Web Store Dashboard 작업 미수행 |
@@ -69,6 +74,7 @@ GitHub Issue: [#54](https://github.com/postmelee/crop/issues/54)
 - Stage 2: [`task_m030_54_stage2.md`](../working/task_m030_54_stage2.md) — #50 템플릿 구조로 공개 body 초안 작성, 필수 키워드와 placeholder 금지 패턴 검증 통과.
 - Stage 3: [`task_m030_54_stage3.md`](../working/task_m030_54_stage3.md) — 승인 초안을 원격 Release body에 반영, tag/title/asset/draft/prerelease 불변 및 asset checksum 재확인.
 - Stage 4: [`task_m030_54_stage4.md`](../working/task_m030_54_stage4.md) — 원격 Release 재조회, 통합 grep, 제외 범위 grep, `git diff --check`, `git status --short` 확인.
+- Stage 4.1: [`task_m030_54_stage4_1.md`](../working/task_m030_54_stage4_1.md) — 원격 Release body 다국어 보정, future release 규칙의 다국어 명시 여부 확인, asset checksum 재확인.
 
 ## Stage 4 통합 검증 상세
 
@@ -79,6 +85,17 @@ GitHub Issue: [#54](https://github.com/postmelee/crop/issues/54)
 | `rg -n "새 tag|새 GitHub Release|asset 교체|version bump|Chrome Web Store Dashboard|변경하지|제외" mydocs/working/task_m030_54_stage4.md mydocs/report/task_m030_54_report.md` | OK — 제외 범위와 변경하지 않은 항목 확인 |
 | `git diff --check` | OK — whitespace 경고 없음 |
 | `git status --short` | OK — Stage 4 산출물만 미커밋 변경으로 확인 후 단계 커밋 예정 |
+
+## Stage 4.1 보정 검증 상세
+
+| 검증 | 결과 |
+|---|---|
+| `gh release edit v0.1.0 --repo postmelee/crop --notes-file /private/tmp/crop-task54-v010-release-body-multilingual.md` | OK — 다국어 body 반영 후 Release URL 반환 |
+| `gh release view v0.1.0 --repo postmelee/crop --json tagName,name,url,isDraft,isPrerelease,assets,body` | OK — English/한국어/日本語/简体中文/Developer Verification 구조, tag/name/url, draft/prerelease, asset metadata 확인 |
+| `rg -n "^## English\|^## 한국어\|^## 日本語\|^## 简体中文\|^## Developer Verification\|Privacy URL\|개인정보처리방침 URL\|プライバシーポリシー URL\|隐私政策 URL\|SHA-256 checksum" /private/tmp/crop-task54-v010-release-body-multilingual.md` | OK — 다국어 사용자 섹션과 공통 developer 검증 항목 확인 |
+| `rg -n "language\|언어\|다국어\|English\|한국어\|日本語\|简体中文\|localization\|release note\|GitHub Release" mydocs/_templates/github_release_note.md mydocs/_templates/README.md mydocs/manual/release_pipeline_guide.md` | OK — 현재 규칙에 다국어 전체 작성 요구가 명시돼 있지 않음을 확인 |
+| `shasum -a 256 /tmp/crop-task54-release-check-stage4-1/crop-0.1.0-cws.zip` | OK — `84c69f31e40667fdda97cf5af045ed8e770769b135dd72656dedb8dd0f9f4c15` |
+| `wc -c /tmp/crop-task54-release-check-stage4-1/crop-0.1.0-cws.zip` | OK — `438474` bytes |
 
 ## 제외 범위 확인
 
@@ -97,10 +114,11 @@ GitHub Issue: [#54](https://github.com/postmelee/crop/issues/54)
 - GitHub Release body는 Stage 3에서 이미 공개 변경됐다. 되돌림이 필요하면 Stage 1 기술 노트에 보존된 기존 body 또는 별도 승인된 수정 body로 다시 `gh release edit --notes-file`을 수행해야 한다.
 - Chrome Web Store URL HTTP 확인은 CLI 접근성 확인이며, 브라우저 UI의 버튼 상태 검증은 아니다.
 - `downloadCount`는 검증 다운로드로 변동되는 통계값이므로 release 불변 기준으로 사용하지 않는다.
+- future release 규칙에는 아직 README 지원 언어 전체 작성 요구가 명시돼 있지 않다.
 
 ### 후속 작업 후보
 
-- 해당 없음. 이후 release는 `mydocs/_templates/github_release_note.md`를 사용한다.
+- release note 템플릿과 release pipeline guide에 README 지원 언어 전체 작성 원칙을 명시하는 후속 표준화 task.
 
 ## 작업지시자 승인 요청
 

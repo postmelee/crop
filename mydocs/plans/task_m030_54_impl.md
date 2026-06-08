@@ -12,6 +12,7 @@ GitHub Issue: [#54](https://github.com/postmelee/crop/issues/54)
 | 2 | v0.1.0 release body 초안 작성 | `mydocs/tech/task_m030_54_v010_release_body.md`, `mydocs/working/task_m030_54_stage2.md` | #50 템플릿 필수 섹션과 실제 기준값 반영 여부 확인 |
 | 3 | 승인된 body를 GitHub Release에 반영 | GitHub Release `v0.1.0` body, `mydocs/tech/task_m030_54_v010_release_body.md`, `mydocs/working/task_m030_54_stage3.md` | 원격 body 업데이트 확인, tag/title/asset/draft/prerelease 상태 불변 확인 |
 | 4 | 통합 검증과 최종 보고 | `mydocs/working/task_m030_54_stage4.md`, `mydocs/report/task_m030_54_report.md`, `mydocs/orders/20260608.md` | 최종 grep, 원격 release 재조회, status/diff 확인 |
+| 4.1 | 다국어 release body 보정과 future rule 확인 | GitHub Release `v0.1.0` body, `mydocs/working/task_m030_54_stage4_1.md`, `mydocs/report/task_m030_54_report.md` | English/한국어/日本語/简体中文 섹션, developer verification, future rule 명시 여부, asset 불변 확인 |
 
 ## 문서 위치 확인
 
@@ -194,9 +195,50 @@ git status --short
 Task #54 Stage 4: release body 소급 표준화 검증
 ```
 
+## Stage 4.1 - 다국어 release body 보정과 future rule 확인
+
+### 산출물
+
+신규:
+
+- `mydocs/working/task_m030_54_stage4_1.md`
+
+수정:
+
+- GitHub Release `v0.1.0` body
+- `mydocs/tech/task_m030_54_v010_release_body.md`
+- `mydocs/report/task_m030_54_report.md`
+- `mydocs/orders/20260608.md`
+- `mydocs/plans/task_m030_54_impl.md`
+
+### 변경 내용
+
+- 작업지시자 피드백에 따라 원격 GitHub Release `v0.1.0` body를 English, 한국어, 日本語, 简体中文 user-facing 섹션과 공통 `Developer Verification` 섹션으로 보정한다.
+- README 지원 언어 기준을 사용하고, release asset, tag, title, draft/prerelease 상태 변경 옵션은 사용하지 않는다.
+- `mydocs/_templates/github_release_note.md`, `mydocs/_templates/README.md`, `mydocs/manual/release_pipeline_guide.md`에 future release용 다국어 작성 규칙이 명시돼 있는지 확인한다.
+- future release 규칙에 명시적 다국어 작성 요구가 없으면 이번 task에서는 확인 결과와 후속 작업 후보로만 기록한다.
+
+### 검증
+
+```bash
+gh release view v0.1.0 --repo postmelee/crop --json tagName,name,url,isDraft,isPrerelease,assets,body
+rg -n "^## English|^## 한국어|^## 日本語|^## 简体中文|^## Developer Verification|Privacy URL|개인정보처리방침 URL|プライバシーポリシー URL|隐私政策 URL|SHA-256 checksum" /private/tmp/crop-task54-v010-release-body-multilingual.md
+rg -n "language|언어|다국어|English|한국어|日本語|简体中文|localization|release note|GitHub Release" mydocs/_templates/github_release_note.md mydocs/_templates/README.md mydocs/manual/release_pipeline_guide.md
+shasum -a 256 /tmp/crop-task54-release-check-stage4-1/crop-0.1.0-cws.zip
+wc -c /tmp/crop-task54-release-check-stage4-1/crop-0.1.0-cws.zip
+git diff --check
+git status --short
+```
+
+### 커밋
+
+```text
+Task #54 [Stage 4.1]: 다국어 release body 보정
+```
+
 ## 최종 보고와 PR 준비
 
-Stage 4 완료와 승인 후 `task-final-report` 절차로 진행한다.
+Stage 4.1 완료와 승인 후 `task-final-report` 절차로 진행한다.
 
 예상 산출물:
 

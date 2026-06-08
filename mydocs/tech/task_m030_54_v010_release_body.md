@@ -285,3 +285,49 @@ wc -c /tmp/crop-task54-release-check-stage3/crop-0.1.0-cws.zip
 - OK: tag, Release name/title, Release URL, draft/prerelease 상태가 변경되지 않았다.
 - OK: asset name, URL, size, digest가 변경되지 않았다.
 - OK: update 후 downloaded asset SHA-256과 byte size가 Stage 1/#48 기준과 동일하다.
+
+## Stage 4.1 다국어 보정과 future rule 확인
+
+작업지시자 피드백에 따라 Stage 3 body를 English, 한국어, 日本語, 简体中文 전체 사용자-facing 섹션과 공통 `Developer Verification` 섹션으로 보정했다.
+
+적용 명령:
+
+```bash
+gh release edit v0.1.0 --repo postmelee/crop --notes-file /private/tmp/crop-task54-v010-release-body-multilingual.md
+```
+
+### update 후 body 구조
+
+- `# crop v0.1.0`
+- `## English`
+- `## 한국어`
+- `## 日本語`
+- `## 简体中文`
+- `## Developer Verification`
+
+각 언어의 사용자-facing 섹션은 설치/업데이트, 주요 변경점, 권한과 개인정보/privacy, 알려진 제한/known limitations를 포함한다. Developer Verification은 release 기준, package asset, verification results, rollback/follow-up을 공통 영어 섹션으로 둔다.
+
+### future release rule 확인
+
+| 문서 | 확인 결과 | 판단 |
+|---|---|---|
+| `mydocs/_templates/github_release_note.md` | user 안내와 developer 검증 기록 구조는 있지만 README 지원 언어 전체 작성 요구는 없음 | 다국어 명시 규칙 없음 |
+| `mydocs/_templates/README.md` | 실제 release body는 release 작업에서 승인된 공개 언어로 채운다고만 명시 | 다국어 명시 규칙 없음 |
+| `mydocs/manual/release_pipeline_guide.md` | release note 작성 절차와 필수 값은 있으나 English/한국어/日本語/简体中文 전체 작성 규칙은 없음 | 다국어 명시 규칙 없음 |
+
+이번 task에서는 작업지시자 요청에 따라 존재 여부를 확인하고, `v0.1.0` body만 다국어로 보정했다. 앞으로 모든 release에 같은 다국어 원칙을 적용하려면 release note 템플릿과 release pipeline guide를 갱신하는 별도 표준화 task가 필요하다.
+
+### Stage 4.1 원격 metadata와 asset 검증
+
+| 항목 | 값 | 결과 |
+|---|---|---|
+| Tag | `v0.1.0` | 불변 |
+| Release name/title | `crop v0.1.0` | 불변 |
+| Draft | `false` | 불변 |
+| Prerelease | `false` | 불변 |
+| Asset name | `crop-0.1.0-cws.zip` | 불변 |
+| Asset size | `438474 bytes` | 불변 |
+| Asset digest | `sha256:84c69f31e40667fdda97cf5af045ed8e770769b135dd72656dedb8dd0f9f4c15` | 불변 |
+| Downloaded SHA-256 | `84c69f31e40667fdda97cf5af045ed8e770769b135dd72656dedb8dd0f9f4c15` | Stage 1/#48 기준과 동일 |
+
+Stage 4.1에서도 새 tag, 새 GitHub Release, asset 교체, version bump, Chrome Web Store Dashboard 작업은 수행하지 않았다.
