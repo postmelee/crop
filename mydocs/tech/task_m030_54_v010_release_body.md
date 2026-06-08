@@ -96,7 +96,96 @@ Stage 2에서 보강해야 할 정보:
 
 ## Stage 2 초안 영역
 
-Stage 2에서 승인 요청용 공개 body 초안을 이 섹션에 작성한다. Stage 1에서는 원격 Release body를 변경하지 않았다.
+아래 본문은 Stage 3 승인 후 원격 GitHub Release `v0.1.0` body에 적용할 후보 초안이다. Stage 2에서는 초안만 작성했고, 원격 Release body는 변경하지 않았다.
+
+### 공개 body 초안
+
+```markdown
+# crop v0.1.0
+
+## user 안내
+
+### 설치 / 업데이트
+
+- Chrome Web Store: published
+- 설치 URL: https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki
+- 업데이트 방식: 자동 업데이트
+- 대상 버전: `v0.1.0`
+
+### 주요 변경점
+
+- 확장 action icon 또는 `Ctrl+Shift+S` 단축키로 현재 tab에서 capture overlay를 열 수 있다.
+- DOM element hover highlight, element selection, custom region selection, visible viewport capture, top-level full-page capture를 지원한다.
+- 선택한 PNG를 system clipboard로 복사하거나 download 파일로 저장할 수 있다.
+
+### 권한과 privacy
+
+- 권한 변화: 첫 공개 릴리즈 기준. 필요한 권한은 `activeTab`, `scripting`, `clipboardWrite`, `downloads`다.
+- privacy URL: https://github.com/postmelee/crop/blob/v0.1.0/PRIVACY.md
+- 데이터 처리: 스크린샷은 브라우저 안에서 로컬 처리된다. `crop`은 스크린샷이나 페이지 데이터를 서버로 업로드하지 않고 telemetry를 포함하지 않는다.
+
+### known limitations
+
+- Chrome은 `chrome://` 페이지와 Chrome Web Store 페이지 같은 제한된 페이지에서 extension injection을 차단한다.
+- Cross-origin iframe contents와 closed shadow DOM internals는 content script에서 검사할 수 없다.
+- Full-page와 scroll-stitched capture는 동적 페이지 또는 fixed/sticky layout 변화가 있는 페이지에서 완전하지 않을 수 있으며, 매우 큰 capture는 browser canvas limit 안에 맞추기 위해 downscale될 수 있다.
+
+### Chrome Web Store 상태
+
+- Store 상태: published
+- Store package: `crop-0.1.0-cws.zip`
+- 확인일: 2026-06-08
+
+## developer 검증 기록
+
+### release 기준
+
+| 항목 | 값 |
+|---|---|
+| Tag | `v0.1.0` |
+| Release commit | `53808a2147c120e67f7bb93b737b2f6d0526d6f4` |
+| Base branch | `main` |
+| 포함 PR | `#47` |
+| 포함 Issue | `#46`, `#48` |
+
+### package asset
+
+| 항목 | 값 |
+|---|---|
+| asset 이름 | `crop-0.1.0-cws.zip` |
+| asset URL | `https://github.com/postmelee/crop/releases/download/v0.1.0/crop-0.1.0-cws.zip` |
+| asset size | `438474 bytes` |
+| SHA-256 checksum | `84c69f31e40667fdda97cf5af045ed8e770769b135dd72656dedb8dd0f9f4c15` |
+| 생성 명령 | `npm run build && npm run package:cws` |
+| 검증 명령 | `npm run verify:cws` |
+
+### verification 결과
+
+| 검증 | 결과 |
+|---|---|
+| `npm run build` | OK - Vite build가 통과했고 extension package 입력이 생성됐다. |
+| `npm run typecheck` | OK |
+| `npm test` | OK - 17 files, 213 tests passed. |
+| `npm run package:cws` | OK - `/tmp/crop-0.1.0-cws.zip`, 13 files, 438474 bytes. |
+| `npm run verify:cws` | OK - Chrome Web Store ZIP verification passed. |
+| ZIP contents 확인 | OK - `manifest.json`이 ZIP root에 있고 `.DS_Store`, `__MACOSX`, `node_modules`, `mydocs`, repository root docs/config 같은 forbidden entry가 없다. |
+| privacy URL 확인 | OK - `https://github.com/postmelee/crop/blob/v0.1.0/PRIVACY.md`, contents SHA `29f580ed98e124904268a7d9225b2cc8cfda6722`. |
+| Chrome Web Store URL 확인 | OK - `https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki`가 2026-06-08에 HTTP 200을 반환했다. |
+
+### rollback / follow-up
+
+- Rollback 기준: 이번 작업은 GitHub Release body만 변경한다. body update가 잘못되면 이전 단일 문단 body 또는 별도 승인된 수정 body로 되돌린다. 별도 task와 승인 없이 Release asset, tag, Store package를 교체하지 않는다.
+- 후속 작업: 이 업데이트 이후 `v0.1.0` Release body 기준 후속 작업은 해당 없음. 이후 release는 `mydocs/_templates/github_release_note.md`를 사용한다.
+- 자동 release notes: 사용 안 함. 이 Release body는 승인된 템플릿 구조를 기준으로 수동 관리한다.
+```
+
+### 초안 판단
+
+- 템플릿 주석과 작성 체크박스는 공개 body 초안에서 제거했다.
+- 모든 release 기준값은 Stage 1에서 확인한 원격 Release, downloaded asset, `v0.1.0` privacy URL, #48 package 검증 기록을 기준으로 채웠다.
+- Chrome Web Store 상태는 작업지시자의 게시 완료 통지, #51 README 갱신 결과, Store URL HTTP 200 확인을 기준으로 `published`로 표기했다.
+- `downloadCount`처럼 시간에 따라 변하는 값은 공개 body 초안에서 제외했다.
+- Stage 3에서는 위 초안만 적용하고 tag, title, asset, draft/prerelease 상태는 변경하지 않는다.
 
 ## Stage 3 update 전후 비교 영역
 
@@ -122,7 +211,7 @@ shasum -a 256 /tmp/crop-task54-release-check-stage1/crop-0.1.0-cws.zip
 wc -c /tmp/crop-task54-release-check-stage1/crop-0.1.0-cws.zip
 gh api 'repos/postmelee/crop/contents/PRIVACY.md?ref=v0.1.0' --jq '.html_url, .sha'
 git ls-remote --tags origin v0.1.0
-curl -L -s -o /dev/null -w '%{http_code} %{url_effective}\n' https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki
+curl -I -L --max-time 20 https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki
 ```
 
 결과:
