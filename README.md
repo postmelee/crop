@@ -6,9 +6,17 @@ Languages: English | [한국어](README.ko.md) | [简体中文](README.zh-CN.md)
 Open the overlay, select a page element or draw a custom region, then copy or
 save the resulting PNG.
 
-Release status: `crop` is in Chrome Web Store release preparation. It is not
-listed in the Chrome Web Store yet. For now, build the extension locally and
-load the generated `dist/` folder as an unpacked extension.
+Release status: `crop` is published in the Chrome Web Store.
+
+## Install from Chrome Web Store
+
+1. Open [`crop` in the Chrome Web Store](https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki).
+2. Click Add to Chrome and confirm the installation.
+3. Open a normal web page and click the `crop` action icon.
+
+Chrome may leave the suggested shortcut unassigned if it conflicts with an
+existing browser or operating system shortcut. You can review extension
+shortcuts in `chrome://extensions/shortcuts`.
 
 ## What crop does
 
@@ -28,7 +36,24 @@ load the generated `dist/` folder as an unpacked extension.
 - Supports same-origin and `srcdoc` iframe element selection when Chrome allows
   the content script to inspect the iframe document.
 
-## Load from source
+## Basic Usage
+
+1. Open a normal web page.
+2. Click the `crop` action icon, or press `Ctrl+Shift+S`
+   (`Command+Shift+S` on macOS).
+3. Choose one of the capture flows:
+   - Move over an element and click to select it.
+   - Drag to draw a custom region.
+   - Use the visible-page button to capture the current viewport.
+   - Use the full-page button to capture the current top-level document.
+4. Adjust the selected region if needed.
+5. Click Copy to write a PNG to the clipboard, or Save to download a PNG.
+6. Press Escape or use Cancel to close the overlay without capturing.
+
+## Load from source for development
+
+Use this path when developing `crop`, testing local changes, or loading an
+unpacked build manually.
 
 Requirements:
 
@@ -50,24 +75,6 @@ Load it in Chrome:
 3. Click Load unpacked.
 4. Select this repository's `dist/` folder.
 5. Open a normal web page and click the `crop` action icon.
-
-Chrome may leave the suggested shortcut unassigned if it conflicts with an
-existing browser or operating system shortcut. You can review extension
-shortcuts in `chrome://extensions/shortcuts`.
-
-## Basic Usage
-
-1. Open a normal web page.
-2. Click the `crop` action icon, or press `Ctrl+Shift+S`
-   (`Command+Shift+S` on macOS).
-3. Choose one of the capture flows:
-   - Move over an element and click to select it.
-   - Drag to draw a custom region.
-   - Use the visible-page button to capture the current viewport.
-   - Use the full-page button to capture the current top-level document.
-4. Adjust the selected region if needed.
-5. Click Copy to write a PNG to the clipboard, or Save to download a PNG.
-6. Press Escape or use Cancel to close the overlay without capturing.
 
 ## Permissions
 
