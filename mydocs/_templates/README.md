@@ -25,7 +25,22 @@
 - `external_pr_review.md`
 - `external_pr_review_impl.md`
 - `external_pr_report.md`
+- `github_release_note.md`
 - 그 밖에 산출물 종류가 드러나는 이름
+
+## GitHub Release note 템플릿
+
+`github_release_note.md`는 GitHub Release body를 작성할 때 사용하는 출력 템플릿이다.
+
+| 항목 | 기준 |
+|---|---|
+| 실제 파일 위치 | `mydocs/_templates/github_release_note.md` |
+| 작성 시점 | release tag/GitHub Release 생성 전, release 기준 commit과 Store package asset 검증이 끝난 뒤 |
+| 작성 언어 | 템플릿 설명은 한국어. 실제 release body는 release 작업에서 승인된 공개 언어로 채우되 섹션 구조를 유지한다. |
+| 필수 섹션 | `user 안내`, `developer 검증 기록`, `notes-file 작성 체크` |
+| 필수 항목 | Chrome Web Store 상태, privacy URL, package asset, SHA-256 checksum, verification 결과, rollback/follow-up |
+| 사용 명령 | `gh release create v{version} {asset_path} --notes-file {filled_notes_file}` |
+| 검증 기준 | `user`, `developer`, `checksum`, `privacy`, `Chrome Web Store`, `asset`, `verification`, `rollback`, `known`, `SHA-256`, `notes-file` 키워드가 템플릿에 있어야 한다. |
 
 ## 사용 템플릿
 
