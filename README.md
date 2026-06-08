@@ -1,12 +1,20 @@
-# crop
+<p align="center">
+  <img src="/assets/logo/Crop-iOS-Default-256x256@2x.png" alt="crop logo" width="128" />
+</p>
 
-Languages: English | [한국어](README.ko.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
+# <div align="center">crop</div>
 
 `crop` is a Chrome Manifest V3 extension for taking precise page screenshots.
 Open the overlay, select a page element or draw a custom region, then copy or
 save the resulting PNG.
 
-Release status: `crop` is published in the Chrome Web Store.
+<div align="center">
+  
+English | [한국어](README.ko.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
+
+</div>
+
+![screenshot](/assets/crop_screenshots/crop_eng_1.png)
 
 ## Install from Chrome Web Store
 
