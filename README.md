@@ -4,12 +4,24 @@
 
 # <div align="center">crop</div>
 
+<p align="center">
+  <a href="https://github.com/postmelee/crop/releases/latest">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/postmelee/crop?label=release" />
+  </a>
+  <a href="LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/postmelee/crop" />
+  </a>
+  <a href="https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki">
+    <img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/pdmniipgbjdcpnhbkkppodechbehagki?label=chrome%20web%20store&logo=googlechrome&logoColor=white" />
+  </a>
+</p>
+
 `crop` is a Chrome Manifest V3 extension for taking precise page screenshots.
 Open the overlay, select a page element or draw a custom region, then copy or
 save the resulting PNG.
 
 <div align="center">
-  
+
 English | [한국어](README.ko.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
 </div>

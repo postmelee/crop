@@ -1,10 +1,31 @@
-# crop
+<p align="center">
+  <img src="/assets/logo/Crop-iOS-Default-256x256@2x.png" alt="crop logo" width="128" />
+</p>
 
-语言：[English](README.md) | [한국어](README.ko.md) | 简体中文 | [日本語](README.ja.md)
+# <div align="center">crop</div>
 
-`crop` 是一个用于精确截取网页截图的 Chrome Manifest V3 扩展。打开覆盖层，选择页面元素或拖出自定义区域，然后复制或保存生成的 PNG。
+<p align="center">
+  <a href="https://github.com/postmelee/crop/releases/latest">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/postmelee/crop?label=release" />
+  </a>
+  <a href="LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/postmelee/crop" />
+  </a>
+  <a href="https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki">
+    <img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/pdmniipgbjdcpnhbkkppodechbehagki?label=chrome%20web%20store&logo=googlechrome&logoColor=white" />
+  </a>
+</p>
 
-发布状态：`crop` 已在 Chrome Web Store 发布，可通过官方页面安装。
+`crop` 是一个用于精确截取网页截图的 Chrome Manifest V3 扩展。打开覆盖层，
+选择页面元素或拖出自定义区域，然后复制或保存生成的 PNG。
+
+<div align="center">
+
+[English](README.md) | [한국어](README.ko.md) | 简体中文 | [日本語](README.ja.md)
+
+</div>
+
+![截图](/assets/crop_screenshots/crop_chi_1.png)
 
 ## 从 Chrome Web Store 安装
 

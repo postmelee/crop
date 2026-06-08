@@ -1,10 +1,32 @@
-# crop
+<p align="center">
+  <img src="/assets/logo/Crop-iOS-Default-256x256@2x.png" alt="crop logo" width="128" />
+</p>
 
-言語: [English](README.md) | [한국어](README.ko.md) | [简体中文](README.zh-CN.md) | 日本語
+# <div align="center">crop</div>
 
-`crop` は、正確なページスクリーンショットを撮るための Chrome Manifest V3 拡張機能です。オーバーレイを開き、ページ要素を選択するか任意の範囲をドラッグして、生成された PNG をコピーまたは保存できます。
+<p align="center">
+  <a href="https://github.com/postmelee/crop/releases/latest">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/postmelee/crop?label=release" />
+  </a>
+  <a href="LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/postmelee/crop" />
+  </a>
+  <a href="https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki">
+    <img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/pdmniipgbjdcpnhbkkppodechbehagki?label=chrome%20web%20store&logo=googlechrome&logoColor=white" />
+  </a>
+</p>
 
-リリース状況: `crop` は Chrome Web Store で公開されており、公式掲載ページからインストールできます。
+`crop` は、正確なページスクリーンショットを撮るための Chrome Manifest V3
+拡張機能です。オーバーレイを開き、ページ要素を選択するか任意の範囲を
+ドラッグして、生成された PNG をコピーまたは保存できます。
+
+<div align="center">
+
+[English](README.md) | [한국어](README.ko.md) | [简体中文](README.zh-CN.md) | 日本語
+
+</div>
+
+![スクリーンショット](/assets/crop_screenshots/crop_jap_1.png)
 
 ## Chrome Web Store からインストール
 
