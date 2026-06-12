@@ -490,6 +490,79 @@ describe("full page capture helpers", () => {
     ]);
   });
 
+  it("uses minimal scroll for single-tile selected page rect capture", async () => {
+    const events: string[] = [];
+    let currentScrollX = 0;
+    let currentScrollY = 300;
+    const readMetrics = (): FullPageMetrics =>
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 700,
+        scrollWidth: 1400,
+        scrollHeight: 1800,
+        scrollX: currentScrollX,
+        scrollY: currentScrollY
+      });
+
+    const result = await capturePageRectTiles({
+      pageRect: rectFromEdges(100, 500, 400, 1100),
+      readMetrics,
+      scrollTo: (x, y) => {
+        events.push(`scroll:${x},${y}`);
+        currentScrollX = x;
+        currentScrollY = y;
+      },
+      waitForPaint: () => Promise.resolve(),
+      captureVisibleTab: async () => `data:image/png;base64,${currentScrollX}-${currentScrollY}`
+    });
+
+    expect(result.tiles).toHaveLength(1);
+    expect(result.tiles[0]).toMatchObject({
+      actualScrollX: 0,
+      actualScrollY: 400,
+      viewportCropRect: rectFromEdges(100, 100, 400, 700),
+      destinationCssRect: rectFromEdges(0, 0, 300, 600)
+    });
+    expect(result.tiles[0].dataUrl).toBe("data:image/png;base64,0-400");
+    expect(events).toEqual([
+      "scroll:0,400",
+      "scroll:0,300"
+    ]);
+  });
+
+  it("allows selected page rect capture to opt back into segment-start planning", async () => {
+    let currentScrollX = 0;
+    let currentScrollY = 300;
+    const result = await capturePageRectTiles({
+      pageRect: rectFromEdges(100, 500, 400, 1100),
+      readMetrics: () =>
+        createFullPageMetrics({
+          viewportWidth: 500,
+          viewportHeight: 700,
+          scrollWidth: 1400,
+          scrollHeight: 1800,
+          scrollX: currentScrollX,
+          scrollY: currentScrollY
+        }),
+      scrollTo: (x, y) => {
+        currentScrollX = x;
+        currentScrollY = y;
+      },
+      waitForPaint: () => Promise.resolve(),
+      captureVisibleTab: async () => `data:image/png;base64,${currentScrollX}-${currentScrollY}`,
+      tilePlanOptions: {
+        scrollStrategy: "segment-start"
+      }
+    });
+
+    expect(result.tiles[0]).toMatchObject({
+      actualScrollX: 100,
+      actualScrollY: 500,
+      viewportCropRect: rectFromEdges(0, 0, 300, 600)
+    });
+    expect(result.tiles[0].dataUrl).toBe("data:image/png;base64,100-500");
+  });
+
   it("runs per-tile capture hooks and restores hook state after a failed tile", async () => {
     const events: string[] = [];
     let currentScrollY = 0;

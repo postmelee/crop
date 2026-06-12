@@ -91,6 +91,7 @@ export interface FullPageCaptureLoopOptions {
 
 export interface PageRectCaptureLoopOptions extends FullPageCaptureLoopOptions {
   readonly pageRect: CropRectLike;
+  readonly tilePlanOptions?: PageRectTilePlanOptions;
 }
 
 interface FullPageElementLike {
@@ -306,7 +307,12 @@ export async function captureFullPageTiles(
 export async function capturePageRectTiles(
   options: PageRectCaptureLoopOptions
 ): Promise<FullPageCaptureLoopResult> {
-  return captureTiles(options, (metrics) => createPageRectTilePlan(metrics, options.pageRect));
+  return captureTiles(options, (metrics) =>
+    createPageRectTilePlan(metrics, options.pageRect, {
+      scrollStrategy: "minimal-scroll",
+      ...options.tilePlanOptions
+    })
+  );
 }
 
 async function captureTiles(
