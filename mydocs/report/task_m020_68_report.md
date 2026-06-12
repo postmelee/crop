@@ -4,7 +4,7 @@ GitHub Issue: [#68](https://github.com/postmelee/crop/issues/68)
 수행계획서: [`task_m020_68.md`](../plans/task_m020_68.md)
 구현계획서: [`task_m020_68_impl.md`](../plans/task_m020_68_impl.md)
 마일스톤: M020
-상태: 자동 검증 완료, 작업지시자 수동 smoke 대기
+상태: PR 게시 준비
 
 ## 요약
 
@@ -70,7 +70,7 @@ macOS `Show scroll bars: Always` 환경에서 이미지 선택 Copy/Save 결과 
 
 | 수용 기준 | 결과 |
 |---|---|
-| macOS `Show scroll bars: Always`, Chrome zoom 100%에서 선택 이미지 오른쪽에 scrollbar gutter 유래 여백이 포함되지 않는다 | 수동 대기 — 작업지시자가 직접 Copy/Save smoke 진행 예정 |
+| macOS `Show scroll bars: Always`, Chrome zoom 100%에서 선택 이미지 오른쪽에 scrollbar gutter 유래 여백이 포함되지 않는다 | OK — 작업지시자가 직접 검증해 수정 확인 |
 | selected visible capture와 visible viewport preview는 콘텐츠 viewport rect를 선택하되, source pixel mapping은 capture viewport size 기준을 사용한다 | OK — `getCaptureViewportCssSize()`, `cropPngDataUrl()` caller, phase6 regression |
 | viewport 밖 selected stitching과 full-page stitching은 tile segment 크기와 capture source mapping 크기를 분리한다 | OK — `captureViewportCssSize` metrics/plan/tile 계약, full-page/stitch tests |
 | Copy와 Save는 같은 corrected PNG data URL을 사용한다 | OK — existing Copy/Save data URL flow 유지, phase6 preview action regression |
@@ -107,7 +107,7 @@ git diff --check
 
 ### 수동 smoke
 
-작업지시자가 직접 진행하기로 한 항목이다.
+작업지시자가 직접 진행했고, 수정이 확인되었다.
 
 1. macOS `System Settings > Appearance > Show scroll bars`를 `Always`로 둔다.
 2. Chrome을 완전히 종료 후 재실행한다.
@@ -117,19 +117,21 @@ git diff --check
 6. 저장 PNG 오른쪽에 순백 gutter가 붙지 않고 원본 이미지 표시 비율과 일치하는지 확인한다.
 7. 가능하면 출력 이미지 폭이 선택 CSS 폭에 DPR을 곱한 값과 일치하는지 확인한다.
 
+결과:
+
+- OK: 작업지시자가 현재 브랜치의 `dist/`를 로드해 직접 검증했고, 오른쪽 흰 여백 보정이 확인되었다.
+
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- 실제 Copy/Save PNG smoke는 작업지시자 직접 검증 결과가 아직 반영되지 않았다.
 - Chrome UI에서 어떤 `crop` 확장이 로드됐는지에 따라 smoke 결과가 달라질 수 있으므로, 검증 시 반드시 현재 브랜치의 `dist/`를 reload한 unpacked extension으로 확인해야 한다.
 - lazy loading, animation, layout shift가 있는 실제 문서에서는 tiled capture 경로에서 tile 간 픽셀 차이가 생길 수 있다.
 
 ### 후속 작업 후보
 
-- 작업지시자 수동 smoke 결과가 정상이라면 PR 본문에 확인 환경과 결과를 기록한다.
 - 수동 smoke에서 문제가 재현되면 로드된 extension ID와 `dist/` reload 상태, `window.innerWidth/clientWidth`, 저장 PNG dimension을 함께 기록해 Stage 2/3 계약을 재점검한다.
 
 ## 작업지시자 승인 요청
 
-- 수동 smoke 결과와 최종 보고서가 승인되면 PR 게시 절차로 진행한다.
+- 최종 보고서와 수동 smoke 결과가 승인되었으므로 PR 게시 절차로 진행한다.
