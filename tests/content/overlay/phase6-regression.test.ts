@@ -51,6 +51,14 @@ const overlayRuntime = readFileSync(
   resolve(testDir, "../../../src/content/overlay/crop-overlay.ts"),
   "utf8"
 );
+const fullPageCaptureRuntime = readFileSync(
+  resolve(testDir, "../../../src/content/overlay/full-page-capture.ts"),
+  "utf8"
+);
+const stitchImageRuntime = readFileSync(
+  resolve(testDir, "../../../src/shared/stitch-image.ts"),
+  "utf8"
+);
 const firefoxUiAssets = readFileSync(
   resolve(testDir, "../../../src/firefox-derived/screenshots-ui-assets.ts"),
   "utf8"
@@ -195,6 +203,17 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(overlayRuntime).toContain("window.innerWidth");
     expect(overlayRuntime).toContain("window.innerHeight");
     expect(overlayRuntime.match(/viewportCssSize: captureViewportCssSize/g)).toHaveLength(2);
+  });
+
+  it("passes capture viewport dimensions to tiled stitching and preview source mapping", () => {
+    expect(fullPageCaptureRuntime).toContain("captureViewportWidth: win.innerWidth");
+    expect(fullPageCaptureRuntime).toContain("captureViewportCssSize: metrics.captureViewportCssSize");
+    expect(stitchImageRuntime).toContain("readonly captureViewportCssSize: ViewportCssSize");
+    expect(stitchImageRuntime).toContain("input.tiles[0].captureViewportCssSize");
+    expect(overlayRuntime.match(/captureViewportCssSize: tile\.captureViewportCssSize/g)).toHaveLength(
+      4
+    );
+    expect(overlayRuntime).not.toContain("viewportCssSize: captureResult.plan.viewportCssSize");
   });
 
   it("uses the last pointer and latest scroll position for edge auto-scroll drag updates", () => {

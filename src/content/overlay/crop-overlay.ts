@@ -131,10 +131,7 @@ interface CropTiledPreviewTile {
   readonly dataUrl: string;
   readonly viewportCropRect: CropRect;
   readonly destinationCssRect: CropRect;
-  readonly viewportCssSize: {
-    readonly clientWidth: number;
-    readonly clientHeight: number;
-  };
+  readonly captureViewportCssSize: ViewportCssSize;
 }
 
 interface CropTiledPreviewModel {
@@ -1016,7 +1013,7 @@ export function mountCropOverlay(): void {
           dataUrl: tile.dataUrl,
           viewportCropRect: tile.viewportCropRect,
           destinationCssRect: tile.destinationCssRect,
-          viewportCssSize: captureResult.plan.viewportCssSize
+          captureViewportCssSize: tile.captureViewportCssSize
         }))
       });
 
@@ -1109,7 +1106,7 @@ export function mountCropOverlay(): void {
           dataUrl: tile.dataUrl,
           viewportCropRect: tile.viewportCropRect,
           destinationCssRect: tile.destinationCssRect,
-          viewportCssSize: captureResult.plan.viewportCssSize
+          captureViewportCssSize: tile.captureViewportCssSize
         }))
       });
     } finally {
@@ -1130,7 +1127,7 @@ export function mountCropOverlay(): void {
           dataUrl: tile.dataUrl,
           viewportCropRect: tile.viewportCropRect,
           destinationCssRect: tile.destinationCssRect,
-          viewportCssSize: captureResult.plan.viewportCssSize
+          captureViewportCssSize: tile.captureViewportCssSize
         }))
       },
       outputWidth: stitchResult.outputWidth,
@@ -1400,7 +1397,7 @@ export function mountCropOverlay(): void {
       const tileLayout = getStitchPreviewTileLayout({
         viewportCropRect: tile.viewportCropRect,
         destinationCssRect: tile.destinationCssRect,
-        viewportCssSize: tile.viewportCssSize,
+        captureViewportCssSize: tile.captureViewportCssSize,
         outputScale: model.outputScale
       });
       const tileElement = document.createElement("div");
