@@ -52,7 +52,7 @@ import {
   pngDataUrlToBlob,
   writePngDataUrlToClipboard
 } from "../../shared/clipboard";
-import { cropPngDataUrl } from "../../shared/crop-image";
+import { cropPngDataUrl, type ViewportCssSize } from "../../shared/crop-image";
 import { createPngFilename } from "../../shared/filename";
 import { getCropMessage } from "../../shared/i18n";
 import {
@@ -953,6 +953,7 @@ export function mountCropOverlay(): void {
     const cropResult = await captureWithOverlayHidden(async () => {
       const viewport = getViewportMetrics();
       const viewportRect = clipPageRectToViewport(selectedRect, viewport);
+      const captureViewportCssSize = getCaptureViewportCssSize(viewport);
 
       if (!viewportRect) {
         throw new Error("Selected area is outside the visible viewport.");
@@ -970,10 +971,7 @@ export function mountCropOverlay(): void {
         cropResult: await cropPngDataUrl({
           dataUrl: captureResponse.dataUrl,
           viewportCropRect: viewportRect,
-          viewportCssSize: {
-            clientWidth: viewport.clientWidth,
-            clientHeight: viewport.clientHeight
-          }
+          viewportCssSize: captureViewportCssSize
         })
       };
     }, visibilityOptions);
@@ -1050,6 +1048,7 @@ export function mountCropOverlay(): void {
     const captureResult = await captureWithOverlayHidden(async () => {
       const viewport = getViewportMetrics();
       const viewportRect = getViewportRect(viewport);
+      const captureViewportCssSize = getCaptureViewportCssSize(viewport);
 
       await waitForNextPaint();
       const captureResponse = await requestVisibleTabCapture();
@@ -1063,10 +1062,7 @@ export function mountCropOverlay(): void {
         cropResult: await cropPngDataUrl({
           dataUrl: captureResponse.dataUrl,
           viewportCropRect: viewportRect,
-          viewportCssSize: {
-            clientWidth: viewport.clientWidth,
-            clientHeight: viewport.clientHeight
-          }
+          viewportCssSize: captureViewportCssSize
         })
       };
     });
@@ -2159,6 +2155,17 @@ function getViewportMetrics(): ViewportMetrics {
     scrollX: windowDimensions.scrollX,
     scrollY: windowDimensions.scrollY
   };
+}
+
+function getCaptureViewportCssSize(fallback: ViewportMetrics): ViewportCssSize {
+  return {
+    clientWidth: getUsableCaptureViewportDimension(window.innerWidth, fallback.clientWidth),
+    clientHeight: getUsableCaptureViewportDimension(window.innerHeight, fallback.clientHeight)
+  };
+}
+
+function getUsableCaptureViewportDimension(value: number, fallback: number): number {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
 function isPageRectFullyInsideViewport(

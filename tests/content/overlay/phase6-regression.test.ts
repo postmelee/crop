@@ -190,6 +190,13 @@ describe("Phase 6 overlay regression coverage", () => {
     ).toBe(726);
   });
 
+  it("passes capture viewport dimensions to visible crop source mapping", () => {
+    expect(overlayRuntime).toContain("function getCaptureViewportCssSize");
+    expect(overlayRuntime).toContain("window.innerWidth");
+    expect(overlayRuntime).toContain("window.innerHeight");
+    expect(overlayRuntime.match(/viewportCssSize: captureViewportCssSize/g)).toHaveLength(2);
+  });
+
   it("uses the last pointer and latest scroll position for edge auto-scroll drag updates", () => {
     const lastPointer = {
       x: 760,
