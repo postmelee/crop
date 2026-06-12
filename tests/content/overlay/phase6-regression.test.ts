@@ -51,6 +51,10 @@ const overlayRuntime = readFileSync(
   resolve(testDir, "../../../src/content/overlay/crop-overlay.ts"),
   "utf8"
 );
+const fullPageCaptureRuntime = readFileSync(
+  resolve(testDir, "../../../src/content/overlay/full-page-capture.ts"),
+  "utf8"
+);
 const firefoxUiAssets = readFileSync(
   resolve(testDir, "../../../src/firefox-derived/screenshots-ui-assets.ts"),
   "utf8"
@@ -312,6 +316,34 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(qualityMatrix).toContain("P6-39");
     expect(qualityMatrix).toContain("selected-scroll-capture-target");
     expect(qualityMatrix).toContain("Task #26");
+    expect(qualityMatrix).toContain("Task #66");
+  });
+
+  it("keeps selected stitching on minimal scroll without changing full page planning", () => {
+    const fullPageCaptureStart = fullPageCaptureRuntime.indexOf(
+      "export async function captureFullPageTiles"
+    );
+    const selectedCaptureStart = fullPageCaptureRuntime.indexOf(
+      "export async function capturePageRectTiles"
+    );
+    const captureLoopStart = fullPageCaptureRuntime.indexOf(
+      "async function captureTiles",
+      selectedCaptureStart
+    );
+    const fullPageCaptureBlock = fullPageCaptureRuntime.slice(
+      fullPageCaptureStart,
+      selectedCaptureStart
+    );
+    const selectedCaptureBlock = fullPageCaptureRuntime.slice(
+      selectedCaptureStart,
+      captureLoopStart
+    );
+
+    expect(fullPageCaptureBlock).toContain("createFullPageTilePlan(metrics)");
+    expect(fullPageCaptureBlock).not.toContain('"minimal-scroll"');
+    expect(selectedCaptureBlock).toContain("createPageRectTilePlan(metrics, options.pageRect");
+    expect(selectedCaptureBlock).toContain('scrollStrategy: "minimal-scroll"');
+    expect(selectedCaptureBlock).toContain("...options.tilePlanOptions");
   });
 
   it("keeps oversized full page downscale fallback quality criteria", () => {
