@@ -1,0 +1,122 @@
+name: Bug Report
+description: Report a reproducible bug in crop with environment details.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        crop에서 발생한 문제를 알려주세요. 재현 절차와 사용 환경을 함께 남기면 원인 확인과 수정 범위 판단에 도움이 됩니다.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 버그 내용
+      description: 어떤 문제가 발생했는지 짧게 설명해주세요.
+      placeholder: |
+        예:
+        복사와 다운로드 모두 이미지 오른쪽에 불필요한 흰색 마진이 생깁니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: 재현 절차
+      description: 같은 문제를 다시 확인할 수 있도록 순서대로 적어주세요.
+      placeholder: |
+        예:
+        1. crop 확장 아이콘을 클릭합니다.
+        2. 캡처할 영역을 선택합니다.
+        3. Copy 또는 Save를 실행합니다.
+        4. 생성된 이미지를 확인합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_result
+    attributes:
+      label: 기대 결과
+      description: 원래 기대했던 동작을 적어주세요.
+      placeholder: |
+        예:
+        선택한 영역만 이미지로 복사되거나 다운로드되고, 오른쪽에 추가 여백이 없어야 합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_result
+    attributes:
+      label: 실제 결과
+      description: 실제로 관찰한 동작을 적어주세요.
+      placeholder: |
+        예:
+        복사한 이미지와 다운로드한 이미지 모두 오른쪽에 흰색 마진이 붙어 있습니다.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected_action
+    attributes:
+      label: 문제가 발생한 동작
+      description: 문제가 나타난 동작을 선택해주세요.
+      options:
+        - Copy
+        - Save/Download
+        - Copy와 Save/Download 모두
+        - 기타
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 사용 환경 및 버전
+      description: OS, 브라우저, crop 버전, 설치 경로 또는 빌드 출처를 적어주세요.
+      placeholder: |
+        예:
+        - OS: macOS 15.x
+        - Browser: Chrome 1xx
+        - crop 버전: v0.1.0
+        - 설치 경로 또는 빌드 출처: Chrome Web Store / local build / GitHub release
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 스크린샷 또는 녹화 자료
+      description: 가능하다면 문제 화면, 생성된 이미지, 비교 이미지를 첨부해주세요.
+      placeholder: |
+        예:
+        - 오른쪽 흰색 마진이 보이는 결과 이미지
+        - 선택 영역과 결과 이미지 비교 화면
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: 추가 정보
+      description: 특정 사이트, 확대/축소 배율, 디스플레이 배율, 반복 빈도 등 도움이 될 정보를 적어주세요.
+      placeholder: |
+        예:
+        - 특정 사이트에서만 발생합니다.
+        - Chrome zoom 125%에서 확인했습니다.
+        - Retina 디스플레이에서 확인했습니다.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: 확인
+      description: 제보 전에 아래 항목을 확인해주세요.
+      options:
+        - label: 가능한 최신 버전의 crop에서 문제가 재현되는지 확인했습니다.
+          required: true
+        - label: 비슷한 열린 이슈가 없는지 확인했습니다.
+          required: true
+        - label: 스크린샷과 설명에 민감한 정보가 포함되지 않았는지 확인했습니다.
+          required: true
