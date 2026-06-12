@@ -218,6 +218,85 @@ describe("full page capture helpers", () => {
     });
   });
 
+  it("keeps current scroll where possible for minimal selected page rect capture", () => {
+    const selectedRect = rectFromEdges(100, 500, 400, 1100);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 700,
+        scrollWidth: 1400,
+        scrollHeight: 1800,
+        scrollX: 0,
+        scrollY: 300
+      }),
+      selectedRect,
+      {
+        scrollStrategy: "minimal-scroll"
+      }
+    );
+
+    expect(plan.tiles).toHaveLength(1);
+    expect(plan.tiles[0]).toMatchObject({
+      scrollX: 0,
+      scrollY: 400,
+      pageRect: selectedRect,
+      viewportCropRect: rectFromEdges(100, 100, 400, 700),
+      destinationCssRect: rectFromEdges(0, 0, 300, 600)
+    });
+  });
+
+  it("keeps segment-start planning as the default for selected page rect capture", () => {
+    const selectedRect = rectFromEdges(100, 500, 400, 1100);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 700,
+        scrollWidth: 1400,
+        scrollHeight: 1800,
+        scrollX: 0,
+        scrollY: 300
+      }),
+      selectedRect
+    );
+
+    expect(plan.tiles).toHaveLength(1);
+    expect(plan.tiles[0]).toMatchObject({
+      scrollX: 100,
+      scrollY: 500,
+      viewportCropRect: rectFromEdges(0, 0, 300, 600)
+    });
+  });
+
+  it("keeps segment-start planning for selected bounds larger than the viewport", () => {
+    const selectedRect = rectFromEdges(240, 320, 1760, 1240);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 800,
+        viewportHeight: 600,
+        scrollWidth: 2000,
+        scrollHeight: 1600,
+        scrollX: 100,
+        scrollY: 200
+      }),
+      selectedRect,
+      {
+        scrollStrategy: "minimal-scroll"
+      }
+    );
+
+    expect(plan.tiles).toHaveLength(4);
+    expect(plan.tiles[0]).toMatchObject({
+      scrollX: 240,
+      scrollY: 320,
+      viewportCropRect: rectFromEdges(0, 0, 800, 600)
+    });
+    expect(plan.tiles.at(-1)).toMatchObject({
+      scrollX: 1040,
+      scrollY: 920,
+      viewportCropRect: rectFromEdges(0, 0, 720, 320)
+    });
+  });
+
   it("normalizes reversed selected page rect bounds before planning tiles", () => {
     const plan = createPageRectTilePlan(
       createFullPageMetrics({
