@@ -115,6 +115,35 @@ describe("stitch image helpers", () => {
     ).toEqual(rectFromEdges(0, 500, 1000, 799));
   });
 
+  it("maps source crop pixels from the capture viewport size when scrollbars are classic", () => {
+    const selectedImageRect = rectFromEdges(36, 288.594, 756, 693.594);
+    const capturedTileSize = {
+      naturalWidth: 1452,
+      naturalHeight: 982
+    };
+
+    expect(
+      getStitchSourcePixelRect({
+        viewportCropRect: selectedImageRect,
+        imageNaturalSize: capturedTileSize,
+        viewportCssSize: {
+          clientWidth: 1452,
+          clientHeight: 982
+        }
+      })
+    ).toEqual(rectFromEdges(36, 289, 756, 694));
+    expect(
+      getStitchSourcePixelRect({
+        viewportCropRect: selectedImageRect,
+        imageNaturalSize: capturedTileSize,
+        viewportCssSize: {
+          clientWidth: 1440,
+          clientHeight: 982
+        }
+      })?.width
+    ).toBe(726);
+  });
+
   it("snaps destination CSS rects to nearest output pixels", () => {
     expect(
       getStitchDestinationPixelRect(

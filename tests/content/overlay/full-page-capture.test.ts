@@ -55,6 +55,35 @@ describe("full page capture helpers", () => {
     });
   });
 
+  it("keeps tile planning on the content viewport when classic scrollbars widen innerWidth", () => {
+    const metrics = readFullPageMetrics({
+      innerWidth: 1452,
+      innerHeight: 982,
+      scrollX: 0,
+      scrollY: 0,
+      devicePixelRatio: 1,
+      document: {
+        documentElement: {
+          clientWidth: 1440,
+          clientHeight: 982,
+          scrollWidth: 1440,
+          scrollHeight: 2400
+        },
+        body: {
+          scrollWidth: 1440,
+          scrollHeight: 2400
+        },
+        scrollingElement: null
+      }
+    });
+    const plan = createFullPageTilePlan(metrics);
+
+    expect(metrics.viewportWidth).toBe(1440);
+    expect(plan.viewportCssSize).toEqual({ clientWidth: 1440, clientHeight: 982 });
+    expect(plan.tiles[0].pageRect).toEqual(rectFromEdges(0, 0, 1440, 982));
+    expect(plan.outputCssSize).toEqual({ width: 1440, height: 2400 });
+  });
+
   it("normalizes metrics and clamps scroll positions to the document range", () => {
     expect(
       createFullPageMetrics({

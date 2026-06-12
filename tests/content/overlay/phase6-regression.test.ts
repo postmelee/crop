@@ -147,6 +147,49 @@ describe("Phase 6 overlay regression coverage", () => {
     ).toEqual(sharedRectFromEdges(185, 73, 1167, 500));
   });
 
+  it("keeps Always scroll bars source mapping based on the capture viewport width", () => {
+    const contentViewport = {
+      clientWidth: 1440,
+      clientHeight: 982,
+      scrollX: 0,
+      scrollY: 0
+    };
+    const captureViewport = {
+      clientWidth: 1452,
+      clientHeight: 982
+    };
+    const selectedPageRect = sharedRectFromEdges(36, 288.594, 756, 693.594);
+    const viewportSelection = clipPageRectToViewport(selectedPageRect, contentViewport);
+
+    expect(viewportSelection).toEqual(selectedPageRect);
+    if (!viewportSelection) {
+      throw new Error("Expected image selection to fit inside content viewport.");
+    }
+    expect(
+      getSourceCropRect({
+        viewportCropRect: viewportSelection,
+        imageNaturalSize: {
+          naturalWidth: 1452,
+          naturalHeight: 982
+        },
+        viewportCssSize: captureViewport
+      })
+    ).toEqual(sharedRectFromEdges(36, 289, 756, 694));
+    expect(
+      getSourceCropRect({
+        viewportCropRect: viewportSelection,
+        imageNaturalSize: {
+          naturalWidth: 1452,
+          naturalHeight: 982
+        },
+        viewportCssSize: {
+          clientWidth: contentViewport.clientWidth,
+          clientHeight: contentViewport.clientHeight
+        }
+      })?.width
+    ).toBe(726);
+  });
+
   it("uses the last pointer and latest scroll position for edge auto-scroll drag updates", () => {
     const lastPointer = {
       x: 760,
