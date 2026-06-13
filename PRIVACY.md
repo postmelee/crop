@@ -1,9 +1,12 @@
 # crop Privacy Policy
 
-Last updated: June 6, 2026
+Last updated: June 14, 2026
 
 This privacy policy applies to `crop`, a Chrome Manifest V3 extension for
 selecting and capturing screenshots from the current page.
+
+This policy applies to `crop` v0.1.1 and later, unless it is replaced by a
+newer policy.
 
 ## Summary
 
@@ -87,10 +90,13 @@ For questions, issues, or source information, use the public repository:
 
 # crop 개인정보처리방침
 
-최종 업데이트: 2026년 6월 6일
+최종 업데이트: 2026년 6월 14일
 
 이 개인정보처리방침은 현재 페이지에서 스크린샷을 선택하고 캡처하는
 Chrome Manifest V3 확장 프로그램 `crop`에 적용됩니다.
+
+이 방침은 더 새로운 방침으로 대체되기 전까지 `crop` v0.1.1 및 이후
+버전에 적용됩니다.
 
 ## 요약
 
@@ -177,10 +183,13 @@ Chrome은 `chrome://` 페이지와 Chrome Web Store 페이지 같은 제한된
 
 # crop プライバシーポリシー
 
-最終更新日: 2026年6月6日
+最終更新日: 2026年6月14日
 
 このプライバシーポリシーは、現在のページからスクリーンショットを
 選択してキャプチャする Chrome Manifest V3 拡張機能 `crop` に適用されます。
+
+このポリシーは、より新しいポリシーに置き換えられるまで、`crop` v0.1.1
+以降に適用されます。
 
 ## 概要
 
@@ -268,10 +277,12 @@ Chrome は `chrome://` ページや Chrome Web Store ページなどの制限さ
 
 # crop 隐私政策
 
-最后更新日期: 2026年6月6日
+最后更新日期: 2026年6月14日
 
 本隐私政策适用于 `crop`，这是一款用于从当前页面选择并捕获截图的
 Chrome Manifest V3 扩展程序。
+
+除非被更新的政策取代，本政策适用于 `crop` v0.1.1 及更高版本。
 
 ## 概要
 
