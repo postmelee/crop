@@ -38,7 +38,7 @@ export interface StitchCapturedTileInput {
   readonly dataUrl: string;
   readonly viewportCropRect: CropRectLike;
   readonly destinationCssRect: CropRectLike;
-  readonly viewportCssSize: ViewportCssSize;
+  readonly captureViewportCssSize: ViewportCssSize;
 }
 
 export interface StitchCapturedTilesInput {
@@ -61,7 +61,7 @@ export interface StitchCapturedTilesResult {
 export interface StitchPreviewTileLayoutInput {
   readonly viewportCropRect: CropRectLike;
   readonly destinationCssRect: CropRectLike;
-  readonly viewportCssSize: ViewportCssSize;
+  readonly captureViewportCssSize: ViewportCssSize;
   readonly outputScale: StitchImageScale;
 }
 
@@ -183,8 +183,12 @@ export function getStitchPreviewTileLayout(
   );
   const imageLeft = normalizeSignedZero(-sourceDisplayRect.left);
   const imageTop = normalizeSignedZero(-sourceDisplayRect.top);
-  const imageWidth = Math.round(input.viewportCssSize.clientWidth * input.outputScale.scaleX);
-  const imageHeight = Math.round(input.viewportCssSize.clientHeight * input.outputScale.scaleY);
+  const imageWidth = Math.round(
+    input.captureViewportCssSize.clientWidth * input.outputScale.scaleX
+  );
+  const imageHeight = Math.round(
+    input.captureViewportCssSize.clientHeight * input.outputScale.scaleY
+  );
 
   return {
     tileRect,
@@ -209,7 +213,7 @@ export async function stitchCapturedTiles(
   }
 
   const firstImage = await loadImage(input.tiles[0].dataUrl);
-  const sourceScale = getScaleFromImage(firstImage, input.tiles[0].viewportCssSize);
+  const sourceScale = getScaleFromImage(firstImage, input.tiles[0].captureViewportCssSize);
   const outputPlan = getStitchOutputPixelPlan(input.outputCssSize, sourceScale);
   const canvas = document.createElement("canvas");
   canvas.width = outputPlan.width;
@@ -232,7 +236,7 @@ export async function stitchCapturedTiles(
         naturalWidth: image.naturalWidth,
         naturalHeight: image.naturalHeight
       },
-      viewportCssSize: tile.viewportCssSize
+      viewportCssSize: tile.captureViewportCssSize
     });
 
     if (!tileSourceRect) {

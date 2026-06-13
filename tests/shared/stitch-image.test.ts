@@ -115,6 +115,35 @@ describe("stitch image helpers", () => {
     ).toEqual(rectFromEdges(0, 500, 1000, 799));
   });
 
+  it("maps source crop pixels from the capture viewport size when scrollbars are classic", () => {
+    const selectedImageRect = rectFromEdges(36, 288.594, 756, 693.594);
+    const capturedTileSize = {
+      naturalWidth: 1452,
+      naturalHeight: 982
+    };
+
+    expect(
+      getStitchSourcePixelRect({
+        viewportCropRect: selectedImageRect,
+        imageNaturalSize: capturedTileSize,
+        viewportCssSize: {
+          clientWidth: 1452,
+          clientHeight: 982
+        }
+      })
+    ).toEqual(rectFromEdges(36, 289, 756, 694));
+    expect(
+      getStitchSourcePixelRect({
+        viewportCropRect: selectedImageRect,
+        imageNaturalSize: capturedTileSize,
+        viewportCssSize: {
+          clientWidth: 1440,
+          clientHeight: 982
+        }
+      })?.width
+    ).toBe(726);
+  });
+
   it("snaps destination CSS rects to nearest output pixels", () => {
     expect(
       getStitchDestinationPixelRect(
@@ -182,7 +211,7 @@ describe("stitch image helpers", () => {
     const layout = getStitchPreviewTileLayout({
       viewportCropRect: rectFromEdges(0, 250.2, 500, 399.6),
       destinationCssRect,
-      viewportCssSize: {
+      captureViewportCssSize: {
         clientWidth: 500,
         clientHeight: 400
       },
@@ -194,6 +223,25 @@ describe("stitch image helpers", () => {
     );
     expect(layout.imageRect).toEqual(rectFromEdges(0, -375, 750, 225));
     expect(layout.imageRect.bottom).toBe(layout.tileRect.height);
+  });
+
+  it("sizes preview tile images from the capture viewport while keeping tile wrappers aligned", () => {
+    const layout = getStitchPreviewTileLayout({
+      viewportCropRect: rectFromEdges(0, 0, 1440, 982),
+      destinationCssRect: rectFromEdges(0, 0, 1440, 982),
+      captureViewportCssSize: {
+        clientWidth: 1452,
+        clientHeight: 982
+      },
+      outputScale: {
+        scaleX: 1,
+        scaleY: 1
+      }
+    });
+
+    expect(layout.tileRect).toEqual(rectFromEdges(0, 0, 1440, 982));
+    expect(layout.imageRect).toEqual(rectFromEdges(0, 0, 1452, 982));
+    expect(layout.imageRect.width).toBeGreaterThan(layout.tileRect.width);
   });
 
   it("keeps preview tile wrappers edge-aligned after downscaling", () => {
@@ -213,7 +261,7 @@ describe("stitch image helpers", () => {
     const firstTile = getStitchPreviewTileLayout({
       viewportCropRect: rectFromEdges(0, 0, 500, 1000),
       destinationCssRect: rectFromEdges(0, 0, 500, 1000),
-      viewportCssSize: {
+      captureViewportCssSize: {
         clientWidth: 500,
         clientHeight: 1000
       },
@@ -222,7 +270,7 @@ describe("stitch image helpers", () => {
     const secondTile = getStitchPreviewTileLayout({
       viewportCropRect: rectFromEdges(0, 0, 500, 1000),
       destinationCssRect: rectFromEdges(500, 0, 1000, 1000),
-      viewportCssSize: {
+      captureViewportCssSize: {
         clientWidth: 500,
         clientHeight: 1000
       },

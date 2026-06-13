@@ -1,4 +1,5 @@
 import { type OutputCssSize } from "../../shared/stitch-image";
+import { type ViewportCssSize } from "../../shared/crop-image";
 import {
   normalizeRect,
   rectFromEdges,
@@ -17,6 +18,8 @@ export interface FullPageMetricsInput {
   readonly scrollMinY?: number | null;
   readonly scrollMaxX?: number | null;
   readonly scrollMaxY?: number | null;
+  readonly captureViewportWidth?: number | null;
+  readonly captureViewportHeight?: number | null;
   readonly devicePixelRatio?: number | null;
 }
 
@@ -31,6 +34,7 @@ export interface FullPageMetrics {
   readonly scrollMinY: number;
   readonly scrollMaxX: number;
   readonly scrollMaxY: number;
+  readonly captureViewportCssSize: ViewportCssSize;
   readonly devicePixelRatio: number;
 }
 
@@ -54,6 +58,7 @@ export interface FullPageTilePlan {
     readonly clientWidth: number;
     readonly clientHeight: number;
   };
+  readonly captureViewportCssSize: ViewportCssSize;
   readonly outputCssSize: OutputCssSize;
   readonly tiles: readonly FullPageTile[];
 }
@@ -71,6 +76,7 @@ export interface CapturedFullPageTile {
   readonly actualScrollY: number;
   readonly viewportCropRect: CropRect;
   readonly destinationCssRect: CropRect;
+  readonly captureViewportCssSize: ViewportCssSize;
 }
 
 export interface FullPageCaptureLoopResult {
@@ -152,6 +158,8 @@ export function readFullPageMetrics(win: FullPageWindowLike = window): FullPageM
     scrollHeight,
     scrollX: win.scrollX,
     scrollY: win.scrollY,
+    captureViewportWidth: win.innerWidth,
+    captureViewportHeight: win.innerHeight,
     devicePixelRatio: win.devicePixelRatio
   });
 }
@@ -167,6 +175,10 @@ export function createFullPageMetrics(input: FullPageMetricsInput): FullPageMetr
   const defaultScrollMaxY = scrollMinY + Math.max(0, scrollHeight - viewportHeight);
   const scrollMaxX = Math.max(scrollMinX, toFiniteNumber(input.scrollMaxX, defaultScrollMaxX));
   const scrollMaxY = Math.max(scrollMinY, toFiniteNumber(input.scrollMaxY, defaultScrollMaxY));
+  const captureViewportCssSize = {
+    clientWidth: firstPositive(input.captureViewportWidth, viewportWidth),
+    clientHeight: firstPositive(input.captureViewportHeight, viewportHeight)
+  };
 
   return {
     viewportWidth,
@@ -179,6 +191,7 @@ export function createFullPageMetrics(input: FullPageMetricsInput): FullPageMetr
     scrollMinY,
     scrollMaxX,
     scrollMaxY,
+    captureViewportCssSize,
     devicePixelRatio: Math.max(1, toFiniteNumber(input.devicePixelRatio, 1))
   };
 }
@@ -290,6 +303,7 @@ export function createPageRectTilePlan(
       clientWidth: metrics.viewportWidth,
       clientHeight: metrics.viewportHeight
     },
+    captureViewportCssSize: metrics.captureViewportCssSize,
     outputCssSize: {
       width: bounds.width,
       height: bounds.height
@@ -409,7 +423,8 @@ export function createCapturedFullPageTile(input: {
     actualScrollX: input.metrics.scrollX,
     actualScrollY: input.metrics.scrollY,
     viewportCropRect,
-    destinationCssRect: input.tile.destinationCssRect
+    destinationCssRect: input.tile.destinationCssRect,
+    captureViewportCssSize: input.metrics.captureViewportCssSize
   };
 }
 

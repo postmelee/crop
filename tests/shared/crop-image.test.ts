@@ -38,6 +38,38 @@ describe("crop image helpers", () => {
     ).toEqual(rectFromEdges(15, 30, 165, 180));
   });
 
+  it("uses capture viewport CSS size so classic scrollbars do not widen the crop", () => {
+    const selectedImageRect = rectFromEdges(36, 288.594, 756, 693.594);
+    const screenshotNaturalSize = { naturalWidth: 1452, naturalHeight: 982 };
+
+    expect(
+      getSourceCropRect({
+        viewportCropRect: selectedImageRect,
+        imageNaturalSize: screenshotNaturalSize,
+        viewportCssSize: {
+          clientWidth: 1452,
+          clientHeight: 982
+        }
+      })
+    ).toEqual(rectFromEdges(36, 289, 756, 694));
+  });
+
+  it("documents the Always scroll bars failure when clientWidth is used as capture width", () => {
+    const selectedImageRect = rectFromEdges(36, 288.594, 756, 693.594);
+    const screenshotNaturalSize = { naturalWidth: 1452, naturalHeight: 982 };
+
+    expect(
+      getSourceCropRect({
+        viewportCropRect: selectedImageRect,
+        imageNaturalSize: screenshotNaturalSize,
+        viewportCssSize: {
+          clientWidth: 1440,
+          clientHeight: 982
+        }
+      })?.width
+    ).toBe(726);
+  });
+
   it.each([
     { label: "80%", naturalWidth: 800, naturalHeight: 600, expected: rectFromEdges(80, 40, 280, 200) },
     { label: "100%", naturalWidth: 1000, naturalHeight: 750, expected: rectFromEdges(100, 50, 350, 250) },

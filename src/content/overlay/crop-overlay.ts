@@ -52,7 +52,7 @@ import {
   pngDataUrlToBlob,
   writePngDataUrlToClipboard
 } from "../../shared/clipboard";
-import { cropPngDataUrl } from "../../shared/crop-image";
+import { cropPngDataUrl, type ViewportCssSize } from "../../shared/crop-image";
 import { createPngFilename } from "../../shared/filename";
 import { getCropMessage } from "../../shared/i18n";
 import {
@@ -131,10 +131,7 @@ interface CropTiledPreviewTile {
   readonly dataUrl: string;
   readonly viewportCropRect: CropRect;
   readonly destinationCssRect: CropRect;
-  readonly viewportCssSize: {
-    readonly clientWidth: number;
-    readonly clientHeight: number;
-  };
+  readonly captureViewportCssSize: ViewportCssSize;
 }
 
 interface CropTiledPreviewModel {
@@ -165,6 +162,10 @@ interface CropCapturePipelineResult {
 
 interface CaptureOverlayVisibilityOptions {
   readonly keepHiddenOnSuccess?: boolean;
+}
+
+interface CapturePageChromeSuppressionOptions {
+  readonly preserveElements?: ReadonlySet<HTMLElement>;
 }
 
 interface CropCaptureHost extends HTMLElement {
@@ -953,6 +954,7 @@ export function mountCropOverlay(): void {
     const cropResult = await captureWithOverlayHidden(async () => {
       const viewport = getViewportMetrics();
       const viewportRect = clipPageRectToViewport(selectedRect, viewport);
+      const captureViewportCssSize = getCaptureViewportCssSize(viewport);
 
       if (!viewportRect) {
         throw new Error("Selected area is outside the visible viewport.");
@@ -970,10 +972,7 @@ export function mountCropOverlay(): void {
         cropResult: await cropPngDataUrl({
           dataUrl: captureResponse.dataUrl,
           viewportCropRect: viewportRect,
-          viewportCssSize: {
-            clientWidth: viewport.clientWidth,
-            clientHeight: viewport.clientHeight
-          }
+          viewportCssSize: captureViewportCssSize
         })
       };
     }, visibilityOptions);
@@ -1004,8 +1003,9 @@ export function mountCropOverlay(): void {
         captureVisibleTab: captureVisibleTabDataUrl,
         setOverlayHidden: setCaptureOverlayHidden,
         setScrollBehaviorDisabled: setCaptureScrollBehaviorDisabled,
-        beforeCaptureTile: () => {
-          setCapturePageChromeSuppressed(true);
+        beforeCaptureTile: (tile) => {
+          const preserveElements = collectSelectedCapturePreserveElements(tile.pageRect, host);
+          setCapturePageChromeSuppressed(true, { preserveElements });
         },
         afterCaptureTile: () => {
           setCapturePageChromeSuppressed(false);
@@ -1018,7 +1018,7 @@ export function mountCropOverlay(): void {
           dataUrl: tile.dataUrl,
           viewportCropRect: tile.viewportCropRect,
           destinationCssRect: tile.destinationCssRect,
-          viewportCssSize: captureResult.plan.viewportCssSize
+          captureViewportCssSize: tile.captureViewportCssSize
         }))
       });
 
@@ -1050,6 +1050,7 @@ export function mountCropOverlay(): void {
     const captureResult = await captureWithOverlayHidden(async () => {
       const viewport = getViewportMetrics();
       const viewportRect = getViewportRect(viewport);
+      const captureViewportCssSize = getCaptureViewportCssSize(viewport);
 
       await waitForNextPaint();
       const captureResponse = await requestVisibleTabCapture();
@@ -1063,10 +1064,7 @@ export function mountCropOverlay(): void {
         cropResult: await cropPngDataUrl({
           dataUrl: captureResponse.dataUrl,
           viewportCropRect: viewportRect,
-          viewportCssSize: {
-            clientWidth: viewport.clientWidth,
-            clientHeight: viewport.clientHeight
-          }
+          viewportCssSize: captureViewportCssSize
         })
       };
     });
@@ -1113,7 +1111,7 @@ export function mountCropOverlay(): void {
           dataUrl: tile.dataUrl,
           viewportCropRect: tile.viewportCropRect,
           destinationCssRect: tile.destinationCssRect,
-          viewportCssSize: captureResult.plan.viewportCssSize
+          captureViewportCssSize: tile.captureViewportCssSize
         }))
       });
     } finally {
@@ -1134,7 +1132,7 @@ export function mountCropOverlay(): void {
           dataUrl: tile.dataUrl,
           viewportCropRect: tile.viewportCropRect,
           destinationCssRect: tile.destinationCssRect,
-          viewportCssSize: captureResult.plan.viewportCssSize
+          captureViewportCssSize: tile.captureViewportCssSize
         }))
       },
       outputWidth: stitchResult.outputWidth,
@@ -1230,13 +1228,17 @@ export function mountCropOverlay(): void {
       style.setAttribute("data-crop-capture-style", "true");
       style.textContent = `
         html, body, * {
-          scrollbar-width: none !important;
+          scrollbar-color: transparent transparent !important;
         }
 
-        ::-webkit-scrollbar {
-          display: none !important;
-          width: 0 !important;
-          height: 0 !important;
+        ::-webkit-scrollbar,
+        ::-webkit-scrollbar-track,
+        ::-webkit-scrollbar-track-piece,
+        ::-webkit-scrollbar-thumb,
+        ::-webkit-scrollbar-corner {
+          background: transparent !important;
+          border-color: transparent !important;
+          box-shadow: none !important;
         }
       `;
       (document.head ?? document.documentElement).append(style);
@@ -1248,16 +1250,21 @@ export function mountCropOverlay(): void {
     captureDocumentChromeStyle = null;
   };
 
-  const setCapturePageChromeSuppressed = (suppressed: boolean): void => {
+  const setCapturePageChromeSuppressed = (
+    suppressed: boolean,
+    options: CapturePageChromeSuppressionOptions = {}
+  ): void => {
     if (suppressed) {
       if (suppressedPageChromeElements) {
         return;
       }
 
-      suppressedPageChromeElements = collectFullPageChromeElements(host).map((element) => ({
-        element,
-        visibility: element.style.visibility
-      }));
+      suppressedPageChromeElements = collectFullPageChromeElements(host, options).map(
+        (element) => ({
+          element,
+          visibility: element.style.visibility
+        })
+      );
 
       for (const entry of suppressedPageChromeElements) {
         entry.element.style.visibility = "hidden";
@@ -1404,7 +1411,7 @@ export function mountCropOverlay(): void {
       const tileLayout = getStitchPreviewTileLayout({
         viewportCropRect: tile.viewportCropRect,
         destinationCssRect: tile.destinationCssRect,
-        viewportCssSize: tile.viewportCssSize,
+        captureViewportCssSize: tile.captureViewportCssSize,
         outputScale: model.outputScale
       });
       const tileElement = document.createElement("div");
@@ -1836,7 +1843,123 @@ function isCropOverlayElement(element: Element, host: HTMLElement): boolean {
   return element === host || element.closest(`[${ROOT_ATTRIBUTE}="true"]`) === host;
 }
 
-function collectFullPageChromeElements(host: HTMLElement): HTMLElement[] {
+function collectSelectedCapturePreserveElements(
+  pageRect: CropRect,
+  host: HTMLElement
+): ReadonlySet<HTMLElement> {
+  const windowDimensions = readWindowDimensions();
+  const viewportRect = clipPageRectToViewport(pageRect, {
+    clientWidth: windowDimensions.clientWidth,
+    clientHeight: windowDimensions.clientHeight,
+    scrollX: windowDimensions.scrollX,
+    scrollY: windowDimensions.scrollY
+  });
+
+  if (!viewportRect) {
+    return new Set();
+  }
+
+  const previousDisplay = host.style.display;
+  host.style.display = "none";
+
+  try {
+    const target = getFirstPageElementInViewportRect(viewportRect, host);
+    return target ? new Set([target]) : new Set();
+  } finally {
+    host.style.display = previousDisplay;
+  }
+}
+
+function getFirstPageElementInViewportRect(
+  rect: CropRect,
+  host: HTMLElement
+): HTMLElement | null {
+  for (const point of getViewportRectSamplePoints(rect)) {
+    const target = getFirstPageElementAtViewportPoint(point, host);
+
+    if (target) {
+      return target;
+    }
+  }
+
+  return null;
+}
+
+function getFirstPageElementAtViewportPoint(
+  point: PointerPosition,
+  host: HTMLElement
+): HTMLElement | null {
+  for (const element of document.elementsFromPoint(point.x, point.y)) {
+    const htmlElement = getNearestHTMLElement(element);
+
+    if (
+      !htmlElement ||
+      isCropOverlayElement(htmlElement, host) ||
+      isDocumentScaffoldElement(htmlElement)
+    ) {
+      continue;
+    }
+
+    return htmlElement;
+  }
+
+  return null;
+}
+
+function getNearestHTMLElement(element: Element): HTMLElement | null {
+  let current: Element | null = element;
+
+  while (current && !(current instanceof HTMLElement)) {
+    current = current.parentElement;
+  }
+
+  return current instanceof HTMLElement ? current : null;
+}
+
+function getViewportRectSamplePoints(rect: CropRect): readonly PointerPosition[] {
+  return [
+    {
+      x: getInteriorViewportCoordinate(rect.left, rect.right, 0.5),
+      y: getInteriorViewportCoordinate(rect.top, rect.bottom, 0.5)
+    },
+    {
+      x: getInteriorViewportCoordinate(rect.left, rect.right, 0.5),
+      y: getInteriorViewportCoordinate(rect.top, rect.bottom, 0.25)
+    },
+    {
+      x: getInteriorViewportCoordinate(rect.left, rect.right, 0.5),
+      y: getInteriorViewportCoordinate(rect.top, rect.bottom, 0.75)
+    },
+    {
+      x: getInteriorViewportCoordinate(rect.left, rect.right, 0.25),
+      y: getInteriorViewportCoordinate(rect.top, rect.bottom, 0.5)
+    },
+    {
+      x: getInteriorViewportCoordinate(rect.left, rect.right, 0.75),
+      y: getInteriorViewportCoordinate(rect.top, rect.bottom, 0.5)
+    }
+  ];
+}
+
+function getInteriorViewportCoordinate(start: number, end: number, fraction: number): number {
+  const size = Math.max(0, end - start);
+  const edgeInset = Math.min(1, size / 2);
+  const minimum = start + edgeInset;
+  const maximum = end - edgeInset;
+  const value = start + size * fraction;
+
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function isDocumentScaffoldElement(element: HTMLElement): boolean {
+  const ownerDocument = element.ownerDocument;
+  return element === ownerDocument.documentElement || element === ownerDocument.body;
+}
+
+function collectFullPageChromeElements(
+  host: HTMLElement,
+  options: CapturePageChromeSuppressionOptions = {}
+): HTMLElement[] {
   const body = document.body;
 
   if (!body) {
@@ -1854,7 +1977,11 @@ function collectFullPageChromeElements(host: HTMLElement): HTMLElement[] {
 
     const style = window.getComputedStyle(element);
 
-    if (style.display === "none" || style.visibility === "hidden") {
+    if (
+      style.display === "none" ||
+      style.visibility === "hidden" ||
+      isPreservedCaptureElement(element, options.preserveElements)
+    ) {
       continue;
     }
 
@@ -1870,6 +1997,23 @@ function collectFullPageChromeElements(host: HTMLElement): HTMLElement[] {
   }
 
   return chromeElements;
+}
+
+function isPreservedCaptureElement(
+  element: HTMLElement,
+  preserveElements?: ReadonlySet<HTMLElement>
+): boolean {
+  if (!preserveElements) {
+    return false;
+  }
+
+  for (const preserved of preserveElements) {
+    if (element === preserved || element.contains(preserved) || preserved.contains(element)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function isViewportRectVisible(
@@ -2159,6 +2303,17 @@ function getViewportMetrics(): ViewportMetrics {
     scrollX: windowDimensions.scrollX,
     scrollY: windowDimensions.scrollY
   };
+}
+
+function getCaptureViewportCssSize(fallback: ViewportMetrics): ViewportCssSize {
+  return {
+    clientWidth: getUsableCaptureViewportDimension(window.innerWidth, fallback.clientWidth),
+    clientHeight: getUsableCaptureViewportDimension(window.innerHeight, fallback.clientHeight)
+  };
+}
+
+function getUsableCaptureViewportDimension(value: number, fallback: number): number {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
 function isPageRectFullyInsideViewport(
