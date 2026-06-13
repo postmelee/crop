@@ -21,7 +21,7 @@ GitHub Issue: [#72](https://github.com/postmelee/crop/issues/72)
 | manifest permissions | `activeTab`, `scripting`, `clipboardWrite`, `downloads` |
 | manifest host permissions | 없음 |
 
-`scripts/package-cws.mjs`는 `package.json`의 `name`과 `version`을 사용해 기본 ZIP 경로를 `/tmp/{name}-{version}-cws.zip`로 만든다. 따라서 Stage 2에서 `0.1.1`로 bump하면 package 후보는 `/tmp/crop-0.1.1-cws.zip`가 된다.
+`scripts/package-cws.mjs`는 `package.json`의 `name`과 `version`을 사용해 기본 ZIP 경로를 만든다. 따라서 Stage 2에서 `0.1.1`로 bump하면 package 후보는 `/tmp/crop-0.1.1-cws.zip`가 된다.
 
 ## Branch/tag 상태
 
@@ -68,7 +68,7 @@ c052a6e Main sync: add README image assets
 
 | 계열 | 근거 commit/PR | release note 분류 후보 |
 |---|---|---|
-| selected stitching 검정 placeholder 보정 | PR #70 / Issue #66 | user-facing bug fix |
+| selected stitching 검정 대체 블록 보정 | PR #70 / Issue #66 | user-facing bug fix |
 | Always scroll bars 환경 우측 여백 보정 | PR #69 / Issue #68 | user-facing bug fix |
 | 사용자 버그 제보 Issue Form | PR #67 / Issue #65 | user/contributor 안내 |
 | GitHub Community Standards 보강 | PR #56 / Issue #29 | contributor-facing 변경 |
@@ -128,7 +128,7 @@ tests/content/overlay/phase6-regression.test.ts:866:    expect(manifestJson.host
 
 다음 항목은 사용자 안내의 주요 변경점 후보로 둔다.
 
-- 선택 영역이 viewport 밖으로 일부 벗어난 selected stitching 캡처에서 검정 placeholder가 저장되는 문제를 보정했다.
+- 선택 영역이 viewport 밖으로 일부 벗어난 selected stitching 캡처에서 검정 영역이 저장되는 문제를 보정했다.
 - macOS `Show scroll bars: Always` 환경에서 선택 이미지 Copy/Save 결과 오른쪽에 scrollbar gutter 유래 흰 여백이 붙는 문제를 보정했다.
 - 사용자가 GitHub에서 구조화된 버그 제보 Issue Form을 사용할 수 있게 됐다.
 - README와 다국어 README의 설치/소개/asset 표시가 보강됐다.
@@ -192,3 +192,155 @@ rg -n '"version"|debugger|<all_urls>|host_permissions|tabs' package.json manifes
 - OK: manifest 권한은 `activeTab`, `scripting`, `clipboardWrite`, `downloads`, host permission 없음.
 - OK: `origin/main` 전용 README asset 변경과 `origin/devel` 전용 #66/#68 변경을 구분했다.
 - OK: Stage 2 version 후보를 `0.1.1`로 정리했다.
+
+## Stage 2 version bump 결과
+
+기준일: 2026-06-14
+
+Stage 1 승인에 따라 release 후보 version을 `0.1.1`로 반영했다.
+
+| 파일 | 변경 전 | 변경 후 |
+|---|---|---|
+| `package.json` | `0.1.0` | `0.1.1` |
+| `manifest.json` | `0.1.0` | `0.1.1` |
+
+Stage 2 이후 package 후보:
+
+| 항목 | 값 |
+|---|---|
+| release version | `0.1.1` |
+| release tag | `v0.1.1` |
+| package asset name | `crop-0.1.1-cws.zip` |
+| package output path | `/tmp/crop-0.1.1-cws.zip` |
+| Chrome Web Store 상태 표현 | `not submitted` |
+
+## GitHub Release body 후보
+
+아래 body 후보는 `mydocs/_templates/github_release_note.md` 구조를 기준으로 작성했다. Stage 3 package 검증 후 asset size, SHA-256 checksum, verification 결과를 확정값으로 갱신한다.
+
+```markdown
+# crop v0.1.1
+
+## user 안내
+
+### 설치 / 업데이트
+
+- Chrome Web Store: not submitted for `v0.1.1`
+- 설치 URL: https://chromewebstore.google.com/detail/crop/pdmniipgbjdcpnhbkkppodechbehagki
+- 업데이트 방식: Chrome Web Store 제출과 review 완료 후 자동 업데이트 후보
+- 대상 버전: `v0.1.1`
+
+### 주요 변경점
+
+- 선택 영역이 viewport 밖으로 일부 벗어난 selected stitching 캡처에서 검정 영역이 저장되는 문제를 보정했다.
+- macOS `Show scroll bars: Always` 환경에서 선택 이미지 Copy/Save 결과 오른쪽에 scrollbar gutter 유래 흰 여백이 붙는 문제를 보정했다.
+- GitHub에서 crop 버그를 구조화해 제보할 수 있는 Issue Form을 추가했다.
+- README와 다국어 README의 badge, locale header, image asset 표시를 보강했다.
+
+### 권한과 privacy
+
+- 권한 변화: 없음. `activeTab`, `scripting`, `clipboardWrite`, `downloads`를 유지하고 `debugger`, `<all_urls>`, broad `host_permissions`, manifest `tabs` permission을 추가하지 않는다.
+- privacy URL: https://github.com/postmelee/crop/blob/v0.1.1/PRIVACY.md
+- 데이터 처리: 스크린샷은 브라우저 안에서 로컬 처리된다. `crop`은 스크린샷이나 페이지 데이터를 서버로 업로드하지 않고 telemetry를 포함하지 않는다.
+
+### known limitations
+
+- Chrome은 `chrome://` 페이지와 Chrome Web Store 페이지 같은 제한된 페이지에서 extension injection을 차단한다.
+- Cross-origin iframe contents와 closed shadow DOM internals는 content script에서 검사할 수 없다.
+- 동적 페이지, fixed 또는 sticky layout, lazy loading이 있는 페이지에서는 tiled capture 결과가 페이지 상태에 영향을 받을 수 있다.
+
+### Chrome Web Store 상태
+
+- Store 상태: not submitted
+- Store package: `crop-0.1.1-cws.zip`
+- 확인일: 2026-06-14
+
+## developer 검증 기록
+
+### release 기준
+
+| 항목 | 값 |
+|---|---|
+| Tag | `v0.1.1` |
+| Release commit | main release PR merge commit으로 확정 |
+| Base branch | `main` |
+| 포함 PR | #49, #53, #55, #56, #62, #64, #67, #69, #70, Task #72 PR |
+| 포함 Issue | #48, #51, #50, #29, #54, #65, #68, #66, #72 |
+
+### package asset
+
+| 항목 | 값 |
+|---|---|
+| asset 이름 | `crop-0.1.1-cws.zip` |
+| asset URL | `https://github.com/postmelee/crop/releases/download/v0.1.1/crop-0.1.1-cws.zip` |
+| asset size | Stage 3에서 확정 |
+| SHA-256 checksum | Stage 3에서 확정 |
+| 생성 명령 | `npm run build && npm run package:cws` |
+| 검증 명령 | `npm run verify:cws` |
+
+### verification 결과
+
+| 검증 | 결과 |
+|---|---|
+| `npm run build` | Stage 3에서 실행 후 확정 |
+| `npm run typecheck` | Stage 3에서 실행 후 확정 |
+| `npm test` | Stage 3에서 실행 후 확정 |
+| `npm run package:cws` | Stage 3에서 실행 후 확정 |
+| `npm run verify:cws` | Stage 3에서 실행 후 확정 |
+| ZIP contents 확인 | Stage 3에서 실행 후 확정 |
+| privacy URL 확인 | tag 생성 후 `https://github.com/postmelee/crop/blob/v0.1.1/PRIVACY.md` 기준으로 확정 |
+
+### rollback / follow-up
+
+- Rollback 기준: release PR merge 또는 tag 생성 전 문제가 발견되면 `v0.1.0` 공개 release를 유지하고 #72 또는 별도 issue-backed 보정 task에서 수정한다.
+- 후속 작업: Chrome Web Store package upload와 `Submit for review`는 작업지시자가 직접 진행한다.
+- 자동 release notes: 사용 안 함. 수동 body 후보와 검증 기록을 기준으로 한다.
+```
+
+## `devel -> main` Release PR 본문 후보
+
+제목 후보:
+
+```text
+Release: v0.1.1
+```
+
+본문 후보:
+
+```markdown
+## 요약
+
+- `v0.1.1` release 후보를 `main`으로 승격한다.
+- 사용자-facing 변경은 selected stitching 검정 영역 보정, Always scroll bars 환경 우측 여백 보정, 사용자 버그 제보 Issue Form, README/asset 보강이다.
+- Chrome Web Store package upload와 `Submit for review`는 이 PR에서 수행하지 않는다.
+
+## 포함 변경
+
+- #66: viewport 밖 selected stitching의 검정 캡처 보정
+- #68: Always scroll bars 환경 캡처 우측 여백 보정
+- #65: 사용자 버그 제보용 Issue Form 추가
+- #29: GitHub Community Standards 보강
+- #50, #54: GitHub Release body와 release note 운영 기준 정리
+- #48, #51: 첫 release 실행 기록과 Chrome Web Store 게시 후 README 설치 안내
+- #64 및 main 보정 commit: README badge, locale header, image asset 보강
+- #72: release 후보 정리, version bump, release body 후보, package 검증 기록
+
+## 검증
+
+- Stage 3에서 `npm run build`, `npm run typecheck`, `npm test`, `npm run package:cws`, `npm run verify:cws` 결과를 기록한다.
+- Stage 3에서 `/tmp/crop-0.1.1-cws.zip` size와 SHA-256 checksum을 기록한다.
+- Stage 4에서 release PR 생성 전 main 전용 README asset 보존 여부를 다시 확인한다.
+
+## 승인 상태
+
+- `main` merge: 별도 승인 전 보류
+- tag/GitHub Release 생성: 별도 승인 전 보류
+- Chrome Web Store upload와 `Submit for review`: 작업지시자가 직접 진행
+```
+
+## Stage 2 검증 요약
+
+- version grep은 `package.json`과 `manifest.json`의 `0.1.1`을 찾아야 한다.
+- release 후보 grep은 Stage 2 release body 후보와 release PR 본문 후보의 핵심 문맥을 찾아야 한다.
+- 템플릿 잔여 표식 검사는 출력이 없어야 한다.
+- `git diff --check`는 경고 없이 통과해야 한다.
