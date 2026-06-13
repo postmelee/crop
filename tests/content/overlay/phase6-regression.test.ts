@@ -434,12 +434,53 @@ describe("Phase 6 overlay regression coverage", () => {
     );
 
     expect(selectedCaptureBlock).toContain("capturePageRectTiles");
-    expect(selectedCaptureBlock).toContain("beforeCaptureTile: () =>");
-    expect(selectedCaptureBlock).toContain("setCapturePageChromeSuppressed(true)");
+    expect(selectedCaptureBlock).toContain("beforeCaptureTile: (tile) =>");
+    expect(selectedCaptureBlock).toContain(
+      "collectSelectedCapturePreserveElements(tile.pageRect, host)"
+    );
+    expect(selectedCaptureBlock).toContain(
+      "setCapturePageChromeSuppressed(true, { preserveElements })"
+    );
     expect(selectedCaptureBlock).not.toContain("setCapturePageChromeSuppressed(index > 0)");
+    expect(selectedCaptureBlock).toContain("setCaptureDocumentChromeSuppressed(true)");
+    expect(selectedCaptureBlock).toContain("setCaptureDocumentChromeSuppressed(false)");
 
     expect(fullPageCaptureBlock).toContain("captureFullPageTiles");
+    expect(fullPageCaptureBlock).toContain("setCaptureDocumentChromeSuppressed(true)");
+    expect(fullPageCaptureBlock).toContain("setCaptureDocumentChromeSuppressed(false)");
     expect(fullPageCaptureBlock).toContain("setCapturePageChromeSuppressed(index > 0)");
+  });
+
+  it("keeps capture scrollbar suppression from collapsing classic scrollbar gutters", () => {
+    const captureChromeSuppressionStart = overlayRuntime.indexOf(
+      "const setCaptureDocumentChromeSuppressed"
+    );
+    const capturePageSuppressionStart = overlayRuntime.indexOf(
+      "const setCapturePageChromeSuppressed"
+    );
+    const captureChromeSuppressionBlock = overlayRuntime.slice(
+      captureChromeSuppressionStart,
+      capturePageSuppressionStart
+    );
+
+    expect(captureChromeSuppressionBlock).toContain(
+      "scrollbar-color: transparent transparent"
+    );
+    expect(captureChromeSuppressionBlock).toContain("::-webkit-scrollbar-thumb");
+    expect(captureChromeSuppressionBlock).not.toContain("scrollbar-width: none");
+    expect(captureChromeSuppressionBlock).not.toContain("display: none !important");
+    expect(captureChromeSuppressionBlock).not.toContain("width: 0 !important");
+    expect(captureChromeSuppressionBlock).not.toContain("height: 0 !important");
+  });
+
+  it("keeps selected capture targets out of page chrome suppression", () => {
+    expect(overlayRuntime).toContain("function collectSelectedCapturePreserveElements");
+    expect(overlayRuntime).toContain("document.elementsFromPoint(point.x, point.y)");
+    expect(overlayRuntime).toContain("host.style.display = \"none\"");
+    expect(overlayRuntime).toContain("function isPreservedCaptureElement");
+    expect(overlayRuntime).toContain("element.contains(preserved)");
+    expect(overlayRuntime).toContain("preserved.contains(element)");
+    expect(overlayRuntime).not.toContain("black tile");
   });
 
   it("keeps same-origin iframe smoke targets in the fixture", () => {
