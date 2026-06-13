@@ -407,3 +407,50 @@ host_permissions=[]
 optional_permissions=[]
 optional_host_permissions=[]
 ```
+
+## Stage 4 release PR 준비 상태
+
+기준일: 2026-06-14
+
+Stage 4 시작 시 `git fetch --all --tags --prune`로 원격 상태를 최신화했다.
+
+| 항목 | 값 |
+|---|---|
+| `origin/main` | `4a6e2b2 Main sync: merge devel issue template updates` |
+| `origin/devel` | `d107bec Merge pull request #69 from postmelee/publish/task68` |
+| `local/task72` 최신 커밋 | `ebffd2b Task #72 Stage 3: release package 검증` |
+| 최신 공개 tag | `v0.1.0` |
+| release 후보 version | `0.1.1` |
+| release 후보 tag | `v0.1.1` |
+| package asset | `/tmp/crop-0.1.1-cws.zip`, 451,909 bytes |
+| SHA-256 | `57ab12022f97f7b90d91d258434bf5f0010f562c03328e6d7d23df3ae4f59aa3` |
+
+Task #72가 아직 `origin/devel`에 merge되지 않았으므로, 실제 `devel -> main` Release PR 후보는 Task #72의 devel 대상 PR merge 이후 완성된다.
+
+Release PR 준비 판단:
+
+| 확인 항목 | 결과 |
+|---|---|
+| version 정합성 | OK. `package.json`과 `manifest.json` 모두 `0.1.1` |
+| package 검증 | OK. build/typecheck/test/package/verify 통과 |
+| 권한 경계 | OK. `activeTab`, `scripting`, `clipboardWrite`, `downloads`; `host_permissions` 없음 |
+| checksum 기록 | OK. SHA-256 확정 |
+| release body 후보 | OK. GitHub Release body 후보 작성됨 |
+| Release PR 본문 후보 | OK. `Release: v0.1.1` 본문 후보 작성됨 |
+| main 전용 README asset 보존 | OK. `git diff --name-status origin/main...local/task72 -- assets README.md README.ko.md README.ja.md README.zh-CN.md` 출력 없음 |
+| 2-dot tree diff의 asset 삭제 표시 | 주의. `origin/main..local/task72` tree diff는 main 전용 asset을 `D`로 표시하지만, 3-dot PR diff 기준에서는 삭제 의도가 없다 |
+
+보류 승인 항목:
+
+- Task #72 최종 보고서 승인 후 `publish/task72` 브랜치와 `devel` 대상 PR 게시.
+- Task #72 PR merge 후 `devel -> main` Release PR 생성 여부 별도 승인.
+- `main` merge 별도 승인.
+- `v0.1.1` tag 생성과 GitHub Release 생성 별도 승인.
+- Chrome Web Store package upload와 `Submit for review`는 작업지시자가 직접 진행.
+
+Stage 4에서 수행하지 않은 작업:
+
+- `publish/task72` push와 devel 대상 PR 생성은 수행하지 않았다.
+- `devel -> main` Release PR은 생성하지 않았다.
+- `main` merge, tag 생성, GitHub Release 생성은 수행하지 않았다.
+- Chrome Web Store upload와 `Submit for review`는 수행하지 않았다.
