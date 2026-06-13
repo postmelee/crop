@@ -273,8 +273,8 @@ Stage 2 이후 package 후보:
 |---|---|
 | asset 이름 | `crop-0.1.1-cws.zip` |
 | asset URL | `https://github.com/postmelee/crop/releases/download/v0.1.1/crop-0.1.1-cws.zip` |
-| asset size | Stage 3에서 확정 |
-| SHA-256 checksum | Stage 3에서 확정 |
+| asset size | 451,909 bytes |
+| SHA-256 checksum | `57ab12022f97f7b90d91d258434bf5f0010f562c03328e6d7d23df3ae4f59aa3` |
 | 생성 명령 | `npm run build && npm run package:cws` |
 | 검증 명령 | `npm run verify:cws` |
 
@@ -282,13 +282,14 @@ Stage 2 이후 package 후보:
 
 | 검증 | 결과 |
 |---|---|
-| `npm run build` | Stage 3에서 실행 후 확정 |
-| `npm run typecheck` | Stage 3에서 실행 후 확정 |
-| `npm test` | Stage 3에서 실행 후 확정 |
-| `npm run package:cws` | Stage 3에서 실행 후 확정 |
-| `npm run verify:cws` | Stage 3에서 실행 후 확정 |
-| ZIP contents 확인 | Stage 3에서 실행 후 확정 |
-| privacy URL 확인 | tag 생성 후 `https://github.com/postmelee/crop/blob/v0.1.1/PRIVACY.md` 기준으로 확정 |
+| `npm run build` | PASS. Vite production build 완료 |
+| `npm run typecheck` | PASS. TypeScript diagnostics 없음 |
+| `npm test` | PASS. 17 files, 230 tests passed |
+| `npm run package:cws` | PASS. `/tmp/crop-0.1.1-cws.zip`, 13 files, 451,909 bytes 생성 |
+| `npm run verify:cws` | PASS. Chrome Web Store ZIP verification passed |
+| ZIP contents 확인 | PASS. ZIP root `manifest.json` 포함, forbidden repository/dependency entry 출력 없음 |
+| manifest permission 확인 | PASS. `activeTab`, `scripting`, `clipboardWrite`, `downloads`; host permissions 없음 |
+| privacy URL 확인 | 후보 URL 형식 확인. tag 생성 후 `https://github.com/postmelee/crop/blob/v0.1.1/PRIVACY.md` 접근성 최종 확인 필요 |
 
 ### rollback / follow-up
 
@@ -327,8 +328,10 @@ Release: v0.1.1
 
 ## 검증
 
-- Stage 3에서 `npm run build`, `npm run typecheck`, `npm test`, `npm run package:cws`, `npm run verify:cws` 결과를 기록한다.
-- Stage 3에서 `/tmp/crop-0.1.1-cws.zip` size와 SHA-256 checksum을 기록한다.
+- `npm run build`, `npm run typecheck`, `npm test`, `npm run package:cws`, `npm run verify:cws` 통과
+- `/tmp/crop-0.1.1-cws.zip`: 13 files, 451,909 bytes
+- SHA-256: `57ab12022f97f7b90d91d258434bf5f0010f562c03328e6d7d23df3ae4f59aa3`
+- ZIP root `manifest.json` 포함, forbidden repository/dependency entry 없음
 - Stage 4에서 release PR 생성 전 main 전용 README asset 보존 여부를 다시 확인한다.
 
 ## 승인 상태
@@ -344,3 +347,63 @@ Release: v0.1.1
 - release 후보 grep은 Stage 2 release body 후보와 release PR 본문 후보의 핵심 문맥을 찾아야 한다.
 - 템플릿 잔여 표식 검사는 출력이 없어야 한다.
 - `git diff --check`는 경고 없이 통과해야 한다.
+
+## Stage 3 package validation 결과
+
+기준일: 2026-06-14
+
+| 항목 | 결과 |
+|---|---|
+| `npm run build` | PASS. `dist/manifest.json`, locale files, background/content bundles 생성 |
+| `npm run typecheck` | PASS. TypeScript diagnostics 없음 |
+| `npm test` | PASS. 17 test files, 230 tests passed |
+| `npm run package:cws` | PASS. `/tmp/crop-0.1.1-cws.zip` 생성 |
+| `npm run verify:cws` | PASS. Chrome Web Store ZIP verification passed |
+| ZIP root manifest | PASS. `manifest.json`이 ZIP root에 존재 |
+| forbidden ZIP entries | PASS. `.DS_Store`, `__MACOSX`, `node_modules`, `mydocs`, repository root 문서/config 출력 없음 |
+| manifest permission | PASS. `activeTab`, `scripting`, `clipboardWrite`, `downloads`만 확인, `host_permissions` 없음 |
+
+Package asset:
+
+| 항목 | 값 |
+|---|---|
+| path | `/tmp/crop-0.1.1-cws.zip` |
+| file count | 13 |
+| asset size | 451,909 bytes |
+| uncompressed size | 450,333 bytes |
+| SHA-256 | `57ab12022f97f7b90d91d258434bf5f0010f562c03328e6d7d23df3ae4f59aa3` |
+
+ZIP contents:
+
+```text
+_locales/en/messages.json
+_locales/ja/messages.json
+_locales/ko/messages.json
+_locales/zh_CN/messages.json
+background/service-worker.js
+background/service-worker.js.map
+content/inject.js
+content/inject.js.map
+icons/crop-128.png
+icons/crop-16.png
+icons/crop-32.png
+icons/crop-48.png
+manifest.json
+```
+
+Manifest permission 확인:
+
+```text
+manifest.json
+version=0.1.1
+permissions=["activeTab","scripting","clipboardWrite","downloads"]
+host_permissions=[]
+optional_permissions=[]
+optional_host_permissions=[]
+dist/manifest.json
+version=0.1.1
+permissions=["activeTab","scripting","clipboardWrite","downloads"]
+host_permissions=[]
+optional_permissions=[]
+optional_host_permissions=[]
+```
