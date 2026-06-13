@@ -51,7 +51,89 @@ describe("full page capture helpers", () => {
       scrollMinY: 0,
       scrollMaxX: 600,
       scrollMaxY: 1000,
+      captureViewportCssSize: {
+        clientWidth: 320,
+        clientHeight: 240
+      },
       devicePixelRatio: 2
+    });
+  });
+
+  it("keeps tile planning on the content viewport when classic scrollbars widen innerWidth", () => {
+    const metrics = readFullPageMetrics({
+      innerWidth: 1452,
+      innerHeight: 982,
+      scrollX: 0,
+      scrollY: 0,
+      devicePixelRatio: 1,
+      document: {
+        documentElement: {
+          clientWidth: 1440,
+          clientHeight: 982,
+          scrollWidth: 1440,
+          scrollHeight: 2400
+        },
+        body: {
+          scrollWidth: 1440,
+          scrollHeight: 2400
+        },
+        scrollingElement: null
+      }
+    });
+    const plan = createFullPageTilePlan(metrics);
+
+    expect(metrics.viewportWidth).toBe(1440);
+    expect(metrics.captureViewportCssSize).toEqual({ clientWidth: 1452, clientHeight: 982 });
+    expect(plan.viewportCssSize).toEqual({ clientWidth: 1440, clientHeight: 982 });
+    expect(plan.captureViewportCssSize).toEqual({ clientWidth: 1452, clientHeight: 982 });
+    expect(plan.tiles[0].pageRect).toEqual(rectFromEdges(0, 0, 1440, 982));
+    expect(plan.outputCssSize).toEqual({ width: 1440, height: 2400 });
+  });
+
+  it("keeps captured tile source mapping size separate from the planning viewport", () => {
+    const planningMetrics = createFullPageMetrics({
+      viewportWidth: 1440,
+      viewportHeight: 982,
+      captureViewportWidth: 1452,
+      captureViewportHeight: 982,
+      scrollWidth: 3000,
+      scrollHeight: 2400
+    });
+    const selectedRect = rectFromEdges(36, 288.594, 756, 693.594);
+    const plan = createPageRectTilePlan(planningMetrics, selectedRect);
+    const captureMetrics = createFullPageMetrics({
+      viewportWidth: 1440,
+      viewportHeight: 982,
+      captureViewportWidth: 1452,
+      captureViewportHeight: 982,
+      scrollWidth: 3000,
+      scrollHeight: 2400,
+      scrollX: plan.tiles[0].scrollX,
+      scrollY: plan.tiles[0].scrollY
+    });
+    const capturedTile = createCapturedFullPageTile({
+      tile: plan.tiles[0],
+      dataUrl: "data:image/png;base64,classic-scrollbars",
+      metrics: captureMetrics
+    });
+
+    expect(plan.viewportCssSize).toEqual({ clientWidth: 1440, clientHeight: 982 });
+    expect(plan.captureViewportCssSize).toEqual({ clientWidth: 1452, clientHeight: 982 });
+    expect(capturedTile.viewportCropRect.left).toBe(0);
+    expect(capturedTile.viewportCropRect.top).toBe(0);
+    expect(capturedTile.viewportCropRect.right).toBe(720);
+    expect(capturedTile.viewportCropRect.bottom).toBeCloseTo(405);
+    expect(capturedTile.viewportCropRect.width).toBe(720);
+    expect(capturedTile.viewportCropRect.height).toBeCloseTo(405);
+    expect(capturedTile.destinationCssRect.left).toBe(0);
+    expect(capturedTile.destinationCssRect.top).toBe(0);
+    expect(capturedTile.destinationCssRect.right).toBe(720);
+    expect(capturedTile.destinationCssRect.bottom).toBeCloseTo(405);
+    expect(capturedTile.destinationCssRect.width).toBe(720);
+    expect(capturedTile.destinationCssRect.height).toBeCloseTo(405);
+    expect(capturedTile.captureViewportCssSize).toEqual({
+      clientWidth: 1452,
+      clientHeight: 982
     });
   });
 
@@ -75,6 +157,10 @@ describe("full page capture helpers", () => {
       scrollY: 0,
       scrollMaxX: 700,
       scrollMaxY: 500,
+      captureViewportCssSize: {
+        clientWidth: 500,
+        clientHeight: 400
+      },
       devicePixelRatio: 1
     });
   });
@@ -106,6 +192,7 @@ describe("full page capture helpers", () => {
 
     expect(plan.outputCssSize).toEqual({ width: 500, height: 950 });
     expect(plan.viewportCssSize).toEqual({ clientWidth: 500, clientHeight: 400 });
+    expect(plan.captureViewportCssSize).toEqual({ clientWidth: 500, clientHeight: 400 });
     expect(plan.tiles).toHaveLength(3);
     expect(plan.tiles[0]).toMatchObject({
       indexX: 0,
@@ -170,6 +257,7 @@ describe("full page capture helpers", () => {
     });
     expect(plan.outputCssSize).toEqual({ width: 1520, height: 920 });
     expect(plan.viewportCssSize).toEqual({ clientWidth: 800, clientHeight: 600 });
+    expect(plan.captureViewportCssSize).toEqual({ clientWidth: 800, clientHeight: 600 });
     expect(plan.tiles).toHaveLength(4);
     expect(plan.tiles[0]).toMatchObject({
       indexX: 0,
@@ -215,6 +303,85 @@ describe("full page capture helpers", () => {
       pageRect: selectedRect,
       viewportCropRect: rectFromEdges(100, 100, 420, 360),
       destinationCssRect: rectFromEdges(0, 0, 320, 260)
+    });
+  });
+
+  it("keeps current scroll where possible for minimal selected page rect capture", () => {
+    const selectedRect = rectFromEdges(100, 500, 400, 1100);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 700,
+        scrollWidth: 1400,
+        scrollHeight: 1800,
+        scrollX: 0,
+        scrollY: 300
+      }),
+      selectedRect,
+      {
+        scrollStrategy: "minimal-scroll"
+      }
+    );
+
+    expect(plan.tiles).toHaveLength(1);
+    expect(plan.tiles[0]).toMatchObject({
+      scrollX: 0,
+      scrollY: 400,
+      pageRect: selectedRect,
+      viewportCropRect: rectFromEdges(100, 100, 400, 700),
+      destinationCssRect: rectFromEdges(0, 0, 300, 600)
+    });
+  });
+
+  it("keeps segment-start planning as the default for selected page rect capture", () => {
+    const selectedRect = rectFromEdges(100, 500, 400, 1100);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 700,
+        scrollWidth: 1400,
+        scrollHeight: 1800,
+        scrollX: 0,
+        scrollY: 300
+      }),
+      selectedRect
+    );
+
+    expect(plan.tiles).toHaveLength(1);
+    expect(plan.tiles[0]).toMatchObject({
+      scrollX: 100,
+      scrollY: 500,
+      viewportCropRect: rectFromEdges(0, 0, 300, 600)
+    });
+  });
+
+  it("keeps segment-start planning for selected bounds larger than the viewport", () => {
+    const selectedRect = rectFromEdges(240, 320, 1760, 1240);
+    const plan = createPageRectTilePlan(
+      createFullPageMetrics({
+        viewportWidth: 800,
+        viewportHeight: 600,
+        scrollWidth: 2000,
+        scrollHeight: 1600,
+        scrollX: 100,
+        scrollY: 200
+      }),
+      selectedRect,
+      {
+        scrollStrategy: "minimal-scroll"
+      }
+    );
+
+    expect(plan.tiles).toHaveLength(4);
+    expect(plan.tiles[0]).toMatchObject({
+      scrollX: 240,
+      scrollY: 320,
+      viewportCropRect: rectFromEdges(0, 0, 800, 600)
+    });
+    expect(plan.tiles.at(-1)).toMatchObject({
+      scrollX: 1040,
+      scrollY: 920,
+      viewportCropRect: rectFromEdges(0, 0, 720, 320)
     });
   });
 
@@ -274,7 +441,11 @@ describe("full page capture helpers", () => {
       actualScrollX: 0,
       actualScrollY: 550,
       viewportCropRect: rectFromEdges(0, 250, 500, 400),
-      destinationCssRect: rectFromEdges(0, 800, 500, 950)
+      destinationCssRect: rectFromEdges(0, 800, 500, 950),
+      captureViewportCssSize: {
+        clientWidth: 500,
+        clientHeight: 400
+      }
     });
   });
 
@@ -409,6 +580,79 @@ describe("full page capture helpers", () => {
       "scrollBehaviorDisabled:false",
       "hidden:false"
     ]);
+  });
+
+  it("uses minimal scroll for single-tile selected page rect capture", async () => {
+    const events: string[] = [];
+    let currentScrollX = 0;
+    let currentScrollY = 300;
+    const readMetrics = (): FullPageMetrics =>
+      createFullPageMetrics({
+        viewportWidth: 500,
+        viewportHeight: 700,
+        scrollWidth: 1400,
+        scrollHeight: 1800,
+        scrollX: currentScrollX,
+        scrollY: currentScrollY
+      });
+
+    const result = await capturePageRectTiles({
+      pageRect: rectFromEdges(100, 500, 400, 1100),
+      readMetrics,
+      scrollTo: (x, y) => {
+        events.push(`scroll:${x},${y}`);
+        currentScrollX = x;
+        currentScrollY = y;
+      },
+      waitForPaint: () => Promise.resolve(),
+      captureVisibleTab: async () => `data:image/png;base64,${currentScrollX}-${currentScrollY}`
+    });
+
+    expect(result.tiles).toHaveLength(1);
+    expect(result.tiles[0]).toMatchObject({
+      actualScrollX: 0,
+      actualScrollY: 400,
+      viewportCropRect: rectFromEdges(100, 100, 400, 700),
+      destinationCssRect: rectFromEdges(0, 0, 300, 600)
+    });
+    expect(result.tiles[0].dataUrl).toBe("data:image/png;base64,0-400");
+    expect(events).toEqual([
+      "scroll:0,400",
+      "scroll:0,300"
+    ]);
+  });
+
+  it("allows selected page rect capture to opt back into segment-start planning", async () => {
+    let currentScrollX = 0;
+    let currentScrollY = 300;
+    const result = await capturePageRectTiles({
+      pageRect: rectFromEdges(100, 500, 400, 1100),
+      readMetrics: () =>
+        createFullPageMetrics({
+          viewportWidth: 500,
+          viewportHeight: 700,
+          scrollWidth: 1400,
+          scrollHeight: 1800,
+          scrollX: currentScrollX,
+          scrollY: currentScrollY
+        }),
+      scrollTo: (x, y) => {
+        currentScrollX = x;
+        currentScrollY = y;
+      },
+      waitForPaint: () => Promise.resolve(),
+      captureVisibleTab: async () => `data:image/png;base64,${currentScrollX}-${currentScrollY}`,
+      tilePlanOptions: {
+        scrollStrategy: "segment-start"
+      }
+    });
+
+    expect(result.tiles[0]).toMatchObject({
+      actualScrollX: 100,
+      actualScrollY: 500,
+      viewportCropRect: rectFromEdges(0, 0, 300, 600)
+    });
+    expect(result.tiles[0].dataUrl).toBe("data:image/png;base64,100-500");
   });
 
   it("runs per-tile capture hooks and restores hook state after a failed tile", async () => {

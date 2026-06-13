@@ -51,6 +51,14 @@ const overlayRuntime = readFileSync(
   resolve(testDir, "../../../src/content/overlay/crop-overlay.ts"),
   "utf8"
 );
+const fullPageCaptureRuntime = readFileSync(
+  resolve(testDir, "../../../src/content/overlay/full-page-capture.ts"),
+  "utf8"
+);
+const stitchImageRuntime = readFileSync(
+  resolve(testDir, "../../../src/shared/stitch-image.ts"),
+  "utf8"
+);
 const firefoxUiAssets = readFileSync(
   resolve(testDir, "../../../src/firefox-derived/screenshots-ui-assets.ts"),
   "utf8"
@@ -145,6 +153,67 @@ describe("Phase 6 overlay regression coverage", () => {
         }
       })
     ).toEqual(sharedRectFromEdges(185, 73, 1167, 500));
+  });
+
+  it("keeps Always scroll bars source mapping based on the capture viewport width", () => {
+    const contentViewport = {
+      clientWidth: 1440,
+      clientHeight: 982,
+      scrollX: 0,
+      scrollY: 0
+    };
+    const captureViewport = {
+      clientWidth: 1452,
+      clientHeight: 982
+    };
+    const selectedPageRect = sharedRectFromEdges(36, 288.594, 756, 693.594);
+    const viewportSelection = clipPageRectToViewport(selectedPageRect, contentViewport);
+
+    expect(viewportSelection).toEqual(selectedPageRect);
+    if (!viewportSelection) {
+      throw new Error("Expected image selection to fit inside content viewport.");
+    }
+    expect(
+      getSourceCropRect({
+        viewportCropRect: viewportSelection,
+        imageNaturalSize: {
+          naturalWidth: 1452,
+          naturalHeight: 982
+        },
+        viewportCssSize: captureViewport
+      })
+    ).toEqual(sharedRectFromEdges(36, 289, 756, 694));
+    expect(
+      getSourceCropRect({
+        viewportCropRect: viewportSelection,
+        imageNaturalSize: {
+          naturalWidth: 1452,
+          naturalHeight: 982
+        },
+        viewportCssSize: {
+          clientWidth: contentViewport.clientWidth,
+          clientHeight: contentViewport.clientHeight
+        }
+      })?.width
+    ).toBe(726);
+  });
+
+  it("passes capture viewport dimensions to visible crop source mapping", () => {
+    expect(overlayRuntime).toContain("function getCaptureViewportCssSize");
+    expect(overlayRuntime).toContain("window.innerWidth");
+    expect(overlayRuntime).toContain("window.innerHeight");
+    expect(overlayRuntime.match(/viewportCssSize: captureViewportCssSize/g)).toHaveLength(2);
+  });
+
+  it("passes capture viewport dimensions to tiled stitching and preview source mapping", () => {
+    expect(fullPageCaptureRuntime).toContain("captureViewportWidth: win.innerWidth");
+    expect(fullPageCaptureRuntime).toContain("captureViewportCssSize: metrics.captureViewportCssSize");
+    expect(stitchImageRuntime).toContain("readonly captureViewportCssSize: ViewportCssSize");
+    expect(stitchImageRuntime).toContain("input.tiles[0].captureViewportCssSize");
+    expect(overlayRuntime.match(/captureViewportCssSize: tile\.captureViewportCssSize/g)).toHaveLength(
+      4
+    );
+    expect(overlayRuntime).not.toContain("viewportCssSize: captureResult.plan.viewportCssSize");
   });
 
   it("uses the last pointer and latest scroll position for edge auto-scroll drag updates", () => {
@@ -312,6 +381,34 @@ describe("Phase 6 overlay regression coverage", () => {
     expect(qualityMatrix).toContain("P6-39");
     expect(qualityMatrix).toContain("selected-scroll-capture-target");
     expect(qualityMatrix).toContain("Task #26");
+    expect(qualityMatrix).toContain("Task #66");
+  });
+
+  it("keeps selected stitching on minimal scroll without changing full page planning", () => {
+    const fullPageCaptureStart = fullPageCaptureRuntime.indexOf(
+      "export async function captureFullPageTiles"
+    );
+    const selectedCaptureStart = fullPageCaptureRuntime.indexOf(
+      "export async function capturePageRectTiles"
+    );
+    const captureLoopStart = fullPageCaptureRuntime.indexOf(
+      "async function captureTiles",
+      selectedCaptureStart
+    );
+    const fullPageCaptureBlock = fullPageCaptureRuntime.slice(
+      fullPageCaptureStart,
+      selectedCaptureStart
+    );
+    const selectedCaptureBlock = fullPageCaptureRuntime.slice(
+      selectedCaptureStart,
+      captureLoopStart
+    );
+
+    expect(fullPageCaptureBlock).toContain("createFullPageTilePlan(metrics)");
+    expect(fullPageCaptureBlock).not.toContain('"minimal-scroll"');
+    expect(selectedCaptureBlock).toContain("createPageRectTilePlan(metrics, options.pageRect");
+    expect(selectedCaptureBlock).toContain('scrollStrategy: "minimal-scroll"');
+    expect(selectedCaptureBlock).toContain("...options.tilePlanOptions");
   });
 
   it("keeps oversized full page downscale fallback quality criteria", () => {
@@ -337,12 +434,53 @@ describe("Phase 6 overlay regression coverage", () => {
     );
 
     expect(selectedCaptureBlock).toContain("capturePageRectTiles");
-    expect(selectedCaptureBlock).toContain("beforeCaptureTile: () =>");
-    expect(selectedCaptureBlock).toContain("setCapturePageChromeSuppressed(true)");
+    expect(selectedCaptureBlock).toContain("beforeCaptureTile: (tile) =>");
+    expect(selectedCaptureBlock).toContain(
+      "collectSelectedCapturePreserveElements(tile.pageRect, host)"
+    );
+    expect(selectedCaptureBlock).toContain(
+      "setCapturePageChromeSuppressed(true, { preserveElements })"
+    );
     expect(selectedCaptureBlock).not.toContain("setCapturePageChromeSuppressed(index > 0)");
+    expect(selectedCaptureBlock).toContain("setCaptureDocumentChromeSuppressed(true)");
+    expect(selectedCaptureBlock).toContain("setCaptureDocumentChromeSuppressed(false)");
 
     expect(fullPageCaptureBlock).toContain("captureFullPageTiles");
+    expect(fullPageCaptureBlock).toContain("setCaptureDocumentChromeSuppressed(true)");
+    expect(fullPageCaptureBlock).toContain("setCaptureDocumentChromeSuppressed(false)");
     expect(fullPageCaptureBlock).toContain("setCapturePageChromeSuppressed(index > 0)");
+  });
+
+  it("keeps capture scrollbar suppression from collapsing classic scrollbar gutters", () => {
+    const captureChromeSuppressionStart = overlayRuntime.indexOf(
+      "const setCaptureDocumentChromeSuppressed"
+    );
+    const capturePageSuppressionStart = overlayRuntime.indexOf(
+      "const setCapturePageChromeSuppressed"
+    );
+    const captureChromeSuppressionBlock = overlayRuntime.slice(
+      captureChromeSuppressionStart,
+      capturePageSuppressionStart
+    );
+
+    expect(captureChromeSuppressionBlock).toContain(
+      "scrollbar-color: transparent transparent"
+    );
+    expect(captureChromeSuppressionBlock).toContain("::-webkit-scrollbar-thumb");
+    expect(captureChromeSuppressionBlock).not.toContain("scrollbar-width: none");
+    expect(captureChromeSuppressionBlock).not.toContain("display: none !important");
+    expect(captureChromeSuppressionBlock).not.toContain("width: 0 !important");
+    expect(captureChromeSuppressionBlock).not.toContain("height: 0 !important");
+  });
+
+  it("keeps selected capture targets out of page chrome suppression", () => {
+    expect(overlayRuntime).toContain("function collectSelectedCapturePreserveElements");
+    expect(overlayRuntime).toContain("document.elementsFromPoint(point.x, point.y)");
+    expect(overlayRuntime).toContain("host.style.display = \"none\"");
+    expect(overlayRuntime).toContain("function isPreservedCaptureElement");
+    expect(overlayRuntime).toContain("element.contains(preserved)");
+    expect(overlayRuntime).toContain("preserved.contains(element)");
+    expect(overlayRuntime).not.toContain("black tile");
   });
 
   it("keeps same-origin iframe smoke targets in the fixture", () => {

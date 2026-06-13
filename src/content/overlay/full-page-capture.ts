@@ -1,4 +1,5 @@
 import { type OutputCssSize } from "../../shared/stitch-image";
+import { type ViewportCssSize } from "../../shared/crop-image";
 import {
   normalizeRect,
   rectFromEdges,
@@ -17,6 +18,8 @@ export interface FullPageMetricsInput {
   readonly scrollMinY?: number | null;
   readonly scrollMaxX?: number | null;
   readonly scrollMaxY?: number | null;
+  readonly captureViewportWidth?: number | null;
+  readonly captureViewportHeight?: number | null;
   readonly devicePixelRatio?: number | null;
 }
 
@@ -31,6 +34,7 @@ export interface FullPageMetrics {
   readonly scrollMinY: number;
   readonly scrollMaxX: number;
   readonly scrollMaxY: number;
+  readonly captureViewportCssSize: ViewportCssSize;
   readonly devicePixelRatio: number;
 }
 
@@ -54,8 +58,15 @@ export interface FullPageTilePlan {
     readonly clientWidth: number;
     readonly clientHeight: number;
   };
+  readonly captureViewportCssSize: ViewportCssSize;
   readonly outputCssSize: OutputCssSize;
   readonly tiles: readonly FullPageTile[];
+}
+
+export type PageRectTileScrollStrategy = "segment-start" | "minimal-scroll";
+
+export interface PageRectTilePlanOptions {
+  readonly scrollStrategy?: PageRectTileScrollStrategy;
 }
 
 export interface CapturedFullPageTile {
@@ -65,6 +76,7 @@ export interface CapturedFullPageTile {
   readonly actualScrollY: number;
   readonly viewportCropRect: CropRect;
   readonly destinationCssRect: CropRect;
+  readonly captureViewportCssSize: ViewportCssSize;
 }
 
 export interface FullPageCaptureLoopResult {
@@ -85,6 +97,7 @@ export interface FullPageCaptureLoopOptions {
 
 export interface PageRectCaptureLoopOptions extends FullPageCaptureLoopOptions {
   readonly pageRect: CropRectLike;
+  readonly tilePlanOptions?: PageRectTilePlanOptions;
 }
 
 interface FullPageElementLike {
@@ -145,6 +158,8 @@ export function readFullPageMetrics(win: FullPageWindowLike = window): FullPageM
     scrollHeight,
     scrollX: win.scrollX,
     scrollY: win.scrollY,
+    captureViewportWidth: win.innerWidth,
+    captureViewportHeight: win.innerHeight,
     devicePixelRatio: win.devicePixelRatio
   });
 }
@@ -160,6 +175,10 @@ export function createFullPageMetrics(input: FullPageMetricsInput): FullPageMetr
   const defaultScrollMaxY = scrollMinY + Math.max(0, scrollHeight - viewportHeight);
   const scrollMaxX = Math.max(scrollMinX, toFiniteNumber(input.scrollMaxX, defaultScrollMaxX));
   const scrollMaxY = Math.max(scrollMinY, toFiniteNumber(input.scrollMaxY, defaultScrollMaxY));
+  const captureViewportCssSize = {
+    clientWidth: firstPositive(input.captureViewportWidth, viewportWidth),
+    clientHeight: firstPositive(input.captureViewportHeight, viewportHeight)
+  };
 
   return {
     viewportWidth,
@@ -172,6 +191,7 @@ export function createFullPageMetrics(input: FullPageMetricsInput): FullPageMetr
     scrollMinY,
     scrollMaxX,
     scrollMaxY,
+    captureViewportCssSize,
     devicePixelRatio: Math.max(1, toFiniteNumber(input.devicePixelRatio, 1))
   };
 }
@@ -194,7 +214,8 @@ export function createFullPageTilePlan(
 
 export function createPageRectTilePlan(
   metrics: FullPageMetrics,
-  pageRect: CropRectLike
+  pageRect: CropRectLike,
+  options: PageRectTilePlanOptions = {}
 ): FullPageTilePlan {
   if (metrics.viewportWidth <= 0 || metrics.viewportHeight <= 0) {
     throw new Error("Full page capture requires a non-empty viewport.");
@@ -219,14 +240,34 @@ export function createPageRectTilePlan(
     metrics.viewportHeight
   );
   const tiles: FullPageTile[] = [];
+  const useMinimalScrollX =
+    options.scrollStrategy === "minimal-scroll" && bounds.width <= metrics.viewportWidth;
+  const useMinimalScrollY =
+    options.scrollStrategy === "minimal-scroll" && bounds.height <= metrics.viewportHeight;
 
   for (let yIndex = 0; yIndex < ySegments.length; yIndex += 1) {
     const ySegment = ySegments[yIndex];
-    const scrollY = clamp(ySegment.start, metrics.scrollMinY, metrics.scrollMaxY);
+    const scrollY = getTileAxisScroll({
+      segmentStart: ySegment.start,
+      segmentEnd: ySegment.end,
+      viewportSize: metrics.viewportHeight,
+      currentScroll: metrics.scrollY,
+      scrollMin: metrics.scrollMinY,
+      scrollMax: metrics.scrollMaxY,
+      useMinimalScroll: useMinimalScrollY
+    });
 
     for (let xIndex = 0; xIndex < xSegments.length; xIndex += 1) {
       const xSegment = xSegments[xIndex];
-      const scrollX = clamp(xSegment.start, metrics.scrollMinX, metrics.scrollMaxX);
+      const scrollX = getTileAxisScroll({
+        segmentStart: xSegment.start,
+        segmentEnd: xSegment.end,
+        viewportSize: metrics.viewportWidth,
+        currentScroll: metrics.scrollX,
+        scrollMin: metrics.scrollMinX,
+        scrollMax: metrics.scrollMaxX,
+        useMinimalScroll: useMinimalScrollX
+      });
       const pageRect = rectFromEdges(
         xSegment.start,
         ySegment.start,
@@ -262,6 +303,7 @@ export function createPageRectTilePlan(
       clientWidth: metrics.viewportWidth,
       clientHeight: metrics.viewportHeight
     },
+    captureViewportCssSize: metrics.captureViewportCssSize,
     outputCssSize: {
       width: bounds.width,
       height: bounds.height
@@ -279,7 +321,12 @@ export async function captureFullPageTiles(
 export async function capturePageRectTiles(
   options: PageRectCaptureLoopOptions
 ): Promise<FullPageCaptureLoopResult> {
-  return captureTiles(options, (metrics) => createPageRectTilePlan(metrics, options.pageRect));
+  return captureTiles(options, (metrics) =>
+    createPageRectTilePlan(metrics, options.pageRect, {
+      scrollStrategy: "minimal-scroll",
+      ...options.tilePlanOptions
+    })
+  );
 }
 
 async function captureTiles(
@@ -376,7 +423,8 @@ export function createCapturedFullPageTile(input: {
     actualScrollX: input.metrics.scrollX,
     actualScrollY: input.metrics.scrollY,
     viewportCropRect,
-    destinationCssRect: input.tile.destinationCssRect
+    destinationCssRect: input.tile.destinationCssRect,
+    captureViewportCssSize: input.metrics.captureViewportCssSize
   };
 }
 
@@ -384,6 +432,29 @@ function validateCaptureBounds(bounds: CropRect): void {
   if (bounds.width <= 0 || bounds.height <= 0) {
     throw new Error("Full page capture requires a non-empty document.");
   }
+}
+
+function getTileAxisScroll(input: {
+  readonly segmentStart: number;
+  readonly segmentEnd: number;
+  readonly viewportSize: number;
+  readonly currentScroll: number;
+  readonly scrollMin: number;
+  readonly scrollMax: number;
+  readonly useMinimalScroll: boolean;
+}): number {
+  if (!input.useMinimalScroll) {
+    return clamp(input.segmentStart, input.scrollMin, input.scrollMax);
+  }
+
+  const minimumVisibleScroll = input.segmentEnd - input.viewportSize;
+  const maximumVisibleScroll = input.segmentStart;
+
+  return clamp(
+    clamp(input.currentScroll, minimumVisibleScroll, maximumVisibleScroll),
+    input.scrollMin,
+    input.scrollMax
+  );
 }
 
 function createSegments(start: number, end: number, size: number): ReadonlyArray<{
