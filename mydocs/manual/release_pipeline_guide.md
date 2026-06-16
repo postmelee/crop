@@ -87,15 +87,15 @@ npm run typecheck
 npm test
 npm run package:cws
 npm run verify:cws
-unzip -l /tmp/crop-0.1.0-cws.zip
-unzip -Z1 /tmp/crop-0.1.0-cws.zip
+unzip -l /tmp/crop-{version}-cws.zip
+unzip -Z1 /tmp/crop-{version}-cws.zip
 ```
 
 확인할 기준:
 
 - `devel`이 최신 원격 상태다.
 - CI와 동일한 명령이 로컬에서 통과한다.
-- `/tmp/crop-0.1.0-cws.zip` root에 `manifest.json`이 있다.
+- `/tmp/crop-{version}-cws.zip` root에 `manifest.json`이 있다.
 - ZIP에 `.DS_Store`, `__MACOSX`, `node_modules`, `mydocs`, repository root 문서/config가 없다.
 - `manifest.json` 권한은 `activeTab`, `scripting`, `clipboardWrite`, `downloads` 범위를 유지한다.
 - `PRIVACY.md`가 `main` 반영 후 `https://github.com/postmelee/crop/blob/main/PRIVACY.md`에서 제출 URL로 사용할 내용을 갖고 있다.
@@ -128,7 +128,7 @@ Release PR이 merge되기 전에는 Chrome Web Store `Submit for review`를 누�
 
 - `main`이 release PR merge commit을 포함한다.
 - `npm run build`, `npm run package:cws`, `npm run verify:cws`를 `main` 기준으로 다시 실행했다.
-- `/tmp/crop-0.1.0-cws.zip`가 `main` 기준으로 재생성됐다.
+- `/tmp/crop-{version}-cws.zip`가 `main` 기준으로 재생성됐다.
 - `https://github.com/postmelee/crop/blob/main/PRIVACY.md`가 Dashboard에 제출할 Chrome Web Store Privacy URL로 유효하다.
 - `PRIVACY.md`의 Last updated와 적용 version 문구가 release tag 기준과 일치한다.
 - tag URL을 privacy policy URL로 쓰도록 별도 승인됐다면 tag 생성 후 `https://github.com/postmelee/crop/blob/{tag}/PRIVACY.md`가 유효한지 확인한다.
@@ -182,7 +182,7 @@ Dashboard draft 입력은 release PR 이전에도 준비할 수 있다. 단, 다
 - `https://github.com/postmelee/crop/blob/main/PRIVACY.md`가 Dashboard의 Chrome Web Store Privacy URL로 입력됐다. tag URL을 쓰는 경우에는 별도 승인과 tag URL 유효성 확인이 끝났다.
 - `PRIVACY.md`의 Last updated와 적용 version 문구가 이번 release 기준이다.
 - `npm run build`, `npm run package:cws`, `npm run verify:cws`를 release 기준에서 통과했다.
-- `/tmp/crop-0.1.0-cws.zip`를 Dashboard에 업로드했다.
+- `/tmp/crop-{version}-cws.zip`를 Dashboard에 업로드했다.
 - Store screenshot, localized screenshot/video, global fallback asset, small promotional image 준비 상태가 확인됐다.
 - #37 Dashboard guide의 privacy disclosure, permission justification, distribution, deferred publishing 확인이 끝났다.
 - 제출 직전 작업지시자 승인이 있다.
