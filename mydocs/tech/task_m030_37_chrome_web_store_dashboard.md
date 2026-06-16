@@ -8,6 +8,10 @@ GitHub Issue: [#37](https://github.com/postmelee/crop/issues/37)
 기준 커밋: `5fd786f`
 최신 `devel` 병합 커밋: `ae27732`
 
+## 최신 상태 주석
+
+이 문서는 #37 당시 `v0.1.0` Chrome Web Store Dashboard 입력값과 제출 준비 상태를 기록한 스냅샷이다. 이후 release의 실제 package path, version, 제출 상태는 `mydocs/manual/release_pipeline_guide.md`와 해당 release의 GitHub Release body를 우선 기준으로 삼는다.
+
 ## 조사 배경
 
 #9는 Chrome Web Store 배포 준비 문서, `PRIVACY.md`, Store listing/privacy/permission draft, release package checklist, manifest/Store icon asset을 정리했다. #9 PR #36은 `devel`에 merge됐고, 이후 로컬 검증 중 발견된 full-page oversized canvas failure는 #35 PR #38에서 downscale fallback으로 보정되어 `devel`에 반영됐다.

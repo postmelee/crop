@@ -454,3 +454,9 @@ Stage 4에서 수행하지 않은 작업:
 - `devel -> main` Release PR은 생성하지 않았다.
 - `main` merge, tag 생성, GitHub Release 생성은 수행하지 않았다.
 - Chrome Web Store upload와 `Submit for review`는 수행하지 않았다.
+
+## 게시 후 확인
+
+기준일: 2026-06-16
+
+`v0.1.1`은 GitHub Release 생성과 Chrome Web Store review 통과 후 published 상태로 확인됐다. 이 문서의 `not submitted` 문구는 Stage 2~4 당시 release candidate body 후보와 제출 전 상태를 보존한 기록이다. 사용자-facing 최신 release note는 GitHub Release `v0.1.1` body를 기준으로 한다.
